@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-// ── types ────────────────────────────────────────────────────────────────────
+// -- types ------------------------------------------------------------------
 interface SubItem {
   label: string;
   href: string;
@@ -19,7 +19,7 @@ interface NavItem {
   matchPrefix?: string;   // highlight parent when pathname starts with this
 }
 
-// ── nav tree ─────────────────────────────────────────────────────────────────
+// -- nav tree ---------------------------------------------------------------
 const GENERAL_NAV: NavItem[] = [
   {
     key: 'dashboard',
@@ -110,6 +110,7 @@ const GENERAL_NAV: NavItem[] = [
       { label: 'Taxes',        href: '/admin/finance/taxes' },
       { label: 'Reports',      href: '/admin/finance/reports' },
       { label: 'Invoices',     href: '/admin/invoices' },
+      { label: 'Add Invoice',  href: '/admin/invoices/new' },
     ],
   },
   {
@@ -285,282 +286,194 @@ const CMS_NAV: NavItem[] = [
   },
 ];
 
-// ── styles (CSS-in-JS tokens so nothing relies on Larkon) ────────────────────
-const S = {
-  sidebar: (open: boolean): React.CSSProperties => ({
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    height: '100vh',
-    width: open ? '260px' : '0px',
-    minWidth: open ? '260px' : '0px',
-    overflow: 'hidden',
-    background: 'linear-gradient(180deg, #1a2035 0%, #1e2746 100%)',
-    boxShadow: '4px 0 24px rgba(0,0,0,0.3)',
-    display: 'flex',
-    flexDirection: 'column',
-    transition: 'width 0.28s cubic-bezier(.4,0,.2,1), min-width 0.28s cubic-bezier(.4,0,.2,1)',
-    zIndex: 1000,
-    fontFamily: "'Inter', 'Segoe UI', sans-serif",
-  }),
-  logoBox: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '20px 20px 16px',
-    borderBottom: '1px solid rgba(255,255,255,0.06)',
-    flexShrink: 0,
-  } as React.CSSProperties,
-  logoIcon: {
-    width: '34px',
-    height: '34px',
-    borderRadius: '8px',
-    background: 'linear-gradient(135deg, #ff6c2f, #ff8f5e)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  } as React.CSSProperties,
-  logoText: {
-    color: '#fff',
-    fontWeight: 700,
-    fontSize: '18px',
-    letterSpacing: '-0.3px',
-    whiteSpace: 'nowrap',
-  } as React.CSSProperties,
-  scrollArea: {
-    flex: 1,
-    overflowY: 'auto',
-    overflowX: 'hidden',
-    padding: '12px 0 24px',
-    scrollbarWidth: 'thin',
-    scrollbarColor: 'rgba(255,255,255,0.08) transparent',
-  } as React.CSSProperties,
-  sectionTitle: {
-    padding: '16px 20px 6px',
-    fontSize: '10px',
-    fontWeight: 700,
-    letterSpacing: '1.2px',
-    color: 'rgba(255,255,255,0.35)',
-    textTransform: 'uppercase',
-    userSelect: 'none',
-  } as React.CSSProperties,
-  navItem: (active: boolean): React.CSSProperties => ({
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '10px 20px',
-    margin: '1px 10px',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    color: active ? '#fff' : 'rgba(255,255,255,0.6)',
-    background: active
-      ? 'linear-gradient(90deg,rgba(255,108,47,0.25) 0%,rgba(255,108,47,0.08) 100%)'
-      : 'transparent',
-    borderLeft: active ? '2px solid #ff6c2f' : '2px solid transparent',
-    textDecoration: 'none',
-    fontSize: '13.5px',
-    fontWeight: active ? 600 : 400,
-    transition: 'all 0.18s ease',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-  }),
-  navItemHover: {
-    color: '#fff',
-    background: 'rgba(255,255,255,0.06)',
-  } as React.CSSProperties,
-  navIcon: {
-    fontSize: '18px',
-    flexShrink: 0,
-    display: 'flex',
-    alignItems: 'center',
-    opacity: 0.85,
-  } as React.CSSProperties,
-  navLabel: {
-    flex: 1,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-  } as React.CSSProperties,
-  chevron: (open: boolean): React.CSSProperties => ({
-    fontSize: '14px',
-    flexShrink: 0,
-    transition: 'transform 0.22s ease',
-    transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-    color: 'rgba(255,255,255,0.4)',
-  }),
-  subMenu: (open: boolean): React.CSSProperties => ({
-    overflow: 'hidden',
-    maxHeight: open ? '400px' : '0px',
-    transition: 'max-height 0.28s cubic-bezier(.4,0,.2,1)',
-  }),
-  subItem: (active: boolean): React.CSSProperties => ({
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '8px 20px 8px 50px',
-    margin: '0 10px',
-    borderRadius: '6px',
-    textDecoration: 'none',
-    fontSize: '13px',
-    color: active ? '#ff6c2f' : 'rgba(255,255,255,0.5)',
-    fontWeight: active ? 600 : 400,
-    background: active ? 'rgba(255,108,47,0.08)' : 'transparent',
-    transition: 'all 0.16s ease',
-    whiteSpace: 'nowrap',
-  }),
-  dot: (active: boolean): React.CSSProperties => ({
-    width: '5px',
-    height: '5px',
-    borderRadius: '50%',
-    flexShrink: 0,
-    background: active ? '#ff6c2f' : 'rgba(255,255,255,0.25)',
-    transition: 'background 0.16s',
-  }),
-};
-
-// ── sub-component: single nav entry ─────────────────────────────────────────
+// -- sub-component: nav entry ------------------------------------------------
 function NavEntry({
   item,
   pathname,
-  expandedMenu,
+  expandedKey,
   toggle,
+  menuSize,
 }: {
   item: NavItem;
   pathname: string;
-  expandedMenu: string | null;
+  expandedKey: string | null;
   toggle: (key: string) => void;
+  menuSize: string;
 }) {
   const isLeaf = !item.children;
   const isParentActive = item.matchPrefix
     ? pathname.startsWith(item.matchPrefix)
     : pathname === item.href;
-  const isOpen = expandedMenu === item.key;
 
-  const [hovered, setHovered] = useState(false);
+  const isOpen = expandedKey === item.key;
 
   if (isLeaf) {
     return (
-      <Link
-        href={item.href!}
-        style={{
-          ...S.navItem(isParentActive),
-          ...(hovered && !isParentActive ? S.navItemHover : {}),
-        }}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-      >
-        <span style={S.navIcon}>
-          <iconify-icon icon={item.icon} />
-        </span>
-        <span style={S.navLabel}>{item.label}</span>
-      </Link>
+      <li className="nav-item">
+        <Link href={item.href!} className={`nav-link ${isParentActive ? 'active' : ''}`}>
+          <span className="nav-icon">
+            <iconify-icon icon={item.icon} />
+          </span>
+          <span className="nav-text">{item.label}</span>
+        </Link>
+      </li>
     );
   }
 
   return (
-    <>
-      <div
-        onClick={() => toggle(item.key)}
-        style={{
-          ...S.navItem(isParentActive),
-          ...(hovered && !isParentActive ? S.navItemHover : {}),
+    <li className="nav-item">
+      <a
+        className={`nav-link menu-arrow ${isParentActive ? 'active' : ''} ${!isOpen ? 'collapsed' : ''}`}
+        href="#!"
+        onClick={(e) => {
+          e.preventDefault();
+          toggle(item.key);
         }}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        role="button"
         aria-expanded={isOpen}
       >
-        <span style={S.navIcon}>
+        <span className="nav-icon">
           <iconify-icon icon={item.icon} />
         </span>
-        <span style={S.navLabel}>{item.label}</span>
-        <span style={S.chevron(isOpen)}>
-          <iconify-icon icon="solar:alt-arrow-down-bold" />
-        </span>
+        <span className="nav-text">{item.label}</span>
+      </a>
+      <div 
+        className={menuSize === 'condensed' || menuSize === 'hidden' ? `collapse ${isOpen ? 'show' : ''}` : ''}
+        style={menuSize !== 'condensed' && menuSize !== 'hidden' ? {
+          overflow: 'hidden', 
+          maxHeight: isOpen ? '500px' : '0px', 
+          transition: 'max-height 0.28s cubic-bezier(.4,0,.2,1)',
+          display: 'block'
+        } : undefined}
+      >
+        <ul className="nav sub-navbar-nav" style={{ paddingTop: '5px', paddingBottom: '5px' }}>
+          {item.children!.map((child) => {
+            const childActive = pathname === child.href;
+            return (
+              <li className="sub-nav-item" key={child.href}>
+                <Link 
+                  href={child.href} 
+                  className={`sub-nav-link ${childActive ? 'active' : ''}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '8px 20px',
+                    opacity: (menuSize !== 'condensed' && menuSize !== 'hidden' && !isOpen) ? 0 : 1,
+                    transition: 'opacity 0.3s ease',
+                  }}
+                >
+                  <span style={{
+                    width: '5px',
+                    height: '5px',
+                    borderRadius: '50%',
+                    backgroundColor: childActive ? '#ff6c2f' : 'currentColor',
+                    opacity: childActive ? 1 : 0.4
+                  }} />
+                  {child.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </div>
+    </li>
+  );
+}
 
-      <div style={S.subMenu(isOpen)}>
-        {item.children!.map((child) => {
-          const childActive = pathname === child.href;
-          return (
-            <SubEntry key={child.href} child={child} active={childActive} />
-          );
-        })}
-      </div>
+// -- main export ------------------------------------------------------------
+export default function AdminSidebar() {
+  const pathname = usePathname();
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const [menuSize, setMenuSize] = useState('default');
+
+  // Sync menuSize with document.documentElement data-menu-size
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      setMenuSize(document.documentElement.getAttribute('data-menu-size') || 'default');
+      
+      const observer = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          if (m.attributeName === 'data-menu-size') {
+            setMenuSize(document.documentElement.getAttribute('data-menu-size') || 'default');
+          }
+        }
+      });
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-menu-size'] });
+      return () => observer.disconnect();
+    }
+  }, []);
+
+  // Auto-expand the correct menu on route change
+  useEffect(() => {
+    // Find which parent owns the current pathname
+    const allNavGroups = [
+      GENERAL_NAV, CMS_NAV, COMMUNICATIONS_NAV, USERS_NAV, APPS_NAV, OTHER_NAV, SUPPORT_NAV
+    ];
+
+    for (const group of allNavGroups) {
+      for (const item of group) {
+        if (item.children) {
+           const isActive = item.matchPrefix ? pathname.startsWith(item.matchPrefix) : false;
+           if (isActive) {
+             setExpandedKey(item.key);
+             return;
+           }
+        }
+      }
+    }
+  }, [pathname]);
+
+  const toggle = (key: string) => {
+    setExpandedKey(prev => prev === key ? null : key);
+  };
+
+  const renderGroup = (title: string, items: NavItem[]) => (
+    <>
+      <li className="menu-title">{title}</li>
+      {items.map((item) => (
+        <NavEntry 
+          key={item.key} 
+          item={item} 
+          pathname={pathname} 
+          expandedKey={expandedKey}
+          toggle={toggle}
+          menuSize={menuSize}
+        />
+      ))}
     </>
   );
-}
-
-function SubEntry({ child, active }: { child: SubItem; active: boolean }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <Link
-      href={child.href}
-      style={{
-        ...S.subItem(active),
-        ...(hovered && !active ? { color: '#fff', background: 'rgba(255,255,255,0.04)' } : {}),
-      }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      <span style={S.dot(active)} />
-      {child.label}
-    </Link>
-  );
-}
-
-// ── main export ──────────────────────────────────────────────────────────────
-export default function AdminSidebar({ isMenuOpen }: { isMenuOpen: boolean }) {
-  const pathname = usePathname();
-  const [expandedMenu, setExpandedMenu] = useState<string | null>('Products');
-
-  const toggle = (key: string) =>
-    setExpandedMenu((prev) => (prev === key ? null : key));
-
-  const renderGroup = (items: NavItem[]) =>
-    items.map((item) => (
-      <NavEntry
-        key={item.key}
-        item={item}
-        pathname={pathname}
-        expandedMenu={expandedMenu}
-        toggle={toggle}
-      />
-    ));
 
   return (
-    <aside style={S.sidebar(isMenuOpen)} aria-label="Sidebar navigation">
-      {/* Logo */}
-      <div style={S.logoBox}>
-        <div style={S.logoIcon}>
-          <iconify-icon icon="solar:shop-bold-duotone" style={{ color: '#fff', fontSize: '18px' }} />
-        </div>
-        <span style={S.logoText}>Larkon</span>
+    <div className="main-nav">
+      {/* Logo Box */}
+      <div className="logo-box">
+        <a href="/admin" className="logo-dark">
+          <img src="https://techzaa.in/larkon/admin/assets/images/logo-sm.png" className="logo-sm" alt="logo sm" />
+          <img src="https://techzaa.in/larkon/admin/assets/images/logo-dark.png" className="logo-lg" alt="logo dark" />
+        </a>
+        <a href="/admin" className="logo-light">
+          <img src="https://techzaa.in/larkon/admin/assets/images/logo-sm.png" className="logo-sm" alt="logo sm" />
+          <img src="https://techzaa.in/larkon/admin/assets/images/logo-light.png" className="logo-lg" alt="logo light" />
+        </a>
       </div>
+
+      {/* Menu Toggle Button (for hover active mode) */}
+      <button type="button" className="button-sm-hover" aria-label="Show Full Sidebar">
+        <iconify-icon icon="solar:double-alt-arrow-right-bold-duotone" className="button-sm-hover-icon" />
+      </button>
 
       {/* Scrollable nav */}
-      <div style={S.scrollArea}>
-        <div style={S.sectionTitle}>General</div>
-        {renderGroup(GENERAL_NAV)}
-
-        <div style={S.sectionTitle}>Content & SEO</div>
-        {renderGroup(CMS_NAV)}
-
-        <div style={S.sectionTitle}>Communications</div>
-        {renderGroup(COMMUNICATIONS_NAV)}
-
-        <div style={S.sectionTitle}>Users & Staff</div>
-        {renderGroup(USERS_NAV)}
-
-        <div style={S.sectionTitle}>Apps</div>
-        {renderGroup(APPS_NAV)}
-
-        <div style={S.sectionTitle}>Other</div>
-        {renderGroup(OTHER_NAV)}
-
-        <div style={S.sectionTitle}>Support</div>
-        {renderGroup(SUPPORT_NAV)}
+      <div className="scrollbar" data-simplebar>
+        <ul className="navbar-nav" id="navbar-nav">
+          {renderGroup('General', GENERAL_NAV)}
+          {renderGroup('Content & SEO', CMS_NAV)}
+          {renderGroup('Communications', COMMUNICATIONS_NAV)}
+          {renderGroup('Users & Staff', USERS_NAV)}
+          {renderGroup('Apps', APPS_NAV)}
+          {renderGroup('Other', OTHER_NAV)}
+          {renderGroup('Support', SUPPORT_NAV)}
+        </ul>
       </div>
-    </aside>
+    </div>
   );
 }

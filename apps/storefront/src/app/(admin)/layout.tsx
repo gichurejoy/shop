@@ -12,7 +12,7 @@ export default function AdminRootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" data-bs-theme="light" data-topbar-color="light" data-menu-color="dark" data-menu-size="sm-hover-active">
+    <html lang="en" suppressHydrationWarning data-bs-theme="light" data-topbar-color="light" data-menu-color="dark" data-menu-size="sm-hover-active">
       <head>
         {/* Larkon Core CSS */}
         <link href="https://techzaa.in/larkon/admin/assets/css/vendor.min.css" rel="stylesheet" type="text/css" />

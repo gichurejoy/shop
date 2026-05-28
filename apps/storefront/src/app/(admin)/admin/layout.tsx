@@ -46,70 +46,30 @@ function getTitle(pathname: string) {
 
 export default function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  const SIDEBAR_W = 260;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f1f5f9' }}>
+    <div className="wrapper">
 
-      {/* ── Sidebar ─────────────────────────────── */}
-      <AdminSidebar isMenuOpen={sidebarOpen} />
+      {/* Topbar */}
+      <header className="topbar">
+        <div className="container-fluid">
+          <div className="navbar-header">
+            <div className="d-flex align-items-center">
+              {/* Menu Toggle Button */}
+              <div className="topbar-item">
+                <button type="button" className="button-toggle-menu me-2">
+                  <iconify-icon icon="solar:hamburger-menu-broken" className="fs-24 align-middle"></iconify-icon>
+                </button>
+              </div>
 
-      {/* ── Content column ──────────────────────── */}
-      <div style={{
-        flex: 1,
-        marginLeft: sidebarOpen ? `${SIDEBAR_W}px` : '0px',
-        transition: 'margin-left 0.28s cubic-bezier(.4,0,.2,1)',
-        display: 'flex',
-        flexDirection: 'column',
-        minWidth: 0,
-      }}>
-
-        {/* ── Topbar ──────────────────────────── */}
-        <header style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 900,
-          height: '64px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 24px',
-          background: '#ffffff',
-          borderBottom: '1px solid #e2e8f0',
-          boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
-          gap: '16px',
-        }}>
-          {/* Left */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: '#64748b', fontSize: '22px',
-                display: 'flex', alignItems: 'center',
-                padding: '6px', borderRadius: '8px',
-                transition: 'background 0.15s',
-              }}
-              title="Toggle sidebar"
-            >
-              <iconify-icon icon="solar:hamburger-menu-broken" />
-            </button>
-            <h1 style={{
-              margin: 0,
-              fontSize: '14px',
-              fontWeight: 700,
-              color: '#0f172a',
-              textTransform: 'uppercase',
-              letterSpacing: '0.8px',
-            }}>
-              {getTitle(pathname)}
-            </h1>
-          </div>
+              {/* Title */}
+              <div className="topbar-item">
+                <h4 className="fw-bold topbar-button pe-none text-uppercase mb-0">{getTitle(pathname)}</h4>
+              </div>
+            </div>
 
           {/* Right */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div className="d-flex align-items-center gap-1">
             {/* Search */}
             <div style={{ position: 'relative', marginRight: '8px' }}>
               <input
@@ -136,48 +96,90 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
               </span>
             </div>
 
-            {/* Icon buttons */}
-            {([
-              { icon: 'solar:moon-bold-duotone' },
-              { icon: 'solar:bell-bing-bold-duotone', badge: true },
-              { icon: 'solar:settings-bold-duotone' },
-            ] as { icon: string; badge?: boolean }[]).map(({ icon, badge }) => (
-              <button
-                key={icon}
-                style={{
-                  position: 'relative', background: 'none', border: 'none',
-                  cursor: 'pointer', color: '#64748b', fontSize: '20px',
-                  display: 'flex', alignItems: 'center',
-                  padding: '8px', borderRadius: '8px',
-                }}
-              >
-                <iconify-icon icon={icon} />
-                {badge && (
-                  <span style={{
-                    position: 'absolute', top: '6px', right: '6px',
-                    width: '7px', height: '7px',
-                    background: '#ef4444', borderRadius: '50%',
-                    border: '1.5px solid #fff',
-                  }} />
-                )}
+            {/* Theme Color (Light/Dark) */}
+            <div className="topbar-item">
+              <button type="button" className="topbar-button" id="light-dark-mode" onClick={() => {
+                 const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+                 const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                 document.documentElement.setAttribute('data-bs-theme', newTheme);
+                 document.documentElement.setAttribute('data-topbar-color', newTheme);
+                 document.documentElement.setAttribute('data-menu-color', newTheme);
+                 
+                 // Update offcanvas radio buttons if present
+                 const themeRadio = document.getElementById(`layout-color-${newTheme}`) as HTMLInputElement;
+                 if (themeRadio) themeRadio.checked = true;
+                 const topbarRadio = document.getElementById(`topbar-color-${newTheme}`) as HTMLInputElement;
+                 if (topbarRadio) topbarRadio.checked = true;
+                 const menuRadio = document.getElementById(`menu-color-${newTheme}`) as HTMLInputElement;
+                 if (menuRadio) menuRadio.checked = true;
+              }}>
+                <iconify-icon icon="solar:moon-bold-duotone" className="fs-24 align-middle"></iconify-icon>
               </button>
-            ))}
+            </div>
 
-            {/* Avatar */}
-            <img
-              src="https://techzaa.in/larkon/admin/assets/images/users/avatar-1.jpg"
-              alt="avatar"
-              style={{
-                width: '34px', height: '34px', borderRadius: '50%',
-                cursor: 'pointer', border: '2px solid #e2e8f0', marginLeft: '6px',
-                objectFit: 'cover',
-              }}
-            />
+            {/* Notification */}
+            <div className="dropdown topbar-item">
+              <button type="button" className="topbar-button position-relative" id="page-header-notifications-dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <iconify-icon icon="solar:bell-bing-bold-duotone" className="fs-24 align-middle"></iconify-icon>
+                <span className="position-absolute topbar-badge fs-10 translate-middle badge bg-danger rounded-pill">3<span className="visually-hidden">unread messages</span></span>
+              </button>
+              <div className="dropdown-menu py-0 dropdown-lg dropdown-menu-end" aria-labelledby="page-header-notifications-dropdown">
+                <div className="p-3 border-top-0 border-start-0 border-end-0 border-dashed border">
+                  <div className="row align-items-center">
+                    <div className="col"><h6 className="m-0 fs-16 fw-semibold">Notifications</h6></div>
+                    <div className="col-auto"><a href="#!" className="text-dark text-decoration-underline"><small>Clear All</small></a></div>
+                  </div>
+                </div>
+                <div className="p-3 fs-13 text-muted text-center">No new notifications.</div>
+              </div>
+            </div>
+
+            {/* Theme Setting */}
+            <div className="topbar-item d-none d-md-flex">
+              <button type="button" className="topbar-button" id="theme-settings-btn" data-bs-toggle="offcanvas" data-bs-target="#theme-settings-offcanvas" aria-controls="theme-settings-offcanvas">
+                <iconify-icon icon="solar:settings-bold-duotone" className="fs-24 align-middle"></iconify-icon>
+              </button>
+            </div>
+
+            {/* User */}
+            <div className="dropdown topbar-item">
+              <a type="button" className="topbar-button" id="page-header-user-dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <span className="d-flex align-items-center">
+                  <img className="rounded-circle" width="32" src="https://techzaa.in/larkon/admin/assets/images/users/avatar-1.jpg" alt="avatar-3" />
+                </span>
+              </a>
+              <div className="dropdown-menu dropdown-menu-end">
+                <h6 className="dropdown-header">Welcome Gaston!</h6>
+                <a className="dropdown-item" href="/admin/profile">
+                  <i className="bx bx-user-circle text-muted fs-18 align-middle me-1"></i>
+                  <span className="align-middle">Profile</span>
+                </a>
+                <a className="dropdown-item" href="/admin/settings">
+                  <i className="bx bx-wallet text-muted fs-18 align-middle me-1"></i>
+                  <span className="align-middle">Pricing</span>
+                </a>
+                <a className="dropdown-item" href="/admin/support/faqs">
+                  <i className="bx bx-help-circle text-muted fs-18 align-middle me-1"></i>
+                  <span className="align-middle">Help</span>
+                </a>
+                <div className="dropdown-divider my-1"></div>
+                <a className="dropdown-item text-danger" href="/">
+                  <i className="bx bx-log-out fs-18 align-middle me-1"></i>
+                  <span className="align-middle">Logout</span>
+                </a>
+              </div>
+            </div>
+            </div>
           </div>
-        </header>
+        </div>
+      </header>
 
-        {/* ── Page body ────────────────────────── */}
-        <main style={{ flex: 1, padding: '20px' }}>
+      {/* Sidebar */}
+      <AdminSidebar />
+
+      {/* Page body */}
+      <div className="page-content">
+        <div className="container-fluid">
           <style>{`
             .card { margin-bottom: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
             .card-body { padding: 18px !important; }
@@ -199,9 +201,99 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
             .btn-soft-success:hover { background: #dcfce7; }
           `}</style>
           {children}
-        </main>
-
+        </div>
       </div>
+      {/* Theme Settings Offcanvas */}
+      <div className="offcanvas offcanvas-end" tabIndex={-1} id="theme-settings-offcanvas" aria-labelledby="theme-settings-offcanvasLabel">
+        <div className="offcanvas-header bg-primary text-white">
+          <h5 className="offcanvas-title text-white" id="theme-settings-offcanvasLabel">Theme Settings</h5>
+          <button type="button" className="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div className="offcanvas-body">
+          <h6 className="mb-3 text-dark fw-semibold">Color Scheme</h6>
+          <div className="form-check mb-2">
+            <input className="form-check-input" type="radio" name="data-bs-theme" id="layout-color-light" value="light" defaultChecked onChange={(e) => { 
+              document.documentElement.setAttribute('data-bs-theme', 'light'); 
+              document.documentElement.setAttribute('data-topbar-color', 'light');
+              document.documentElement.setAttribute('data-menu-color', 'light');
+              const topbarRadio = document.getElementById('topbar-color-light') as HTMLInputElement;
+              if (topbarRadio) topbarRadio.checked = true;
+              const menuRadio = document.getElementById('menu-color-light') as HTMLInputElement;
+              if (menuRadio) menuRadio.checked = true;
+            }} />
+            <label className="form-check-label" htmlFor="layout-color-light">Light</label>
+          </div>
+          <div className="form-check mb-4">
+            <input className="form-check-input" type="radio" name="data-bs-theme" id="layout-color-dark" value="dark" onChange={(e) => { 
+              document.documentElement.setAttribute('data-bs-theme', 'dark'); 
+              document.documentElement.setAttribute('data-topbar-color', 'dark');
+              document.documentElement.setAttribute('data-menu-color', 'dark');
+              const topbarRadio = document.getElementById('topbar-color-dark') as HTMLInputElement;
+              if (topbarRadio) topbarRadio.checked = true;
+              const menuRadio = document.getElementById('menu-color-dark') as HTMLInputElement;
+              if (menuRadio) menuRadio.checked = true;
+            }} />
+            <label className="form-check-label" htmlFor="layout-color-dark">Dark</label>
+          </div>
+
+          <h6 className="mb-3 text-dark fw-semibold">Topbar Color</h6>
+          <div className="form-check mb-2">
+            <input className="form-check-input" type="radio" name="data-topbar-color" id="topbar-color-light" value="light" defaultChecked onChange={(e) => { document.documentElement.setAttribute('data-topbar-color', e.target.value); }} />
+            <label className="form-check-label" htmlFor="topbar-color-light">Light</label>
+          </div>
+          <div className="form-check mb-4">
+            <input className="form-check-input" type="radio" name="data-topbar-color" id="topbar-color-dark" value="dark" onChange={(e) => { document.documentElement.setAttribute('data-topbar-color', e.target.value); }} />
+            <label className="form-check-label" htmlFor="topbar-color-dark">Dark</label>
+          </div>
+
+          <h6 className="mb-3 text-dark fw-semibold">Menu Color</h6>
+          <div className="form-check mb-2">
+            <input className="form-check-input" type="radio" name="data-menu-color" id="menu-color-light" value="light" onChange={(e) => { document.documentElement.setAttribute('data-menu-color', e.target.value); }} />
+            <label className="form-check-label" htmlFor="menu-color-light">Light</label>
+          </div>
+          <div className="form-check mb-4">
+            <input className="form-check-input" type="radio" name="data-menu-color" id="menu-color-dark" value="dark" defaultChecked onChange={(e) => { document.documentElement.setAttribute('data-menu-color', e.target.value); }} />
+            <label className="form-check-label" htmlFor="menu-color-dark">Dark</label>
+          </div>
+
+          <h6 className="mb-3 text-dark fw-semibold">Sidebar Size</h6>
+          <div className="form-check mb-2">
+            <input className="form-check-input" type="radio" name="data-menu-size" id="sidebar-size-default" value="default" onChange={(e) => { document.documentElement.setAttribute('data-menu-size', e.target.value); }} />
+            <label className="form-check-label" htmlFor="sidebar-size-default">Default</label>
+          </div>
+          <div className="form-check mb-2">
+            <input className="form-check-input" type="radio" name="data-menu-size" id="sidebar-size-condensed" value="condensed" onChange={(e) => { document.documentElement.setAttribute('data-menu-size', e.target.value); }} />
+            <label className="form-check-label" htmlFor="sidebar-size-condensed">Condensed</label>
+          </div>
+          <div className="form-check mb-2">
+            <input className="form-check-input" type="radio" name="data-menu-size" id="sidebar-size-hidden" value="hidden" onChange={(e) => { document.documentElement.setAttribute('data-menu-size', e.target.value); }} />
+            <label className="form-check-label" htmlFor="sidebar-size-hidden">Hidden</label>
+          </div>
+          <div className="form-check mb-2">
+            <input className="form-check-input" type="radio" name="data-menu-size" id="sidebar-size-small-hover-active" value="sm-hover-active" defaultChecked onChange={(e) => { document.documentElement.setAttribute('data-menu-size', e.target.value); }} />
+            <label className="form-check-label" htmlFor="sidebar-size-small-hover-active">Small Hover Active</label>
+          </div>
+          <div className="form-check mb-4">
+            <input className="form-check-input" type="radio" name="data-menu-size" id="sidebar-size-small-hover" value="sm-hover" onChange={(e) => { document.documentElement.setAttribute('data-menu-size', e.target.value); }} />
+            <label className="form-check-label" htmlFor="sidebar-size-small-hover">Small Hover</label>
+          </div>
+
+          <div className="d-grid mt-4">
+            <button type="button" className="btn btn-danger" onClick={() => {
+              document.documentElement.setAttribute('data-bs-theme', 'light');
+              document.documentElement.setAttribute('data-topbar-color', 'light');
+              document.documentElement.setAttribute('data-menu-color', 'dark');
+              document.documentElement.setAttribute('data-menu-size', 'sm-hover-active');
+              // Also update the radio buttons visually
+              (document.getElementById('layout-color-light') as HTMLInputElement).checked = true;
+              (document.getElementById('topbar-color-light') as HTMLInputElement).checked = true;
+              (document.getElementById('menu-color-dark') as HTMLInputElement).checked = true;
+              (document.getElementById('sidebar-size-small-hover') as HTMLInputElement).checked = true;
+            }}>Reset</button>
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }
