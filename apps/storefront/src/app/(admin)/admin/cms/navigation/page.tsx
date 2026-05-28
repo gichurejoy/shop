@@ -135,7 +135,7 @@ export default function NavigationBuilder() {
           </div>
         </div>
         
-        {node.children.length > 0 && (
+        {node.children?.length > 0 && (
           <div className="bg-light p-3 border-top">
             <div className="d-flex flex-column gap-2 ps-4" style={{ borderLeft: '2px solid #e2e8f0' }}>
               {node.children.map((child, i) => renderNode(child, depth + 1, i, false))}

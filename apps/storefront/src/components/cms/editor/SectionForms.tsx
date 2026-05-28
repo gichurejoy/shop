@@ -157,6 +157,12 @@ export function SectionForms({ section }: { section: CmsSection }) {
       {/* Global Settings */}
       <FieldGroup title="Global Settings">
         <Toggle label="Section Visible" checked={section.visible} onChange={v => update({ visible: v })} />
+        <Select label="Theme Variant" value={section.variant || 'default'} onChange={v => update({ variant: v })} options={[
+          { label: 'Default', value: 'default' },
+          { label: 'Light Theme', value: 'light' },
+          { label: 'Dark Theme', value: 'dark' },
+          { label: 'Minimal', value: 'minimal' },
+        ]} />
         <div style={{ display: 'flex', gap: '16px' }}>
           <div style={{ flex: 1 }}>
             <Input type="number" label="Padding Top (px)" value={section.paddingTop} onChange={v => update({ paddingTop: v })} />

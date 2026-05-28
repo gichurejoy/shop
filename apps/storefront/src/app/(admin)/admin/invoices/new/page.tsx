@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const PRODUCTS = [
   { id: 1, name: 'Men Black Slim Fit T-shirt', img: 'https://techzaa.in/larkon/admin/assets/images/product/p-1.png', price: 80 },
@@ -17,6 +18,10 @@ export default function InvoiceAddPage() {
   ]);
   const [discount, setDiscount] = useState(50);
   const [taxRate] = useState(15.5);
+  const [vendorLogo, setVendorLogo] = useState<string>('');
+  const [clientLogo, setClientLogo] = useState<string>('');
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const router = useRouter();
 
   const addItem = () => {
     const p = PRODUCTS[0];
@@ -60,8 +65,15 @@ export default function InvoiceAddPage() {
                     Issue From
                   </h6>
                   <div className="mb-2">
+                    <label className="form-label fw-medium" style={{ fontSize: '13px' }}>Vendor Logo</label>
+                    <div className="d-flex gap-2">
+                      <input type="file" className="form-control form-control-sm" accept="image/*" style={{ flex: 1 }} onChange={e => { if(e.target.files?.[0]) setVendorLogo(URL.createObjectURL(e.target.files[0])) }} />
+                      <input type="text" className="form-control form-control-sm" placeholder="Or paste URL..." style={{ flex: 1 }} value={vendorLogo} onChange={e => setVendorLogo(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="mb-2">
                     <label className="form-label fw-medium" style={{ fontSize: '13px' }}>Company Name</label>
-                    <input type="text" className="form-control form-control-sm" defaultValue="Larkon Admin.INC" />
+                    <input type="text" className="form-control form-control-sm" defaultValue="Larkon Admin.INC" id="vendor-name" />
                   </div>
                   <div className="mb-2">
                     <label className="form-label fw-medium" style={{ fontSize: '13px' }}>Address</label>
@@ -84,8 +96,15 @@ export default function InvoiceAddPage() {
                     Issue For
                   </h6>
                   <div className="mb-2">
+                    <label className="form-label fw-medium" style={{ fontSize: '13px' }}>Client Logo</label>
+                    <div className="d-flex gap-2">
+                      <input type="file" className="form-control form-control-sm" accept="image/*" style={{ flex: 1 }} onChange={e => { if(e.target.files?.[0]) setClientLogo(URL.createObjectURL(e.target.files[0])) }} />
+                      <input type="text" className="form-control form-control-sm" placeholder="Or paste URL..." style={{ flex: 1 }} value={clientLogo} onChange={e => setClientLogo(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="mb-2">
                     <label className="form-label fw-medium" style={{ fontSize: '13px' }}>Customer Name</label>
-                    <input type="text" className="form-control form-control-sm" placeholder="Full name" />
+                    <input type="text" className="form-control form-control-sm" placeholder="Full name" id="client-name" />
                   </div>
                   <div className="mb-2">
                     <label className="form-label fw-medium" style={{ fontSize: '13px' }}>Address</label>
@@ -222,15 +241,111 @@ export default function InvoiceAddPage() {
           </div>
 
           <div className="d-flex gap-2">
-            <button className="btn btn-light flex-fill d-flex align-items-center justify-content-center gap-2">
+            <button className="btn btn-light flex-fill d-flex align-items-center justify-content-center gap-2" onClick={() => setIsPreviewOpen(true)}>
               <iconify-icon icon="solar:printer-bold-duotone"></iconify-icon> Preview
             </button>
-            <button className="btn btn-primary flex-fill d-flex align-items-center justify-content-center gap-2">
+            <button className="btn btn-primary flex-fill d-flex align-items-center justify-content-center gap-2" onClick={() => router.push('/admin/invoices')}>
               <iconify-icon icon="solar:check-circle-bold"></iconify-icon> Save
             </button>
           </div>
         </div>
       </div>
+
+      {/* Preview Modal */}
+      {isPreviewOpen && (
+        <div style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)', position: 'fixed', inset: 0, zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="card shadow-lg m-3" style={{ width: '100%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div className="card-header border-bottom d-flex justify-content-between align-items-center bg-light-subtle position-sticky top-0 z-1">
+              <h5 className="card-title mb-0 d-flex align-items-center gap-2">
+                <iconify-icon icon="solar:document-text-bold-duotone" className="text-primary"></iconify-icon> Invoice Preview
+              </h5>
+              <button type="button" className="btn-close" onClick={() => setIsPreviewOpen(false)}></button>
+            </div>
+            <div className="card-body p-4 p-md-5 bg-white">
+              <div className="row mb-5">
+                <div className="col-sm-6">
+                  {vendorLogo ? (
+                    <img src={vendorLogo} alt="Vendor Logo" style={{ maxHeight: '80px', maxWidth: '250px', objectFit: 'contain', marginBottom: '16px' }} />
+                  ) : (
+                    <h3 className="fw-bold mb-3">{(document.getElementById('vendor-name') as HTMLInputElement)?.value || 'Larkon Admin.INC'}</h3>
+                  )}
+                  <div className="text-muted fs-14">
+                    2437 Romano Street<br/>
+                    Cambridge, MA 02141<br/>
+                    +(31) 781-417-2004
+                  </div>
+                </div>
+                <div className="col-sm-6 text-sm-end mt-4 mt-sm-0">
+                  <h4 className="fw-bold text-uppercase text-muted mb-3">Invoice</h4>
+                  {clientLogo ? (
+                    <img src={clientLogo} alt="Client Logo" style={{ maxHeight: '80px', maxWidth: '250px', objectFit: 'contain', marginBottom: '16px' }} />
+                  ) : null}
+                  <div className="fs-14 fw-medium text-dark">Billed To:</div>
+                  <div className="text-muted fs-14">
+                    {(document.getElementById('client-name') as HTMLInputElement)?.value || 'Customer Name'}<br/>
+                    Billing address here<br/>
+                    email@example.com
+                  </div>
+                </div>
+              </div>
+
+              <div className="table-responsive mb-4">
+                <table className="table table-bordered mb-0">
+                  <thead className="table-light">
+                    <tr>
+                      <th>Description</th>
+                      <th className="text-center">Qty</th>
+                      <th className="text-end">Unit Price</th>
+                      <th className="text-end">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item, i) => (
+                      <tr key={i}>
+                        <td>{item.name}</td>
+                        <td className="text-center">{item.qty}</td>
+                        <td className="text-end">${item.price.toFixed(2)}</td>
+                        <td className="text-end fw-medium">${(item.price * item.qty).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="row justify-content-end">
+                <div className="col-sm-6 col-md-5">
+                  <table className="table table-sm table-borderless text-end">
+                    <tbody>
+                      <tr>
+                        <td className="text-muted">Subtotal:</td>
+                        <td className="fw-medium">${subtotal.toFixed(2)}</td>
+                      </tr>
+                      <tr>
+                        <td className="text-muted">Discount:</td>
+                        <td className="fw-medium text-danger">-${discount.toFixed(2)}</td>
+                      </tr>
+                      <tr>
+                        <td className="text-muted">Tax ({taxRate}%):</td>
+                        <td className="fw-medium">${taxAmt.toFixed(2)}</td>
+                      </tr>
+                      <tr className="border-top border-dark border-2">
+                        <td className="fw-bold fs-16 pt-2">Grand Total:</td>
+                        <td className="fw-bold text-primary fs-18 pt-2">${total.toFixed(2)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div className="card-footer bg-light-subtle d-flex justify-content-end gap-2 position-sticky bottom-0">
+              <button className="btn btn-light" onClick={() => setIsPreviewOpen(false)}>Close Preview</button>
+              <button className="btn btn-primary d-flex align-items-center gap-2" onClick={() => { setIsPreviewOpen(false); router.push('/admin/invoices'); }}>
+                <iconify-icon icon="solar:check-circle-bold"></iconify-icon> Save Invoice
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

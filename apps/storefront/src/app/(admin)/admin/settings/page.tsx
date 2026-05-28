@@ -4,7 +4,7 @@
 export default function SettingsPage() {
   return (
     <>
-<div className="row">
+<div className="row mb-4">
 <div className="col-lg-12">
 <div className="card">
 <div className="card-header">
@@ -67,7 +67,7 @@ export default function SettingsPage() {
 </div>
 </div>
 </div>
-<div className="row">
+<div className="row mb-4">
 <div className="col-lg-12">
 <div className="card">
 <div className="card-header">
@@ -187,7 +187,7 @@ export default function SettingsPage() {
 </div>
 </div>
 </div>
-<div className="row">
+<div className="row mb-4">
 <div className="col-lg-12">
 <div className="card">
 <div className="card-header">
@@ -293,7 +293,7 @@ export default function SettingsPage() {
 </div>
 </div>
 </div>
-<div className="row">
+<div className="row mb-4">
 <div className="col-lg-3">
 <div className="card">
 <div className="card-header">
@@ -415,7 +415,7 @@ export default function SettingsPage() {
 </div>
 </div>
 </div>
-<div className="row">
+<div className="row mb-4">
 <div className="col-lg-12">
 <div className="card">
 <div className="card-header">

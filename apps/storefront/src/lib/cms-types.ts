@@ -8,6 +8,7 @@ export type SectionBase = {
   paddingBottom: number;
   sectionId: string; // for anchor links
   scrollAnimation: 'fade' | 'slide-up' | 'none';
+  variant?: string;
 };
 
 // ─── Hero ──────────────────────────────────────────────────────────────────

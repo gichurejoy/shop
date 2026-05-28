@@ -306,8 +306,13 @@ export function renderSection(s: CmsSection, activeId?: string, onClick?: (id: s
     };
   }
 
+  let variantClass = '';
+  if (s.variant === 'light') variantClass = 'bg-[#FAF6F0] text-[#3D2817]';
+  else if (s.variant === 'dark') variantClass = 'bg-[#3D2817] text-white';
+  else if (s.variant === 'minimal') variantClass = 'bg-white text-gray-900 border-y border-gray-100';
+
   const wrapper = (children: React.ReactNode) => (
-    <div key={s.id} {...wrapperProps}>
+    <div key={s.id} {...wrapperProps} className={variantClass}>
       {isActive && onClick && (
         <div className="absolute top-2 left-2 z-50 bg-blue-500 text-white text-xs px-2 py-1 rounded font-medium pointer-events-none">
           {s.type.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase())}

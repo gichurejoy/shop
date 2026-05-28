@@ -97,14 +97,19 @@ const GENERAL_NAV: NavItem[] = [
     ],
   },
   {
-    key: 'Invoice',
-    label: 'Invoices',
-    icon: 'solar:bill-list-bold-duotone',
-    matchPrefix: '/admin/invoices',
+    key: 'Finance',
+    label: 'Payments & Finance',
+    icon: 'solar:wallet-money-bold-duotone',
+    matchPrefix: '/admin/finance',
     children: [
-      { label: 'List',    href: '/admin/invoices' },
-      { label: 'Details', href: '/admin/invoices/details' },
-      { label: 'Create',  href: '/admin/invoices/new' },
+      { label: 'Dashboard',    href: '/admin/finance/dashboard' },
+      { label: 'Transactions', href: '/admin/finance/transactions' },
+      { label: 'Refunds',      href: '/admin/finance/refunds' },
+      { label: 'Payouts',      href: '/admin/finance/payouts' },
+      { label: 'Gateways',     href: '/admin/finance/gateways' },
+      { label: 'Taxes',        href: '/admin/finance/taxes' },
+      { label: 'Reports',      href: '/admin/finance/reports' },
+      { label: 'Invoices',     href: '/admin/invoices' },
     ],
   },
   {
@@ -123,21 +128,23 @@ const USERS_NAV: NavItem[] = [
     href: '/admin/profile',
   },
   {
-    key: 'Roles',
-    label: 'Roles',
-    icon: 'solar:user-speak-rounded-bold-duotone',
-    matchPrefix: '/admin/roles',
-    children: [
-      { label: 'List',   href: '/admin/roles' },
-      { label: 'Edit',   href: '/admin/roles/edit' },
-      { label: 'Create', href: '/admin/roles/new' },
-    ],
+    key: 'Staff',
+    label: 'Staff',
+    icon: 'solar:users-group-rounded-bold-duotone',
+    matchPrefix: '/admin/staff',
+    href: '/admin/staff',
   },
   {
-    key: 'permissions',
-    label: 'Permissions',
-    icon: 'solar:checklist-minimalistic-bold-duotone',
-    href: '/admin/permissions',
+    key: 'Roles',
+    label: 'Roles & Permissions',
+    icon: 'solar:user-speak-rounded-bold-duotone',
+    href: '/admin/roles',
+  },
+  {
+    key: 'Activity',
+    label: 'Activity Log',
+    icon: 'solar:history-bold-duotone',
+    href: '/admin/activity',
   },
   {
     key: 'Customers',
@@ -199,6 +206,12 @@ const OTHER_NAV: NavItem[] = [
 
 const SUPPORT_NAV: NavItem[] = [
   {
+    key: 'chat',
+    label: 'Helpdesk Chat',
+    icon: 'solar:chat-round-line-bold-duotone',
+    href: '/admin/support/chat',
+  },
+  {
     key: 'help-center',
     label: 'Help Center',
     icon: 'solar:help-bold-duotone',
@@ -215,6 +228,27 @@ const SUPPORT_NAV: NavItem[] = [
     label: 'Privacy Policy',
     icon: 'solar:shield-check-bold-duotone',
     href: '/admin/support/privacy-policy',
+  },
+];
+
+const COMMUNICATIONS_NAV: NavItem[] = [
+  {
+    key: 'emails',
+    label: 'Emails & Flows',
+    icon: 'solar:letter-bold-duotone',
+    href: '/admin/communications/emails',
+  },
+  {
+    key: 'sms',
+    label: 'SMS Settings',
+    icon: 'solar:smartphone-update-bold-duotone',
+    href: '/admin/communications/sms',
+  },
+  {
+    key: 'push',
+    label: 'Push Notifications',
+    icon: 'solar:bell-bing-bold-duotone',
+    href: '/admin/communications/push',
   },
 ];
 
@@ -512,7 +546,10 @@ export default function AdminSidebar({ isMenuOpen }: { isMenuOpen: boolean }) {
         <div style={S.sectionTitle}>Content & SEO</div>
         {renderGroup(CMS_NAV)}
 
-        <div style={S.sectionTitle}>Users</div>
+        <div style={S.sectionTitle}>Communications</div>
+        {renderGroup(COMMUNICATIONS_NAV)}
+
+        <div style={S.sectionTitle}>Users & Staff</div>
         {renderGroup(USERS_NAV)}
 
         <div style={S.sectionTitle}>Apps</div>

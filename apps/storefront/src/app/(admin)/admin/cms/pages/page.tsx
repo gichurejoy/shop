@@ -206,8 +206,9 @@ export default function StaticPages() {
                         <td className="text-muted fs-13">{new Date(page.lastModified).toLocaleDateString()}</td>
                         <td>
                           <div className="d-flex gap-2">
-                            <button className="btn btn-soft-primary btn-sm" onClick={() => openEdit(page)}><iconify-icon icon="solar:pen-2-broken" className="fs-18 align-middle"></iconify-icon></button>
-                            <button className="btn btn-soft-danger btn-sm" onClick={() => handleDelete(page.id)}><iconify-icon icon="solar:trash-bin-minimalistic-2-broken" className="fs-18 align-middle"></iconify-icon></button>
+                            <a href={`/${page.slug}`} target="_blank" className="btn btn-soft-info btn-sm" title="Preview"><iconify-icon icon="solar:eye-broken" className="fs-18 align-middle"></iconify-icon></a>
+                            <button className="btn btn-soft-primary btn-sm" onClick={() => openEdit(page)} title="Edit"><iconify-icon icon="solar:pen-2-broken" className="fs-18 align-middle"></iconify-icon></button>
+                            <button className="btn btn-soft-danger btn-sm" onClick={() => handleDelete(page.id)} title="Delete"><iconify-icon icon="solar:trash-bin-minimalistic-2-broken" className="fs-18 align-middle"></iconify-icon></button>
                           </div>
                         </td>
                       </tr>
