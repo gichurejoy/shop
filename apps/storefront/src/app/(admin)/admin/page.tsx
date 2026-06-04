@@ -62,7 +62,7 @@ export default function AdminDashboard() {
                   </div>
                   <div>
                     <div className="avatar-md bg-soft-primary rounded">
-                      <iconify-icon icon="solar:award-bold-duotone" class="avatar-title fs-32 text-primary"></iconify-icon>
+                      <iconify-icon icon="solar:users-group-two-rounded-bold-duotone" class="avatar-title fs-32 text-primary"></iconify-icon>
                     </div>
                   </div>
                 </div>
@@ -116,7 +116,7 @@ export default function AdminDashboard() {
                   </div>
                   <div>
                     <div className="avatar-md bg-soft-primary rounded">
-                      <iconify-icon icon="solar:dollar-circle-bold-duotone" class="avatar-title fs-32 text-primary"></iconify-icon>
+                      <iconify-icon icon="solar:wallet-money-bold-duotone" class="avatar-title fs-32 text-primary"></iconify-icon>
                     </div>
                   </div>
                 </div>
@@ -155,26 +155,28 @@ export default function AdminDashboard() {
                     type: 'line',
                     toolbar: { show: false },
                     fontFamily: 'inherit',
+                    parentHeightOffset: 0,
                   },
                   stroke: {
-                    width: [0, 2],
+                    width: [0, 3],
                     curve: 'smooth'
                   },
                   colors: ['#ff6c2f', '#10b981'],
                   fill: {
-                    type: ['solid', 'gradient'],
+                    type: ['gradient', 'gradient'],
                     gradient: {
-                      shadeIntensity: 1,
-                      inverseColors: false,
-                      opacityFrom: 0.45,
-                      opacityTo: 0.05,
-                      stops: [20, 100]
+                      shade: 'light',
+                      type: "vertical",
+                      opacityFrom: [0.85, 0.6],
+                      opacityTo: [0.3, 0.05],
+                      stops: [0, 100]
                     }
                   },
                   plotOptions: {
                     bar: {
-                      columnWidth: '30%',
-                      borderRadius: 4
+                      columnWidth: '35%',
+                      borderRadius: 4,
+                      borderRadiusApplication: 'end',
                     }
                   },
                   dataLabels: {
@@ -184,25 +186,40 @@ export default function AdminDashboard() {
                   xaxis: {
                     axisBorder: { show: false },
                     axisTicks: { show: false },
-                    labels: { style: { colors: '#64748b' } }
+                    labels: { style: { colors: '#64748b', fontSize: '12px' } }
                   },
                   yaxis: {
                     min: 0,
                     max: 80,
-                    tickAmount: 8,
+                    tickAmount: 4,
                     labels: {
-                      style: { colors: '#64748b' },
-                      formatter: (value) => { return value.toFixed(0); }
+                      style: { colors: '#64748b', fontSize: '12px' },
+                      formatter: (value) => `${value}k`
                     }
                   },
                   grid: {
                     borderColor: '#f1f5f9',
-                    strokeDashArray: 3,
-                    padding: { top: 0, bottom: 0, right: 0, left: 10 }
+                    strokeDashArray: 4,
+                    padding: { top: 10, bottom: 0, right: 10, left: 10 }
                   },
                   legend: {
-                    position: 'bottom',
-                    markers: { strokeWidth: 0, size: 6 }
+                    position: 'top',
+                    horizontalAlign: 'right',
+                    offsetY: -10,
+                    markers: { strokeWidth: 0, size: 6, radius: 12 },
+                    itemMargin: { horizontal: 10, vertical: 0 }
+                  },
+                  tooltip: {
+                    shared: true,
+                    intersect: false,
+                    y: {
+                      formatter: (y) => {
+                        if (typeof y !== "undefined") {
+                          return y.toFixed(0) + "k";
+                        }
+                        return y;
+                      }
+                    }
                   }
                 }} 
                 series={[
@@ -233,18 +250,50 @@ export default function AdminDashboard() {
             <div className="card-body">
               <h5 className="card-title">Conversions</h5>
               <div className="mb-2 mt-n2 d-flex justify-content-center align-items-center" style={{ height: '235px' }}>
-                <div className="position-relative w-100 h-100 d-flex flex-column align-items-center justify-content-center">
-                  <svg viewBox="0 0 100 100" className="w-100" style={{ maxWidth: '200px' }}>
-                    <mask id="arc-mask">
-                      <path d="M 18 82 A 45 45 0 1 1 82 82" fill="none" stroke="white" strokeWidth="16" strokeLinecap="butt" strokeDasharray="139 1000" />
-                    </mask>
-                    <path d="M 18 82 A 45 45 0 1 1 82 82" fill="none" stroke="#f1f5f9" strokeWidth="12" strokeLinecap="butt" />
-                    <path d="M 18 82 A 45 45 0 1 1 82 82" fill="none" stroke="#ff6c2f" strokeWidth="12" strokeDasharray="2 4" strokeLinecap="butt" mask="url(#arc-mask)" />
-                  </svg>
-                  <div className="position-absolute d-flex flex-column align-items-center" style={{ top: '65%' }}>
-                    <span className="fs-24 fw-medium text-dark">65.2%</span>
-                    <span className="text-muted" style={{ fontSize: '13px' }}>Returning Customer</span>
-                  </div>
+                <div className="w-100 h-100">
+                  {mounted && <ReactApexChart
+                    options={{
+                      chart: {
+                        height: 220,
+                        type: 'radialBar',
+                        sparkline: { enabled: true }
+                      },
+                      plotOptions: {
+                        radialBar: {
+                          startAngle: -135,
+                          endAngle: 135,
+                          hollow: {
+                            size: '70%',
+                          },
+                          track: {
+                            background: '#f1f5f9',
+                            strokeWidth: '100%',
+                          },
+                          dataLabels: {
+                            name: {
+                              show: true,
+                              fontSize: '13px',
+                              color: '#64748b',
+                              offsetY: 60
+                            },
+                            value: {
+                              offsetY: 15,
+                              fontSize: '24px',
+                              color: '#1e293b',
+                              fontWeight: '600',
+                              formatter: (val) => `${val}%`
+                            }
+                          }
+                        }
+                      },
+                      colors: ['#ff6c2f'],
+                      labels: ['Returning Customer']
+                    }}
+                    series={[65.2]}
+                    type="radialBar"
+                    height="100%"
+                    width="100%"
+                  />}
                 </div>
               </div>
               <div className="row text-center mt-3">
