@@ -6,10 +6,10 @@ const FAQ_CATEGORIES = ['General', 'Account', 'Billing', 'Orders', 'Products', '
 
 const FAQS: Record<string, { q: string; a: string }[]> = {
   General: [
-    { q: 'What is Larkon Admin?', a: 'Larkon Admin is a comprehensive e-commerce admin dashboard that helps you manage your online store, track orders, manage customers, and monitor analytics all in one place.' },
-    { q: 'Is there a mobile app available?', a: 'Yes! Larkon Admin is fully responsive and works seamlessly on mobile devices. A dedicated mobile app is also available for iOS and Android.' },
+    { q: 'What is Waveron Admin?', a: 'Waveron Admin is a comprehensive e-commerce admin dashboard that helps you manage your online store, track orders, manage customers, and monitor analytics all in one place.' },
+    { q: 'Is there a mobile app available?', a: 'Yes! Waveron Admin is fully responsive and works seamlessly on mobile devices. A dedicated mobile app is also available for iOS and Android.' },
     { q: 'How do I get started?', a: 'Simply log in with your credentials, complete your store setup by following the onboarding wizard, add your products, and you\'re ready to start selling!' },
-    { q: 'Can I have multiple stores?', a: 'Yes, you can manage multiple stores from a single Larkon account. Navigate to Settings > Stores to add and switch between stores.' },
+    { q: 'Can I have multiple stores?', a: 'Yes, you can manage multiple stores from a single Waveron account. Navigate to Settings > Stores to add and switch between stores.' },
   ],
   Account: [
     { q: 'How do I reset my password?', a: 'Click "Forgot Password" on the login page, enter your email address, and follow the link sent to your inbox to reset your password.' },
@@ -36,7 +36,7 @@ const FAQS: Record<string, { q: string; a: string }[]> = {
     { q: 'How do I set up product categories?', a: 'Go to Category in the sidebar to create, edit, and organize your product categories into a hierarchical structure.' },
   ],
   Technical: [
-    { q: 'What browsers are supported?', a: 'Larkon Admin supports the latest versions of Chrome, Firefox, Safari, and Edge. For the best experience, we recommend using Chrome.' },
+    { q: 'What browsers are supported?', a: 'Waveron Admin supports the latest versions of Chrome, Firefox, Safari, and Edge. For the best experience, we recommend using Chrome.' },
     { q: 'Is my data backed up?', a: 'Yes, all data is automatically backed up daily to secure cloud storage. You can also trigger manual backups from Settings > System.' },
     { q: 'How do I connect payment gateways?', a: 'Go to Settings > Payments and click "Add Payment Gateway". Select your provider (Stripe, PayPal, etc.) and follow the integration steps.' },
     { q: 'How do I set up shipping rules?', a: 'Navigate to Settings > Shipping to configure shipping zones, rates, and carrier integrations for your store.' },

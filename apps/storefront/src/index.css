@@ -84,3 +84,33 @@ body {
 .main-nav.menu-closed ~ .page-content {
   margin-left: 0;
 }
+
+/* Sidebar scrollability — ensures the nav list scrolls even if SimpleBar doesn't init */
+.main-nav {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main-nav .scrollbar {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+
+/* Keep native scrollbar subtle inside sidebar */
+.main-nav .scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.main-nav .scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.main-nav .scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+.main-nav .scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

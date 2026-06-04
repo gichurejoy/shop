@@ -263,7 +263,7 @@ export default function ProductDetails() {
               <table className="table table-bordered mb-0" style={{ fontSize: '14px' }}>
                 <tbody>
                   {[
-                    ['Brand', 'Larkon Apparel'], ['Material', '100% Organic Cotton'], ['Weight', '180 GSM'],
+                    ['Brand', 'Waveron Apparel'], ['Material', '100% Organic Cotton'], ['Weight', '180 GSM'],
                     ['Fit', 'Slim Fit'], ['Neck Style', 'Crew Neck'], ['Sleeve', 'Short Sleeve'],
                     ['Available Colors', 'Dark, Yellow, White, Green'], ['Available Sizes', 'XS, S, M, L, XL, XXL'],
                     ['Country of Origin', 'Bangladesh'], ['SKU', 'MBT-001-BLK'],

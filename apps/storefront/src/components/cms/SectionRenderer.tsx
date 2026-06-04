@@ -1,3 +1,6 @@
+"use client";
+
+import React, { useState, useEffect, useRef } from 'react';
 import { CmsSection } from '../../lib/cms-types';
 import { Hero } from '../Hero';
 import { PromoCards } from '../PromoCards';
@@ -8,7 +11,97 @@ import { ProductGrid } from '../ProductGrid';
 import { CategoryGrid } from '../CategoryGrid';
 import { BrandStrip } from '../BrandStrip';
 
-export function HeroRenderer({ s }: { s: any }) {
+// ─── InlineText Component for Direct Editing ─────────────────────────────────
+export function InlineText({
+  value,
+  onUpdate,
+  className,
+  style,
+  tagName = 'span',
+}: {
+  value: string;
+  onUpdate?: (val: string) => void;
+  className?: string;
+  style?: React.CSSProperties;
+  tagName?: 'h1' | 'h2' | 'h3' | 'p' | 'span' | 'div' | 'a';
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentVal, setCurrentVal] = useState(value);
+  const elementRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    setCurrentVal(value);
+  }, [value]);
+
+  // If there is no onUpdate, it's read-only
+  if (!onUpdate) {
+    const Tag = tagName;
+    return <Tag className={className} style={style}>{value}</Tag>;
+  }
+
+  const handleBlur = () => {
+    setIsEditing(false);
+    if (currentVal !== value) {
+      onUpdate(currentVal);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      elementRef.current?.blur();
+    }
+    if (e.key === 'Escape') {
+      setCurrentVal(value);
+      setIsEditing(false);
+    }
+  };
+
+  const Tag = tagName;
+
+  return (
+    <Tag
+      ref={elementRef as any}
+      contentEditable={isEditing}
+      suppressContentEditableWarning
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        setIsEditing(true);
+        setTimeout(() => {
+          if (elementRef.current) {
+            elementRef.current.focus();
+            const range = document.createRange();
+            range.selectNodeContents(elementRef.current);
+            const sel = window.getSelection();
+            sel?.removeAllRanges();
+            sel?.addRange(range);
+          }
+        }, 50);
+      }}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+      onInput={(e) => setCurrentVal(e.currentTarget.textContent || '')}
+      className={`${className || ''} transition-all duration-150 ${
+        isEditing 
+          ? 'outline-none ring-2 ring-orange-500 rounded px-1 bg-white/20 text-orange-950 dark:text-orange-100' 
+          : 'hover:ring-1 hover:ring-orange-400 hover:ring-dashed rounded cursor-pointer'
+      }`}
+      style={{
+        ...style,
+        outline: 'none',
+        cursor: isEditing ? 'text' : 'pointer',
+      }}
+      title={isEditing ? 'Press Enter to save, Esc to cancel' : 'Double-click to edit text'}
+    >
+      {currentVal}
+    </Tag>
+  );
+}
+
+// ─── Renderers ───────────────────────────────────────────────────────────────
+
+export function HeroRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) => void }) {
   const bg: React.CSSProperties = {};
   if (s.backgroundType === 'image' && s.backgroundImage) {
     bg.backgroundImage = `url(${s.backgroundImage})`;
@@ -29,16 +122,21 @@ export function HeroRenderer({ s }: { s: any }) {
         <div className="absolute inset-0" style={{ backgroundColor: s.overlayColor, opacity: s.overlayOpacity / 100 }} />
       )}
       <div className={`relative z-10 w-full max-w-7xl mx-auto px-6 ${s.layout === 'centered' ? 'text-center' : ''}`}>
-        <h1
-          className="font-bold mb-4 leading-tight"
+        <InlineText
+          tagName="h1"
+          value={s.heading || 'Hero Heading'}
+          onUpdate={onUpdate ? (val) => onUpdate({ heading: val }) : undefined}
+          className="font-bold mb-4 leading-tight block"
           style={{ fontSize: `${s.headingSize}px`, color: s.textColor, textAlign: s.textAlign }}
-        >
-          {s.heading || 'Hero Heading'}
-        </h1>
+        />
         {s.subheading && (
-          <p className="text-lg mb-8 opacity-90" style={{ color: s.textColor, textAlign: s.textAlign }}>
-            {s.subheading}
-          </p>
+          <InlineText
+            tagName="p"
+            value={s.subheading}
+            onUpdate={onUpdate ? (val) => onUpdate({ subheading: val }) : undefined}
+            className="text-lg mb-8 opacity-90 block"
+            style={{ color: s.textColor, textAlign: s.textAlign }}
+          />
         )}
         <div style={{ textAlign: s.textAlign }}>
           {s.cta1Label && (
@@ -50,8 +148,12 @@ export function HeroRenderer({ s }: { s: any }) {
                 borderColor: s.cta1Color,
                 color: s.cta1Style === 'filled' ? '#fff' : s.cta1Color,
               }}
+              onClick={e => { if (onUpdate) e.preventDefault(); }}
             >
-              {s.cta1Label}
+              <InlineText
+                value={s.cta1Label}
+                onUpdate={onUpdate ? (val) => onUpdate({ cta1Label: val }) : undefined}
+              />
             </a>
           )}
           {s.cta2Label && (
@@ -63,8 +165,12 @@ export function HeroRenderer({ s }: { s: any }) {
                 borderColor: s.cta2Color,
                 color: s.cta2Style === 'filled' ? '#fff' : s.cta2Color,
               }}
+              onClick={e => { if (onUpdate) e.preventDefault(); }}
             >
-              {s.cta2Label}
+              <InlineText
+                value={s.cta2Label}
+                onUpdate={onUpdate ? (val) => onUpdate({ cta2Label: val }) : undefined}
+              />
             </a>
           )}
         </div>
@@ -73,14 +179,28 @@ export function HeroRenderer({ s }: { s: any }) {
   );
 }
 
-export function FeaturedProductsRenderer({ s }: { s: any }) {
+export function FeaturedProductsRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) => void }) {
   const cols = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4', 5: 'grid-cols-5' }[s.columns as number] || 'grid-cols-4';
   const mockProducts = Array.from({ length: Math.min(s.maxProducts, 8) }, (_, i) => i);
   return (
     <div style={{ backgroundColor: s.backgroundColor, paddingTop: s.paddingTop, paddingBottom: s.paddingBottom }}>
       <div className="max-w-7xl mx-auto px-6">
-        {s.title && <h2 className="text-3xl font-bold text-center mb-2 text-gray-900">{s.title}</h2>}
-        {s.subtitle && <p className="text-center text-gray-500 mb-8">{s.subtitle}</p>}
+        {s.title && (
+          <InlineText
+            tagName="h2"
+            value={s.title}
+            onUpdate={onUpdate ? (val) => onUpdate({ title: val }) : undefined}
+            className="text-3xl font-bold text-center mb-2 text-gray-900 block"
+          />
+        )}
+        {s.subtitle && (
+          <InlineText
+            tagName="p"
+            value={s.subtitle}
+            onUpdate={onUpdate ? (val) => onUpdate({ subtitle: val }) : undefined}
+            className="text-center text-gray-500 mb-8 block"
+          />
+        )}
         <div className={`grid ${cols} gap-6`}>
           {mockProducts.map(i => (
             <div key={i} className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
@@ -95,7 +215,16 @@ export function FeaturedProductsRenderer({ s }: { s: any }) {
         </div>
         {s.viewAllLabel && (
           <div className="text-center mt-8">
-            <a href={s.viewAllLink || '#'} className="inline-block px-6 py-3 bg-gray-900 text-white rounded-lg font-medium">{s.viewAllLabel}</a>
+            <a
+              href={s.viewAllLink || '#'}
+              className="inline-block px-6 py-3 bg-gray-900 text-white rounded-lg font-medium"
+              onClick={e => { if (onUpdate) e.preventDefault(); }}
+            >
+              <InlineText
+                value={s.viewAllLabel}
+                onUpdate={onUpdate ? (val) => onUpdate({ viewAllLabel: val }) : undefined}
+              />
+            </a>
           </div>
         )}
       </div>
@@ -103,13 +232,20 @@ export function FeaturedProductsRenderer({ s }: { s: any }) {
   );
 }
 
-export function CategoryGridRenderer({ s }: { s: any }) {
+export function CategoryGridRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) => void }) {
   const cols = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4', 6: 'grid-cols-6' }[s.columns as number] || 'grid-cols-4';
   const mockCats = ['Fashion', 'Electronics', 'Home', 'Sports', 'Beauty', 'Books'];
   return (
     <div style={{ paddingTop: s.paddingTop, paddingBottom: s.paddingBottom }}>
       <div className="max-w-7xl mx-auto px-6">
-        {s.title && <h2 className="text-3xl font-bold text-center mb-8 text-gray-900">{s.title}</h2>}
+        {s.title && (
+          <InlineText
+            tagName="h2"
+            value={s.title}
+            onUpdate={onUpdate ? (val) => onUpdate({ title: val }) : undefined}
+            className="text-3xl font-bold text-center mb-8 text-gray-900 block"
+          />
+        )}
         <div className={`grid ${cols} gap-4`}>
           {mockCats.slice(0, s.columns).map((cat, i) => (
             <div key={i} className="relative overflow-hidden rounded-xl bg-gray-200 cursor-pointer group">
@@ -125,7 +261,7 @@ export function CategoryGridRenderer({ s }: { s: any }) {
   );
 }
 
-export function FlashSaleRenderer({ s }: { s: any }) {
+export function FlashSaleRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) => void }) {
   const bg: React.CSSProperties = s.backgroundType === 'gradient'
     ? { background: `linear-gradient(135deg, ${s.gradientFrom}, ${s.gradientTo})` }
     : { backgroundColor: s.backgroundColor };
@@ -138,8 +274,23 @@ export function FlashSaleRenderer({ s }: { s: any }) {
   return (
     <div style={{ ...bg, paddingTop: s.paddingTop, paddingBottom: s.paddingBottom }}>
       <div className="max-w-7xl mx-auto px-6 text-center">
-        {s.bannerLabel && <span className="inline-block px-3 py-1 rounded-full text-sm font-bold mb-3" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: s.textColor }}>{s.bannerLabel}</span>}
-        {s.title && <h2 className="text-4xl font-bold mb-6" style={{ color: s.textColor }}>{s.title}</h2>}
+        {s.bannerLabel && (
+          <span className="inline-block px-3 py-1 rounded-full text-sm font-bold mb-3" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: s.textColor }}>
+            <InlineText
+              value={s.bannerLabel}
+              onUpdate={onUpdate ? (val) => onUpdate({ bannerLabel: val }) : undefined}
+            />
+          </span>
+        )}
+        {s.title && (
+          <InlineText
+            tagName="h2"
+            value={s.title}
+            onUpdate={onUpdate ? (val) => onUpdate({ title: val }) : undefined}
+            className="text-4xl font-bold mb-6 block"
+            style={{ color: s.textColor }}
+          />
+        )}
         <div className="flex justify-center gap-4">
           {[{ v: hours, l: 'Hours' }, { v: mins, l: 'Minutes' }, { v: secs, l: 'Seconds' }].map(({ v, l }) => (
             <div key={l} className="rounded-xl p-4 min-w-[80px]" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
@@ -153,16 +304,33 @@ export function FlashSaleRenderer({ s }: { s: any }) {
   );
 }
 
-export function StatsRenderer({ s }: { s: any }) {
+export function StatsRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) => void }) {
+  const handleUpdateItem = (itemId: string, field: string, newValue: string) => {
+    const newItems = s.items.map((item: any) => 
+      item.id === itemId ? { ...item, [field]: newValue } : item
+    );
+    onUpdate?.({ items: newItems });
+  };
+
   return (
     <div style={{ backgroundColor: s.backgroundColor, paddingTop: s.paddingTop, paddingBottom: s.paddingBottom }}>
       <div className="max-w-7xl mx-auto px-6">
         <div className={`flex flex-wrap justify-center gap-8 ${s.layout === 'grid' ? 'grid grid-cols-2 md:grid-cols-4' : ''}`}>
-          {s.items.map((item: any) => (
+          {(s.items || []).map((item: any) => (
             <div key={item.id} className="text-center flex-1 min-w-[120px]">
               <div className="text-3xl mb-2">{item.icon}</div>
-              <div className="text-xl font-bold text-gray-900">{item.number}</div>
-              <div className="text-sm text-gray-500">{item.label}</div>
+              <InlineText
+                tagName="div"
+                value={item.number}
+                onUpdate={onUpdate ? (val) => handleUpdateItem(item.id, 'number', val) : undefined}
+                className="text-xl font-bold text-gray-900 block"
+              />
+              <InlineText
+                tagName="div"
+                value={item.label}
+                onUpdate={onUpdate ? (val) => handleUpdateItem(item.id, 'label', val) : undefined}
+                className="text-sm text-gray-500 block"
+              />
             </div>
           ))}
         </div>
@@ -171,7 +339,7 @@ export function StatsRenderer({ s }: { s: any }) {
   );
 }
 
-export function NewsletterRenderer({ s }: { s: any }) {
+export function NewsletterRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) => void }) {
   const bg: React.CSSProperties = s.backgroundType === 'gradient'
     ? { background: `linear-gradient(135deg, ${s.backgroundColor}, ${s.backgroundColor}cc)` }
     : s.backgroundType === 'image' && s.backgroundImage
@@ -180,29 +348,87 @@ export function NewsletterRenderer({ s }: { s: any }) {
   return (
     <div style={{ ...bg, paddingTop: s.paddingTop, paddingBottom: s.paddingBottom }}>
       <div className="max-w-2xl mx-auto px-6 text-center">
-        <h2 className="text-3xl font-bold text-white mb-2">{s.heading}</h2>
-        {s.subtext && <p className="text-white/80 mb-6">{s.subtext}</p>}
+        <InlineText
+          tagName="h2"
+          value={s.heading}
+          onUpdate={onUpdate ? (val) => onUpdate({ heading: val }) : undefined}
+          className="text-3xl font-bold text-white mb-2 block"
+        />
+        {s.subtext && (
+          <InlineText
+            tagName="p"
+            value={s.subtext}
+            onUpdate={onUpdate ? (val) => onUpdate({ subtext: val }) : undefined}
+            className="text-white/80 mb-6 block"
+          />
+        )}
         <div className="flex gap-2 max-w-md mx-auto">
-          <input placeholder={s.placeholder} className="flex-1 px-4 py-3 rounded-lg border-0 focus:outline-none" />
-          <button className="px-6 py-3 rounded-lg font-semibold text-white" style={{ backgroundColor: s.buttonColor }}>{s.buttonLabel}</button>
+          <input 
+            placeholder={s.placeholder} 
+            className="flex-1 px-4 py-3 rounded-lg border-0 focus:outline-none" 
+            readOnly
+          />
+          <button 
+            className="px-6 py-3 rounded-lg font-semibold text-white" 
+            style={{ backgroundColor: s.buttonColor }}
+            onClick={e => { if (onUpdate) e.preventDefault(); }}
+          >
+            <InlineText
+              value={s.buttonLabel}
+              onUpdate={onUpdate ? (val) => onUpdate({ buttonLabel: val }) : undefined}
+            />
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-export function TestimonialsRenderer({ s }: { s: any }) {
+export function TestimonialsRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) => void }) {
+  const handleUpdateTestimonial = (itemId: string, field: string, newValue: string) => {
+    const newItems = (s.items || []).map((item: any) => 
+      item.id === itemId ? { ...item, [field]: newValue } : item
+    );
+    onUpdate?.({ items: newItems });
+  };
+
   return (
     <div style={{ backgroundColor: s.backgroundColor, paddingTop: s.paddingTop, paddingBottom: s.paddingBottom }}>
       <div className="max-w-7xl mx-auto px-6">
-        {s.title && <h2 className="text-3xl font-bold text-center mb-8 text-gray-900">{s.title}</h2>}
+        {s.title && (
+          <InlineText
+            tagName="h2"
+            value={s.title}
+            onUpdate={onUpdate ? (val) => onUpdate({ title: val }) : undefined}
+            className="text-3xl font-bold text-center mb-8 text-gray-900 block"
+          />
+        )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {s.items.map((item: any) => (
+          {(s.items || []).map((item: any) => (
             <div key={item.id} className={`p-6 rounded-xl ${s.cardStyle === 'shadowed' ? 'shadow-lg' : s.cardStyle === 'bordered' ? 'border-2 border-gray-200' : ''} bg-white`}>
               <div className="flex mb-3">{'⭐'.repeat(item.rating)}</div>
-              <p className="text-gray-700 mb-4 italic">"{item.text}"</p>
-              <div className="font-semibold text-gray-900">{item.name}</div>
-              {item.company && <div className="text-sm text-gray-500">{item.company}</div>}
+              <p className="text-gray-700 mb-4 italic">
+                "
+                <InlineText
+                  value={item.text}
+                  onUpdate={onUpdate ? (val) => handleUpdateTestimonial(item.id, 'text', val) : undefined}
+                />
+                "
+              </p>
+              <InlineText
+                tagName="div"
+                value={item.name}
+                onUpdate={onUpdate ? (val) => handleUpdateTestimonial(item.id, 'name', val) : undefined}
+                className="font-semibold text-gray-900 block"
+              />
+              {item.company && (
+                <InlineText
+                  tagName="div"
+                  value={item.company}
+                  onUpdate={onUpdate ? (val) => handleUpdateTestimonial(item.id, 'company', val) : undefined}
+                  className="text-sm text-gray-500 block"
+                />
+              )}
             </div>
           ))}
         </div>
@@ -211,7 +437,7 @@ export function TestimonialsRenderer({ s }: { s: any }) {
   );
 }
 
-export function VideoRenderer({ s }: { s: any }) {
+export function VideoRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) => void }) {
   const getEmbedUrl = () => {
     if (!s.videoUrl) return '';
     if (s.videoType === 'youtube') {
@@ -231,7 +457,12 @@ export function VideoRenderer({ s }: { s: any }) {
           )}
           {s.overlayText && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-              <p className="text-white text-2xl font-bold">{s.overlayText}</p>
+              <InlineText
+                tagName="p"
+                value={s.overlayText}
+                onUpdate={onUpdate ? (val) => onUpdate({ overlayText: val }) : undefined}
+                className="text-white text-2xl font-bold block"
+              />
             </div>
           )}
         </div>
@@ -249,13 +480,20 @@ export function CustomHtmlRenderer({ s }: { s: any }) {
   );
 }
 
-export function BrandStripRenderer({ s }: { s: any }) {
+export function BrandStripRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) => void }) {
   return (
     <div style={{ paddingTop: s.paddingTop, paddingBottom: s.paddingBottom, backgroundColor: '#f8fafc' }}>
       <div className="max-w-7xl mx-auto px-6">
-        {s.title && <h2 className="text-2xl font-bold text-center mb-6 text-gray-700">{s.title}</h2>}
+        {s.title && (
+          <InlineText
+            tagName="h2"
+            value={s.title}
+            onUpdate={onUpdate ? (val) => onUpdate({ title: val }) : undefined}
+            className="text-2xl font-bold text-center mb-6 text-gray-700 block"
+          />
+        )}
         <div className="flex gap-8 items-center justify-center flex-wrap">
-          {s.brands.length === 0
+          {!s.brands || s.brands.length === 0
             ? ['Brand 1', 'Brand 2', 'Brand 3', 'Brand 4', 'Brand 5'].map((b, i) => (
                 <div key={i} className="h-12 px-6 bg-gray-200 rounded flex items-center justify-center text-gray-500 font-medium">{b}</div>
               ))
@@ -269,7 +507,7 @@ export function BrandStripRenderer({ s }: { s: any }) {
   );
 }
 
-export function RichContentRenderer({ s }: { s: any }) {
+export function RichContentRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) => void }) {
   return (
     <div style={{ backgroundColor: s.backgroundColor, paddingTop: s.paddingTop, paddingBottom: s.paddingBottom }}>
       <div className="max-w-7xl mx-auto px-6">
@@ -280,7 +518,16 @@ export function RichContentRenderer({ s }: { s: any }) {
         </div>
         {s.ctaLabel && (
           <div className="text-center mt-8">
-            <a href={s.ctaLink || '#'} className="inline-block px-8 py-3 bg-gray-900 text-white rounded-lg font-medium">{s.ctaLabel}</a>
+            <a
+              href={s.ctaLink || '#'}
+              className="inline-block px-8 py-3 bg-gray-900 text-white rounded-lg font-medium"
+              onClick={e => { if (onUpdate) e.preventDefault(); }}
+            >
+              <InlineText
+                value={s.ctaLabel}
+                onUpdate={onUpdate ? (val) => onUpdate({ ctaLabel: val }) : undefined}
+              />
+            </a>
           </div>
         )}
       </div>
@@ -288,10 +535,20 @@ export function RichContentRenderer({ s }: { s: any }) {
   );
 }
 
-export function renderSection(s: CmsSection, activeId?: string, onClick?: (id: string) => void) {
+export function RenderSection({
+  s,
+  activeId,
+  onClick,
+  onUpdateSection,
+}: {
+  s: CmsSection;
+  activeId?: string;
+  onClick?: (id: string) => void;
+  onUpdateSection?: (id: string, patch: Partial<CmsSection>) => void;
+}) {
   if (!s.visible) return null;
   const isActive = s.id === activeId;
-  const wrapperProps: React.HTMLAttributes<HTMLDivElement> = {
+  const wrapperProps: any = {
     'data-section-id': s.id,
   };
 
@@ -322,23 +579,118 @@ export function renderSection(s: CmsSection, activeId?: string, onClick?: (id: s
     </div>
   );
   
+  const updateHandler = onUpdateSection ? (patch: any) => onUpdateSection(s.id, patch) : undefined;
+
   switch (s.type) {
-    case 'hero': return wrapper(<Hero />);
-    case 'promo-cards': return wrapper(<PromoCards />);
-    case 'category-grid': return wrapper(<CategoryGrid />);
-    case 'featured-products': return wrapper(<ProductGrid title={(s as any).title || "Featured"} limit={(s as any).maxProducts || 8} />);
-    case 'promo-banner': return wrapper(<PromoBanner />);
-    case 'brand-strip': return wrapper(<BrandStrip />);
-    case 'stylist-banner': return wrapper(<StylistBanner />);
-    case 'seo-content': return wrapper(<SeoContent />);
+    case 'hero': 
+      return wrapper(
+        <Hero 
+          heading={(s as any).heading} 
+          searchPlaceholder={(s as any).subheading}
+          backgroundColor={(s as any).backgroundColor}
+          backgroundImage={(s as any).backgroundImage}
+        />
+      );
+    case 'promo-cards': 
+      return wrapper(
+        <PromoCards 
+          card1Title={(s as any).card1Title}
+          card1Subtitle={(s as any).card1Subtitle}
+          card1Link={(s as any).card1Link}
+          card1Badge={(s as any).card1Badge}
+          card1Bg={(s as any).card1Bg}
+          card2Title={(s as any).card2Title}
+          card2Subtitle={(s as any).card2Subtitle}
+          card2Link={(s as any).card2Link}
+          card2Badge={(s as any).card2Badge}
+          card2Bg={(s as any).card2Bg}
+          card3Title={(s as any).card3Title}
+          card3Subtitle={(s as any).card3Subtitle}
+          card3Link={(s as any).card3Link}
+          card3Badge={(s as any).card3Badge}
+          card3Bg={(s as any).card3Bg}
+          card4Title={(s as any).card4Title}
+          card4Subtitle={(s as any).card4Subtitle}
+          card4Link={(s as any).card4Link}
+          card4Badge={(s as any).card4Badge}
+          card4Bg={(s as any).card4Bg}
+        />
+      );
+    case 'category-grid': 
+      return wrapper(
+        <CategoryGrid 
+          title={(s as any).title} 
+          cat1Label={(s as any).cat1Label}
+          cat2Label={(s as any).cat2Label}
+          cat3Label={(s as any).cat3Label}
+          cat4Label={(s as any).cat4Label}
+          cat5Label={(s as any).cat5Label}
+          cat6Label={(s as any).cat6Label}
+          cat7Label={(s as any).cat7Label}
+          cat8Label={(s as any).cat8Label}
+          cat9Label={(s as any).cat9Label}
+          cat10Label={(s as any).cat10Label}
+        />
+      );
+    case 'featured-products': 
+      return wrapper(
+        <ProductGrid 
+          title={(s as any).title || "Featured"} 
+          limit={(s as any).maxProducts || 8}
+          columns={(s as any).columns}
+          showPrice={(s as any).showPrice}
+          showRating={(s as any).showRating}
+          showAddToCart={(s as any).showAddToCart}
+          showDiscountBadge={(s as any).showDiscountBadge}
+          backgroundColor={(s as any).backgroundColor}
+        />
+      );
+    case 'promo-banner': 
+      return wrapper(
+        <PromoBanner 
+          title={(s as any).title}
+          description={(s as any).description}
+          ctaLabel={(s as any).ctaLabel}
+          ctaLink={(s as any).ctaLink}
+        />
+      );
+    case 'brand-strip': 
+      return wrapper(<BrandStrip title={(s as any).title} brands={(s as any).brands} />);
+    case 'stylist-banner': 
+      return wrapper(
+        <StylistBanner 
+          title={(s as any).title} 
+          description={(s as any).description} 
+          ctaLabel={(s as any).ctaLabel} 
+        />
+      );
+    case 'seo-content': 
+      return wrapper(
+        <SeoContent 
+          title1={(s as any).title1} 
+          body1={(s as any).body1}
+          title2={(s as any).title2}
+          body2={(s as any).body2}
+          title3={(s as any).title3}
+          body3={(s as any).body3}
+        />
+      );
     
-    case 'flash-sale': return wrapper(<FlashSaleRenderer s={s} />);
-    case 'testimonials': return wrapper(<TestimonialsRenderer s={s} />);
-    case 'rich-content': return wrapper(<RichContentRenderer s={s} />);
-    case 'newsletter': return wrapper(<NewsletterRenderer s={s} />);
-    case 'stats': return wrapper(<StatsRenderer s={s} />);
-    case 'video': return wrapper(<VideoRenderer s={s} />);
-    case 'custom-html': return wrapper(<CustomHtmlRenderer s={s} />);
-    default: return null;
+    case 'flash-sale': 
+      return wrapper(<FlashSaleRenderer s={s} onUpdate={updateHandler} />);
+    case 'testimonials': 
+      return wrapper(<TestimonialsRenderer s={s} onUpdate={updateHandler} />);
+    case 'rich-content': 
+      return wrapper(<RichContentRenderer s={s} onUpdate={updateHandler} />);
+    case 'newsletter': 
+      return wrapper(<NewsletterRenderer s={s} onUpdate={updateHandler} />);
+    case 'stats': 
+      return wrapper(<StatsRenderer s={s} onUpdate={updateHandler} />);
+    case 'video': 
+      return wrapper(<VideoRenderer s={s} onUpdate={updateHandler} />);
+    case 'custom-html': 
+      return wrapper(<CustomHtmlRenderer s={s} />);
+    default: 
+      return null;
   }
 }

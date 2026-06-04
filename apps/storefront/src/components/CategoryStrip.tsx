@@ -264,7 +264,7 @@ export function CategoryStrip() {
                       {col.links.map((link) =>
                   <li key={link}>
                           <Link
-                      href="/"
+                      href={`/products?category=${category.label === 'Sweaters' ? 'sweater' : 'jewelry'}`}
                       className="text-sm text-gray-600 hover:text-[#8B5A3C] transition-colors">
                       
                             {link}

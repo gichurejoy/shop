@@ -1,6 +1,13 @@
 import React from 'react';
 import { MessageCircle } from 'lucide-react';
-export function StylistBanner() {
+
+interface StylistBannerProps {
+  title?: string;
+  description?: string;
+  ctaLabel?: string;
+}
+
+export function StylistBanner({ title, description, ctaLabel }: StylistBannerProps) {
   return (
     <div className="w-full py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -12,16 +19,14 @@ export function StylistBanner() {
                 fontFamily: 'Playfair Display, serif'
               }}>
               
-              Ask Anything About Your Style
+              {title || "Ask Anything About Your Style"}
             </h2>
             <p className="text-gray-700 text-sm mb-5 max-w-xl">
-              Our expert stylists are here to help you find the perfect piece
-              for any occasion. Get personalized recommendations for jewelry and
-              knitwear that match your unique style.
+              {description || "Our expert stylists are here to help you find the perfect piece for any occasion. Get personalized recommendations for jewelry and knitwear that match your unique style."}
             </p>
             <button className="bg-[#8B5A3C] text-white px-6 py-2.5 rounded-lg font-bold hover:bg-[#6F4630] transition-colors flex items-center gap-2 w-fit">
               <MessageCircle className="w-4 h-4" />
-              Chat with a Stylist
+              {ctaLabel || "Chat with a Stylist"}
             </button>
           </div>
 

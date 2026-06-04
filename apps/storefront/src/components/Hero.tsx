@@ -1,8 +1,28 @@
 import React from 'react';
 import { Search } from 'lucide-react';
-export function Hero() {
+
+interface HeroProps {
+  heading?: string;
+  searchPlaceholder?: string;
+  backgroundColor?: string;
+  backgroundImage?: string;
+}
+
+export function Hero({ heading, searchPlaceholder, backgroundColor, backgroundImage }: HeroProps) {
+  const customStyle: React.CSSProperties = {};
+  if (backgroundImage) {
+    customStyle.backgroundImage = `url(${backgroundImage})`;
+    customStyle.backgroundSize = 'cover';
+    customStyle.backgroundPosition = 'center';
+  } else if (backgroundColor) {
+    customStyle.backgroundColor = backgroundColor;
+  }
+
   return (
-    <div className="w-full bg-[#5C3A24] text-white py-12 relative overflow-hidden">
+    <div 
+      className="w-full bg-[#5C3A24] text-white py-12 relative overflow-hidden"
+      style={customStyle}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-6">
           <h2
@@ -11,7 +31,7 @@ export function Hero() {
               fontFamily: 'Playfair Display, serif'
             }}>
             
-            Shop Jewelry & Knitwear
+            {heading || "Shop Jewelry & Knitwear"}
           </h2>
         </div>
 
@@ -20,7 +40,7 @@ export function Hero() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8B5A3C]" />
             <input
               type="text"
-              placeholder="Search rings, necklaces, sweaters..."
+              placeholder={searchPlaceholder || "Search rings, necklaces, sweaters..."}
               className="w-full pl-12 pr-4 py-3.5 rounded-xl text-gray-900 text-base focus:outline-none focus:ring-2 focus:ring-[#8B5A3C]" />
             
           </div>

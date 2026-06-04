@@ -2,7 +2,7 @@ import '../../index.css';
 import Script from 'next/script';
 
 export const metadata = {
-  title: 'Dashboard | Larkon - Responsive Admin Dashboard Template',
+  title: 'Dashboard | Waveron - Responsive Admin Dashboard Template',
   description: 'A fully responsive premium admin dashboard template',
 };
 

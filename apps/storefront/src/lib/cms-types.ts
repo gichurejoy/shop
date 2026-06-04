@@ -62,14 +62,24 @@ export type FeaturedProductsSection = SectionBase & {
 // ─── Category Grid ─────────────────────────────────────────────────────────
 export type CategoryGridSection = SectionBase & {
   type: 'category-grid';
-  title: string;
-  layout: 'grid' | 'horizontal-scroll' | 'masonry';
-  columns: 2 | 3 | 4 | 6;
-  categoryIds: string[];
-  cardStyle: 'overlay' | 'below' | 'icon';
-  imageShape: 'square' | 'portrait' | 'landscape' | 'circle';
-  hoverEffect: 'zoom' | 'lift' | 'darken' | 'none';
-  showProductCount: boolean;
+  title?: string;
+  cat1Label?: string;
+  cat2Label?: string;
+  cat3Label?: string;
+  cat4Label?: string;
+  cat5Label?: string;
+  cat6Label?: string;
+  cat7Label?: string;
+  cat8Label?: string;
+  cat9Label?: string;
+  cat10Label?: string;
+  layout?: 'grid' | 'horizontal-scroll' | 'masonry';
+  columns?: 2 | 3 | 4 | 6;
+  categoryIds?: string[];
+  cardStyle?: 'overlay' | 'below' | 'icon';
+  imageShape?: 'square' | 'portrait' | 'landscape' | 'circle';
+  hoverEffect?: 'zoom' | 'lift' | 'darken' | 'none';
+  showProductCount?: boolean;
 };
 
 // ─── Flash Sale ────────────────────────────────────────────────────────────
@@ -92,12 +102,12 @@ export type FlashSaleSection = SectionBase & {
 // ─── Brand Strip ───────────────────────────────────────────────────────────
 export type BrandStripSection = SectionBase & {
   type: 'brand-strip';
-  title: string;
-  displayType: 'logo-strip' | 'cards';
-  autoScroll: boolean;
-  scrollSpeed: number;
-  showProductCount: boolean;
-  brands: Array<{ id: string; name: string; logo: string; link: string }>;
+  title?: string;
+  displayType?: 'logo-strip' | 'cards';
+  autoScroll?: boolean;
+  scrollSpeed?: number;
+  showProductCount?: boolean;
+  brands?: Array<{ id: string; name: string; logo: string; link: string }> | string | string[];
 };
 
 // ─── Testimonials ──────────────────────────────────────────────────────────
@@ -177,10 +187,51 @@ export type CustomHtmlSection = SectionBase & {
 };
 
 // ─── Bespoke Storefront Types ─────────────────────────────────────────────────
-export type PromoCardsSection = SectionBase & { type: 'promo-cards' };
-export type PromoBannerSection = SectionBase & { type: 'promo-banner' };
-export type StylistBannerSection = SectionBase & { type: 'stylist-banner' };
-export type SeoContentSection = SectionBase & { type: 'seo-content' };
+export type PromoCardsSection = SectionBase & {
+  type: 'promo-cards';
+  card1Title?: string;
+  card1Subtitle?: string;
+  card1Link?: string;
+  card1Badge?: string;
+  card1Bg?: string;
+  card2Title?: string;
+  card2Subtitle?: string;
+  card2Link?: string;
+  card2Badge?: string;
+  card2Bg?: string;
+  card3Title?: string;
+  card3Subtitle?: string;
+  card3Link?: string;
+  card3Badge?: string;
+  card3Bg?: string;
+  card4Title?: string;
+  card4Subtitle?: string;
+  card4Link?: string;
+  card4Badge?: string;
+  card4Bg?: string;
+};
+export type PromoBannerSection = SectionBase & {
+  type: 'promo-banner';
+  title?: string;
+  description?: string;
+  ctaLabel?: string;
+  ctaLink?: string;
+};
+export type StylistBannerSection = SectionBase & {
+  type: 'stylist-banner';
+  title?: string;
+  description?: string;
+  ctaLabel?: string;
+};
+export type SeoContentSection = SectionBase & {
+  type: 'seo-content';
+  title1?: string;
+  body1?: string;
+  title2?: string;
+  body2?: string;
+  title3?: string;
+  body3?: string;
+};
 
 // ─── Union ────────────────────────────────────────────────────────────────
 export type CmsSection =

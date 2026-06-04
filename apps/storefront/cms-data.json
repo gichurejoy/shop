@@ -9,7 +9,8 @@
           "paddingTop": 0,
           "paddingBottom": 0,
           "mobileHidden": false,
-          "desktopHidden": false
+          "desktopHidden": false,
+          "heading": "Beautiful Jewelry & Luxury Knitwear"
         },
         {
           "id": "1779947179231",
@@ -18,7 +19,8 @@
           "paddingTop": 0,
           "paddingBottom": 0,
           "mobileHidden": false,
-          "desktopHidden": false
+          "desktopHidden": false,
+          "card1Title": "Special 20% Off Jewelry"
         },
         {
           "id": "1779947179232",
@@ -27,17 +29,34 @@
           "paddingTop": 0,
           "paddingBottom": 0,
           "mobileHidden": false,
-          "desktopHidden": false
+          "desktopHidden": false,
+          "title": " ",
+          "cat1Label": "Rings",
+          "cat2Label": "Necklaces",
+          "cat3Label": "Earrings",
+          "cat4Label": "Bracelets",
+          "cat5Label": "Watches",
+          "cat6Label": "Cardigans",
+          "cat7Label": "Pullovers",
+          "cat8Label": "Cashmere",
+          "cat9Label": "Turtlenecks",
+          "cat10Label": "Vests"
         },
         {
-          "id": "1779947179233",
+          "id": "1779947179237",
           "type": "featured-products",
           "visible": true,
           "paddingTop": 0,
           "paddingBottom": 0,
           "mobileHidden": false,
           "desktopHidden": false,
-          "title": "Trending Now"
+          "title": "Trending Now",
+          "maxProducts": 8,
+          "columns": 4,
+          "showPrice": true,
+          "showRating": true,
+          "showAddToCart": true,
+          "showDiscountBadge": true
         },
         {
           "id": "1779947179234",
@@ -46,7 +65,11 @@
           "paddingTop": 0,
           "paddingBottom": 0,
           "mobileHidden": false,
-          "desktopHidden": false
+          "desktopHidden": false,
+          "title": "Save Up to 25% on Premium Collections",
+          "description": "Exclusive offers on handcrafted jewelry and luxury knitwear",
+          "ctaLabel": "Shop Now",
+          "ctaLink": "/products"
         },
         {
           "id": "1779947179235",
@@ -55,7 +78,8 @@
           "paddingTop": 0,
           "paddingBottom": 0,
           "mobileHidden": false,
-          "desktopHidden": false
+          "desktopHidden": false,
+          "title": "Featured Brands"
         },
         {
           "id": "1779947179236",
@@ -67,14 +91,13 @@
           "desktopHidden": false
         },
         {
-          "id": "1779947179237",
-          "type": "featured-products",
+          "id": "1779947179238",
+          "type": "seo-content",
           "visible": true,
           "paddingTop": 0,
           "paddingBottom": 0,
           "mobileHidden": false,
-          "desktopHidden": false,
-          "title": "Bestsellers"
+          "desktopHidden": false
         }
       ]
     },
@@ -87,7 +110,8 @@
           "paddingTop": 0,
           "paddingBottom": 0,
           "mobileHidden": false,
-          "desktopHidden": false
+          "desktopHidden": false,
+          "heading": "Beautiful Jewelry & Luxury Knitwear"
         },
         {
           "id": "1779947179231",
@@ -96,7 +120,8 @@
           "paddingTop": 0,
           "paddingBottom": 0,
           "mobileHidden": false,
-          "desktopHidden": false
+          "desktopHidden": false,
+          "card1Title": "Special 20% Off Jewelry"
         },
         {
           "id": "1779947179232",
@@ -105,17 +130,34 @@
           "paddingTop": 0,
           "paddingBottom": 0,
           "mobileHidden": false,
-          "desktopHidden": false
+          "desktopHidden": false,
+          "title": " ",
+          "cat1Label": "Rings",
+          "cat2Label": "Necklaces",
+          "cat3Label": "Earrings",
+          "cat4Label": "Bracelets",
+          "cat5Label": "Watches",
+          "cat6Label": "Cardigans",
+          "cat7Label": "Pullovers",
+          "cat8Label": "Cashmere",
+          "cat9Label": "Turtlenecks",
+          "cat10Label": "Vests"
         },
         {
-          "id": "1779947179233",
+          "id": "1779947179237",
           "type": "featured-products",
           "visible": true,
           "paddingTop": 0,
           "paddingBottom": 0,
           "mobileHidden": false,
           "desktopHidden": false,
-          "title": "Trending Now"
+          "title": "Trending Now",
+          "maxProducts": 8,
+          "columns": 4,
+          "showPrice": true,
+          "showRating": true,
+          "showAddToCart": true,
+          "showDiscountBadge": true
         },
         {
           "id": "1779947179234",
@@ -124,7 +166,11 @@
           "paddingTop": 0,
           "paddingBottom": 0,
           "mobileHidden": false,
-          "desktopHidden": false
+          "desktopHidden": false,
+          "title": "Save Up to 25% on Premium Collections",
+          "description": "Exclusive offers on handcrafted jewelry and luxury knitwear",
+          "ctaLabel": "Shop Now",
+          "ctaLink": "/products"
         },
         {
           "id": "1779947179235",
@@ -133,7 +179,8 @@
           "paddingTop": 0,
           "paddingBottom": 0,
           "mobileHidden": false,
-          "desktopHidden": false
+          "desktopHidden": false,
+          "title": "Featured Brands"
         },
         {
           "id": "1779947179236",
@@ -145,14 +192,13 @@
           "desktopHidden": false
         },
         {
-          "id": "1779947179237",
-          "type": "featured-products",
+          "id": "1779947179238",
+          "type": "seo-content",
           "visible": true,
           "paddingTop": 0,
           "paddingBottom": 0,
           "mobileHidden": false,
-          "desktopHidden": false,
-          "title": "Bestsellers"
+          "desktopHidden": false
         }
       ]
     }
@@ -167,6 +213,7 @@
       "lastModified": "2026-05-26T07:11:55.632Z"
     }
   ],
+  "posts": [],
   "navigation": [
     {
       "id": "nav-1",
@@ -299,5 +346,17 @@
       "isMega": false,
       "children": []
     }
-  ]
+  ],
+  "seo": {
+    "siteTitleTemplate": "{page_title} | Store",
+    "defaultMetaDescription": "",
+    "googleAnalyticsId": "",
+    "robotsTxt": "User-agent: *\nAllow: /"
+  },
+  "announcementBar": {
+    "visible": false,
+    "message": "Welcome to our store!",
+    "backgroundColor": "#000000",
+    "textColor": "#ffffff"
+  }
 }

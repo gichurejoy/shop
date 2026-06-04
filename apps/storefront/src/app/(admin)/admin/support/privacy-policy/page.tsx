@@ -106,7 +106,7 @@ export default function PrivacyPolicyPage() {
           <div className="card mb-3">
             <div className="card-body">
               <p className="text-muted mb-0" style={{ fontSize: '15px', lineHeight: '1.8' }}>
-                Welcome to Larkon Admin. We are committed to protecting your personal information and your right to privacy.
+                Welcome to Waveron Admin. We are committed to protecting your personal information and your right to privacy.
                 This Privacy Policy describes how we collect, use, disclose, and safeguard your information when you use our platform.
                 Please read this policy carefully. If you disagree with its terms, please discontinue use of our service.
               </p>

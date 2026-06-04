@@ -127,7 +127,7 @@ export default function ProductEdit() {
               </div>
               <div className="col-lg-4">
                 <label className="form-label fw-medium">Brand</label>
-                <input type="text" className="form-control" defaultValue="Larkon Fashion" />
+                <input type="text" className="form-control" defaultValue="Waveron Fashion" />
               </div>
               <div className="col-lg-4">
                 <label className="form-label fw-medium">Weight</label>

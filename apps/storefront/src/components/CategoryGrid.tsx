@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import {
   Gem,
   Sparkles,
@@ -9,48 +10,85 @@ import {
   Snowflake,
   Layers,
   Square } from
-'lucide-react';
-export function CategoryGrid() {
+  'lucide-react';
+
+interface CategoryGridProps {
+  title?: string;
+  cat1Label?: string;
+  cat2Label?: string;
+  cat3Label?: string;
+  cat4Label?: string;
+  cat5Label?: string;
+  cat6Label?: string;
+  cat7Label?: string;
+  cat8Label?: string;
+  cat9Label?: string;
+  cat10Label?: string;
+}
+
+export function CategoryGrid({
+  title,
+  cat1Label,
+  cat2Label,
+  cat3Label,
+  cat4Label,
+  cat5Label,
+  cat6Label,
+  cat7Label,
+  cat8Label,
+  cat9Label,
+  cat10Label
+}: CategoryGridProps) {
   const categories = [
   {
     icon: Circle,
-    label: 'Rings'
+    label: cat1Label || 'Rings',
+    value: 'jewelry'
   },
   {
     icon: Sparkles,
-    label: 'Necklaces'
+    label: cat2Label || 'Necklaces',
+    value: 'jewelry'
   },
   {
     icon: Gem,
-    label: 'Earrings'
+    label: cat3Label || 'Earrings',
+    value: 'jewelry'
   },
   {
     icon: Circle,
-    label: 'Bracelets'
+    label: cat4Label || 'Bracelets',
+    value: 'jewelry'
   },
   {
     icon: Watch,
-    label: 'Watches'
+    label: cat5Label || 'Watches',
+    value: 'jewelry'
   },
   {
     icon: Shirt,
-    label: 'Cardigans'
+    label: cat6Label || 'Cardigans',
+    value: 'sweater'
   },
   {
     icon: Wind,
-    label: 'Pullovers'
+    label: cat7Label || 'Pullovers',
+    value: 'sweater'
   },
   {
     icon: Snowflake,
-    label: 'Cashmere'
+    label: cat8Label || 'Cashmere',
+    value: 'sweater'
   },
   {
     icon: Layers,
-    label: 'Turtlenecks'
+    label: cat9Label || 'Turtlenecks',
+    value: 'sweater'
   },
   {
     icon: Square,
-    label: 'Vests'
+    label: cat10Label || 'Vests',
+    value: 'sweater'
   }];
 
   return (
@@ -62,12 +100,13 @@ export function CategoryGrid() {
             fontFamily: 'Playfair Display, serif'
           }}>
           
-          Browse by Category
+          {title || "Browse by Category"}
         </h2>
 
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           {categories.map((category) =>
-          <button
+          <Link
+            href={`/products?category=${category.value}`}
             key={category.label}
             className="bg-white border border-gray-200 rounded-xl p-2 pr-4 flex items-center gap-3 hover:shadow-md hover:border-[#8B5A3C] transition-all group">
             
@@ -77,7 +116,7 @@ export function CategoryGrid() {
               <span className="font-medium text-sm text-[#3D2817] text-left leading-tight">
                 {category.label}
               </span>
-            </button>
+            </Link>
           )}
         </div>
       </div>

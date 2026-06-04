@@ -1,35 +1,61 @@
 import React from 'react';
 import { ChevronRight, Sparkles, User, Shield, Ruler } from 'lucide-react';
-export function PromoCards() {
+interface PromoCardsProps {
+  card1Title?: string;
+  card1Subtitle?: string;
+  card1Link?: string;
+  card1Badge?: string;
+  card1Bg?: string;
+  card2Title?: string;
+  card2Subtitle?: string;
+  card2Link?: string;
+  card2Badge?: string;
+  card2Bg?: string;
+  card3Title?: string;
+  card3Subtitle?: string;
+  card3Link?: string;
+  card3Badge?: string;
+  card3Bg?: string;
+  card4Title?: string;
+  card4Subtitle?: string;
+  card4Link?: string;
+  card4Badge?: string;
+  card4Bg?: string;
+}
+
+export function PromoCards(props: PromoCardsProps) {
   const promos = [
   {
     icon: Sparkles,
-    title: 'Get 20%* off on Jewelry',
-    subtitle: 'SHOP NOW',
-    bg: 'bg-[#E8F0E5]',
-    textColor: 'text-[#8B5A3C]'
+    title: props.card1Title || 'Get 20%* off on Jewelry',
+    subtitle: props.card1Subtitle || 'SHOP NOW',
+    bg: props.card1Bg || 'bg-[#E8F0E5]',
+    textColor: 'text-[#8B5A3C]',
+    badge: props.card1Badge
   },
   {
     icon: User,
-    title: 'Personal Stylist',
-    subtitle: 'BOOK NOW',
-    bg: 'bg-[#EDE7F3]',
-    textColor: 'text-[#8B5A3C]'
+    title: props.card2Title || 'Personal Stylist',
+    subtitle: props.card2Subtitle || 'BOOK NOW',
+    bg: props.card2Bg || 'bg-[#EDE7F3]',
+    textColor: 'text-[#8B5A3C]',
+    badge: props.card2Badge
   },
   {
     icon: Shield,
-    title: 'Care Plan',
-    subtitle: 'EXPLORE PLANS',
-    bg: 'bg-[#FCEFE3]',
+    title: props.card3Title || 'Care Plan',
+    subtitle: props.card3Subtitle || 'EXPLORE PLANS',
+    bg: props.card3Bg || 'bg-[#FCEFE3]',
     textColor: 'text-[#8B5A3C]',
-    badge: 'New'
+    badge: props.card3Badge || 'New'
   },
   {
     icon: Ruler,
-    title: 'Free Sizing',
-    subtitle: 'AT HOME',
-    bg: 'bg-[#F8E6E6]',
-    textColor: 'text-[#8B5A3C]'
+    title: props.card4Title || 'Free Sizing',
+    subtitle: props.card4Subtitle || 'AT HOME',
+    bg: props.card4Bg || 'bg-[#F8E6E6]',
+    textColor: 'text-[#8B5A3C]',
+    badge: props.card4Badge
   }];
 
   return (

@@ -1,5 +1,13 @@
 import React from 'react';
-export function PromoBanner() {
+
+interface PromoBannerProps {
+  title?: string;
+  description?: string;
+  ctaLabel?: string;
+  ctaLink?: string;
+}
+
+export function PromoBanner({ title, description, ctaLabel, ctaLink }: PromoBannerProps) {
   return (
     <div className="w-full py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -11,13 +19,13 @@ export function PromoBanner() {
                 fontFamily: 'Playfair Display, serif'
               }}>
               
-              Save Up to 25% on Premium Collections
+              {title || "Save Up to 25% on Premium Collections"}
             </h2>
             <p className="text-sm md:text-base mb-5 opacity-90 max-w-2xl mx-auto">
-              Exclusive offers on handcrafted jewelry and luxury knitwear
+              {description || "Exclusive offers on handcrafted jewelry and luxury knitwear"}
             </p>
             <button className="bg-[#8B5A3C] text-white px-8 py-2.5 rounded-lg font-bold hover:bg-[#6F4630] transition-colors">
-              Shop Now
+              {ctaLabel || "Shop Now"}
             </button>
           </div>
 

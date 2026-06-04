@@ -446,14 +446,36 @@ export default function AdminSidebar() {
   return (
     <div className="main-nav">
       {/* Logo Box */}
-      <div className="logo-box">
+      <div className="logo-box" style={{ paddingTop: '20px', paddingBottom: '10px', height: 'auto', display: 'flex', alignItems: 'center' }}>
         <a href="/admin" className="logo-dark">
-          <img src="https://techzaa.in/larkon/admin/assets/images/logo-sm.png" className="logo-sm" alt="logo sm" />
-          <img src="https://techzaa.in/larkon/admin/assets/images/logo-dark.png" className="logo-lg" alt="logo dark" />
+          <span className="logo-sm">
+            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <iconify-icon icon="solar:cart-large-4-bold-duotone" style={{ fontSize: '28px', color: '#ff6c2f' }} />
+            </span>
+          </span>
+          <span className="logo-lg">
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <iconify-icon icon="solar:cart-large-4-bold-duotone" style={{ fontSize: '28px', color: '#ff6c2f' }} />
+              <span className="font-bold text-xl tracking-wide" style={{ fontFamily: 'Outfit, sans-serif', textTransform: 'none', color: '#3d2817' }}>
+                Waveron
+              </span>
+            </span>
+          </span>
         </a>
         <a href="/admin" className="logo-light">
-          <img src="https://techzaa.in/larkon/admin/assets/images/logo-sm.png" className="logo-sm" alt="logo sm" />
-          <img src="https://techzaa.in/larkon/admin/assets/images/logo-light.png" className="logo-lg" alt="logo light" />
+          <span className="logo-sm">
+            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <iconify-icon icon="solar:cart-large-4-bold-duotone" style={{ fontSize: '28px', color: '#ff6c2f' }} />
+            </span>
+          </span>
+          <span className="logo-lg">
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <iconify-icon icon="solar:cart-large-4-bold-duotone" style={{ fontSize: '28px', color: '#ff6c2f' }} />
+              <span className="font-bold text-xl tracking-wide" style={{ fontFamily: 'Outfit, sans-serif', textTransform: 'none', color: '#ffffff' }}>
+                Waveron
+              </span>
+            </span>
+          </span>
         </a>
       </div>
 

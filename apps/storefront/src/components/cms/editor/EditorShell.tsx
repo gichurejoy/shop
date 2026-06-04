@@ -21,7 +21,7 @@ export function EditorShell({
   onSaveDraft: (sections: any[]) => Promise<void>;
   onPublish: () => Promise<void>;
 }) {
-  const { sections, isDirty, activeId, setActive, markSaved } = useCms();
+  const { sections, isDirty, activeId, setActive, markSaved, updateSection, setSections, removeSection } = useCms();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [viewport, setViewport] = useState<Viewport>('desktop');
   const [iframeReady, setIframeReady] = useState(false);
@@ -58,10 +58,19 @@ export function EditorShell({
       if (e.data?.type === 'SECTION_CLICKED') {
         setActive(e.data.id);
       }
+      if (e.data?.type === 'SECTION_UPDATED') {
+        updateSection(e.data.id, e.data.patch);
+      }
+      if (e.data?.type === 'SECTIONS_REORDERED') {
+        setSections(e.data.sections);
+      }
+      if (e.data?.type === 'SECTION_DELETED') {
+        removeSection(e.data.id);
+      }
     };
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, [sections, setActive]);
+  }, [sections, setActive, updateSection, setSections, removeSection]);
 
   // Keyboard shortcuts
   useEffect(() => {
