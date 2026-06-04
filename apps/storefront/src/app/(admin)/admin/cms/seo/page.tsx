@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { getCmsSeoSettings, saveCmsSeoSettings } from '../../../../actions';
-import { CmsSeoSettings } from '../../../../lib/cms';
+import type { CmsSeoSettings } from '../../../../../lib/cms';
 
 export default function AdvancedSEO() {
   const [seo, setSeo] = useState<CmsSeoSettings>({

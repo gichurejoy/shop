@@ -264,3 +264,4 @@ export function CareGuide() {
     </div>);
 
 }
+export default CareGuide;

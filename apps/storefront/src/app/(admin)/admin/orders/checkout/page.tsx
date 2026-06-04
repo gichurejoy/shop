@@ -5,9 +5,6 @@ import Link from 'next/link';
 export default function OrderCheckoutPage() {
   return (
     <>
-      <div className="page-content">
-{/* Start Container */}
-<div className="container-xxl">
 <div className="row">
 <div className="col-lg-8">
 <div className="card">
@@ -606,8 +603,6 @@ export default function OrderCheckoutPage() {
 </div>
 <div className="ms-auto">
 <a className="text-primary fs-30" data-bs-placement="bottom" data-bs-title="Download Invoice" data-bs-toggle="tooltip" href="#!"><iconify-icon className="align-middle" icon="solar:download-square-bold"></iconify-icon></a>
-</div>
-</div>
 </div>
 </div>
 </div>

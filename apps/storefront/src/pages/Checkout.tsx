@@ -909,3 +909,4 @@ export function Checkout() {
     </div>);
 
 }
+export default Checkout;

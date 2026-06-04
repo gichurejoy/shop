@@ -7,7 +7,7 @@ import { CategoryStrip } from './CategoryStrip';
 import { Footer } from './Footer';
 import { CartDrawer } from './CartDrawer';
 
-import { CmsMenuNode } from '../lib/cms';
+import type { CmsMenuNode } from '../lib/cms';
 
 import { StorefrontProvider } from '../context/StorefrontContext';
 import { AddressDrawer } from './AddressDrawer';

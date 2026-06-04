@@ -335,3 +335,4 @@ export function GiftCards() {
     </div>);
 
 }
+export default GiftCards;

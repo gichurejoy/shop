@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getCmsPosts, saveCmsPost, deleteCmsPost, CmsPost } from '../../../../actions';
+import { getCmsPosts, saveCmsPost, deleteCmsPost } from '../../../../actions';
+import type { CmsPost } from '../../../../../lib/cms';
 import { TipTapEditor } from '../../../../../components/cms/TipTapEditor';
 
 export default function BlogManagement() {

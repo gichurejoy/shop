@@ -446,3 +446,4 @@ export function OrderTracking() {
     </div>);
 
 }
+export default OrderTracking;

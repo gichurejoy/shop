@@ -6,8 +6,27 @@ import dynamic from 'next/dynamic';
 
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getCmsPages } from '../../actions';
+
+const getCountryName = (id: string): string => {
+  if (!id) return '';
+  const mapping: Record<string, string> = {
+    usa: 'United States',
+    drc: 'Democratic Republic of the Congo',
+    car: 'Central African Republic',
+    uae: 'United Arab Emirates',
+    uk: 'United Kingdom',
+    britain: 'United Kingdom',
+  };
+  if (mapping[id.toLowerCase()]) {
+    return mapping[id.toLowerCase()];
+  }
+  // Title case the ID
+  return id
+    .replace(/[-_]+/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
 
 export default function AdminDashboard() {
   const [mounted, setMounted] = useState(false);
@@ -24,16 +43,19 @@ export default function AdminDashboard() {
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
   const [zoom, setZoom] = useState({ scale: 1, originX: 50, originY: 50 });
+  const [svgContent, setSvgContent] = useState<string>('');
+  const [activeCountryCoords, setActiveCountryCoords] = useState<{ top: string; left?: string; right?: string } | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
 
   // Top storefront pages state
   const [topPages, setTopPages] = useState<Array<{ path: string; title: string; views: number; exitRate: string; isSuccess: boolean | 'warning' }>>([]);
 
   const countries = [
-    { name: 'Canada', top: '35%', left: '20%' },
-    { name: 'United States', top: '45%', left: '25%' },
-    { name: 'Brazil', top: '65%', left: '33%' },
-    { name: 'Russia', top: '30%', right: '25%' },
-    { name: 'China', top: '45%', right: '25%' },
+    { name: 'Canada', top: '29%', left: '27%' },
+    { name: 'United States', top: '37%', left: '32%'},
+    { name: 'Brazil', top: '60%', left: '40%' },
+    { name: 'Russia', top: '20%', left: '72%' },
+    { name: 'China', top: '32%', left: '76%' },
   ] as const;
 
   // Performance range mock data
@@ -116,6 +138,49 @@ export default function AdminDashboard() {
     China: { sessions: '4.9k', bounceRate: '35.4%', trend: '+6.1%', isUp: true, thisWeek: '4.9k', lastWeek: '4.5k' },
   };
 
+  const getCountryStats = (name: string) => {
+    if (countryData[name as keyof typeof countryData]) {
+      return countryData[name as keyof typeof countryData];
+    }
+    
+    // Generate stable mock data based on name
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const sessionsVal = Math.abs(hash % 40) + 5; // e.g. 0.5k to 4.5k
+    const sessions = `${(sessionsVal / 10).toFixed(1)}k`;
+    const lastWeekVal = Math.max(sessionsVal + (hash % 6), 3);
+    const lastWeek = `${(lastWeekVal / 10).toFixed(1)}k`;
+    const bounceVal = 30 + Math.abs(hash % 30);
+    const bounceRate = `${bounceVal.toFixed(1)}%`;
+    const trendPercent = (hash % 15);
+    const trend = `${trendPercent >= 0 ? '+' : ''}${trendPercent}%`;
+    const isUp = trendPercent >= 0;
+
+    return {
+      sessions,
+      bounceRate,
+      trend,
+      isUp,
+      thisWeek: sessions,
+      lastWeek
+    };
+  };
+
+  const handleMapClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as SVGElement;
+    if (target && target.tagName === 'path') {
+      const id = target.getAttribute('id');
+      if (id) {
+        const countryName = getCountryName(id);
+        if (countryName) {
+          setSelectedCountry(selectedCountry === countryName ? null : countryName);
+        }
+      }
+    }
+  };
+
   const currentConversion = conversionData[conversionGroup];
   const currentPerfData = performanceData[performanceRange];
 
@@ -185,19 +250,88 @@ export default function AdminDashboard() {
     loadPages();
   }, []);
 
-  // Sync selected country click with zoom focus centering
+  // Fetch and parse world-map.svg inline so we can interact with country paths
   useEffect(() => {
+    fetch('/assets/images/world-map.svg')
+      .then(res => res.text())
+      .then(text => {
+        let adjusted = text.replace(/<svg[^>]*>/, () => {
+          return '<svg id="svg2" version="1.2" viewBox="0 0 950 620" class="w-100 h-100" style="display: block;">';
+        });
+        
+        const styles = `
+          <style>
+            #svg2 path {
+              fill: #cbd5e1;
+              stroke: #ffffff;
+              stroke-width: 0.8;
+              transition: all 0.25s ease;
+              cursor: pointer;
+            }
+            #svg2 path:hover {
+              fill: #94a3b8;
+            }
+            #svg2 .selected-country {
+              fill: #ff6c2f !important;
+            }
+          </style>
+        `;
+        adjusted = adjusted.replace('</defs>', `</defs>${styles}`);
+        setSvgContent(adjusted);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Update country selection style classes and dynamic centering zoom coordinates
+  useEffect(() => {
+    if (!svgContent) return;
+    
+    const paths = document.querySelectorAll('#svg2 path');
+    paths.forEach(p => {
+      p.classList.remove('selected-country');
+    });
+
     if (selectedCountry) {
-      const match = countries.find(c => c.name === selectedCountry);
+      const match = Array.from(paths).find(p => {
+        const id = p.getAttribute('id');
+        return id && getCountryName(id).toLowerCase() === selectedCountry.toLowerCase();
+      });
       if (match) {
-        const x = 'left' in match ? parseFloat(match.left) : (100 - parseFloat(match.right));
-        const y = parseFloat(match.top);
+        match.classList.add('selected-country');
+        
+        try {
+          const rect = (match as any).getBBox();
+          if (rect) {
+            const x = ((rect.x + rect.width / 2) / 950) * 100;
+            const y = ((rect.y + rect.height / 2) / 620) * 100;
+            
+            setActiveCountryCoords({
+              top: `${y}%`,
+              left: `${x}%`
+            });
+            setZoom({ scale: 2.2, originX: x, originY: y });
+            return;
+          }
+        } catch (e) {
+          // BBox fallback
+        }
+      }
+      
+      // Coordinate fallback for static pins
+      const predefined = countries.find(c => c.name.toLowerCase() === selectedCountry.toLowerCase());
+      if (predefined) {
+        setActiveCountryCoords(predefined);
+        const x = parseFloat(predefined.left);
+        const y = parseFloat(predefined.top);
         setZoom({ scale: 2.2, originX: x, originY: y });
+      } else {
+        setActiveCountryCoords(null);
       }
     } else {
+      setActiveCountryCoords(null);
       setZoom({ scale: 1, originX: 50, originY: 50 });
     }
-  }, [selectedCountry]);
+  }, [selectedCountry, svgContent]);
 
   const filledLen = maxLen * (animatedPercent / 100);
 
@@ -343,12 +477,14 @@ export default function AdminDashboard() {
 
             <div className="mt-4" style={{ height: '320px', width: '100%' }}>
               {mounted && <ReactApexChart 
+                key={performanceRange}
                 options={{
                   chart: {
                     type: 'line',
                     toolbar: { show: false },
                     fontFamily: 'inherit',
                     parentHeightOffset: 0,
+                    animations: { enabled: false }
                   },
                   stroke: {
                     width: [0, 3],
@@ -522,29 +658,127 @@ export default function AdminDashboard() {
                 )}
               </div>
 
-              <div className="position-relative rounded overflow-hidden" style={{ height: '316px', border: '1px solid #f1f5f9' }}>
+              <div 
+                ref={mapContainerRef}
+                onClick={handleMapClick}
+                className="position-relative rounded overflow-hidden" 
+                style={{ height: '316px', border: '1px solid #f1f5f9' }}
+              >
+                {svgContent ? (
+                  <div 
+                    className="w-100 h-100 position-relative bg-light bg-opacity-10" 
+                    style={{ 
+                      transform: `scale(${zoom.scale})`,
+                      transformOrigin: `${zoom.originX}% ${zoom.originY}%`,
+                      transition: 'transform 0.45s cubic-bezier(0.25, 0.8, 0.25, 1), transform-origin 0.45s cubic-bezier(0.25, 0.8, 0.25, 1)'
+                    }}
+                    dangerouslySetInnerHTML={{ __html: svgContent }}
+                  />
+                ) : (
+                  <div 
+                    className="w-100 h-100 position-relative bg-light bg-opacity-10" 
+                    style={{ 
+                      backgroundImage: 'url("/assets/images/world-map.svg")', 
+                      backgroundSize: 'contain', 
+                      backgroundRepeat: 'no-repeat', 
+                      backgroundPosition: 'center', 
+                      opacity: 0.9,
+                      transform: `scale(${zoom.scale})`,
+                      transformOrigin: `${zoom.originX}% ${zoom.originY}%`,
+                      transition: 'transform 0.45s cubic-bezier(0.25, 0.8, 0.25, 1), transform-origin 0.45s cubic-bezier(0.25, 0.8, 0.25, 1)'
+                    }}
+                  />
+                )}
+
+                {/* Overlaid components inside the zoomable container boundaries */}
                 <div 
-                  className="w-100 h-100 position-relative bg-light bg-opacity-10" 
-                  style={{ 
-                    backgroundImage: 'url("/assets/images/world-map.svg")', 
-                    backgroundSize: 'contain', 
-                    backgroundRepeat: 'no-repeat', 
-                    backgroundPosition: 'center', 
-                    opacity: 0.9,
+                  className="position-absolute top-0 start-0 w-100 h-100"
+                  style={{
                     transform: `scale(${zoom.scale})`,
                     transformOrigin: `${zoom.originX}% ${zoom.originY}%`,
-                    transition: 'transform 0.45s cubic-bezier(0.25, 0.8, 0.25, 1), transform-origin 0.45s cubic-bezier(0.25, 0.8, 0.25, 1)'
+                    transition: 'transform 0.45s cubic-bezier(0.25, 0.8, 0.25, 1), transform-origin 0.45s cubic-bezier(0.25, 0.8, 0.25, 1)',
+                    pointerEvents: 'none'
                   }}
                 >
+                  {/* Dynamic selection tooltip overlay */}
+                  {selectedCountry && activeCountryCoords && (
+                    (() => {
+                      const data = getCountryStats(selectedCountry);
+                      const topPercent = parseFloat(activeCountryCoords.top);
+
+                      return (
+                        <div 
+                          className="position-absolute" 
+                          style={{ 
+                            top: activeCountryCoords.top, 
+                            left: 'left' in activeCountryCoords ? activeCountryCoords.left : undefined, 
+                            right: 'right' in activeCountryCoords ? activeCountryCoords.right : undefined,
+                            zIndex: 1000,
+                            transform: `translate(-50%, -50%) scale(${1 / zoom.scale})`,
+                            transformOrigin: 'center center',
+                            pointerEvents: 'auto'
+                          }}
+                        >
+                          <div 
+                            className="position-absolute shadow-lg rounded p-2 text-start" 
+                            style={{
+                              top: topPercent < 45 ? '100%' : undefined,
+                              bottom: topPercent >= 45 ? '100%' : undefined,
+                              left: '50%',
+                              transform: `translateX(-50%) ${topPercent < 45 ? 'translateY(12px)' : 'translateY(-12px)'}`,
+                              transformOrigin: topPercent < 45 ? 'top center' : 'bottom center',
+                              backgroundColor: '#0f172a',
+                              color: '#fff',
+                              fontSize: '10px',
+                              width: '130px',
+                              pointerEvents: 'none',
+                              border: '1.5px solid #ff6c2f',
+                              boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)'
+                            }}
+                          >
+                            <div className="fw-bold border-bottom border-secondary pb-1 mb-1" style={{ fontSize: '11px' }}>{selectedCountry}</div>
+                            <div className="d-flex justify-content-between mb-1">
+                              <span className="text-secondary">Sessions:</span>
+                              <span className="fw-semibold">{data.sessions}</span>
+                            </div>
+                            <div className="d-flex justify-content-between mb-1">
+                              <span className="text-secondary">Bounce:</span>
+                              <span className="fw-semibold">{data.bounceRate}</span>
+                            </div>
+                            <div className="d-flex justify-content-between">
+                              <span className="text-secondary">Trend:</span>
+                              <span className={data.isUp ? 'text-success fw-bold' : 'text-danger fw-bold'}>
+                                {data.trend}
+                              </span>
+                            </div>
+                            <div style={{
+                              position: 'absolute',
+                              top: topPercent < 45 ? 'auto' : '100%',
+                              bottom: topPercent < 45 ? '100%' : 'auto',
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              width: 0,
+                              height: 0,
+                              borderLeft: '5px solid transparent',
+                              borderRight: '5px solid transparent',
+                              borderTop: topPercent < 45 ? 'none' : '5px solid #0f172a',
+                              borderBottom: topPercent < 45 ? '5px solid #0f172a' : 'none'
+                            }} />
+                          </div>
+                        </div>
+                      );
+                    })()
+                  )}
+
+                  {/* Standard Country Pulse Beacon Pins */}
                   {countries.map((c) => {
                     const isSelected = selectedCountry === c.name;
-                    const isHovered = hoveredCountry === c.name;
-                    const data = countryData[c.name];
-                    const pinColor = isSelected ? '#ff6c2f' : '#64748b';
-                    const pulseClass = isSelected ? 'pulse-orange' : 'pulse-gray';
+                    if (isSelected) return null; // Avoid duplicate tooltip rendering
 
-                    // Counter-scale so pins remain relative and don't block visibility when scaled up
-                    const counterScale = zoom.scale > 1.5 ? 0.7 : 1;
+                    const isHovered = hoveredCountry === c.name;
+                    const data = getCountryStats(c.name);
+                    const pinColor = '#64748b';
+                    const pulseClass = 'pulse-gray';
 
                     return (
                       <div 
@@ -552,20 +786,22 @@ export default function AdminDashboard() {
                         className="position-absolute" 
                         style={{ 
                           top: c.top, 
-                          left: 'left' in c ? c.left : undefined, 
-                          right: 'right' in c ? c.right : undefined,
-                          zIndex: isHovered ? 100 : (isSelected ? 50 : 10),
-                          transform: 'translate(-9px, -9px)' // center pin offset
+                          left: c.left,
+                          zIndex: isHovered ? 100 : 10,
+                          transform: `translate(-50%, -50%) scale(${1 / zoom.scale})`,
+                          transformOrigin: 'center center',
+                          pointerEvents: 'auto'
                         }}
                         onMouseEnter={() => setHoveredCountry(c.name)}
                         onMouseLeave={() => setHoveredCountry(null)}
-                        onClick={() => setSelectedCountry(selectedCountry === c.name ? null : c.name)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedCountry(selectedCountry === c.name ? null : c.name);
+                        }}
                       >
                         <div 
                           className="d-flex align-items-center gap-1 cursor-pointer" 
                           style={{ 
-                            transform: `scale(${counterScale})`,
-                            transformOrigin: 'center center',
                             transition: 'transform 0.2s ease',
                             padding: '4px'
                           }}
@@ -575,7 +811,7 @@ export default function AdminDashboard() {
                             style={{ 
                               width: '18px', 
                               height: '18px', 
-                              backgroundColor: isSelected ? 'rgba(255, 108, 47, 0.2)' : 'rgba(100, 116, 139, 0.2)',
+                              backgroundColor: 'rgba(100, 116, 139, 0.2)',
                               transition: 'all 0.2s ease'
                             }}
                           >
@@ -586,7 +822,7 @@ export default function AdminDashboard() {
                           </span>
                         </div>
 
-                        {/* Custom Map Marker Tooltip */}
+                        {/* Hover Tooltip */}
                         {isHovered && (
                           <div 
                             className="position-absolute shadow-lg rounded p-2 text-start" 
@@ -594,7 +830,7 @@ export default function AdminDashboard() {
                               top: parseFloat(c.top) < 45 ? '100%' : undefined,
                               bottom: parseFloat(c.top) >= 45 ? '100%' : undefined,
                               left: '50%',
-                              transform: `translateX(-50%) ${parseFloat(c.top) < 45 ? 'translateY(12px)' : 'translateY(-12px)'} scale(${1 / counterScale})`,
+                              transform: `translateX(-50%) ${parseFloat(c.top) < 45 ? 'translateY(12px)' : 'translateY(-12px)'}`,
                               transformOrigin: parseFloat(c.top) < 45 ? 'top center' : 'bottom center',
                               backgroundColor: '#0f172a',
                               color: '#fff',
@@ -693,13 +929,23 @@ export default function AdminDashboard() {
               <div className="row text-center mt-3">
                 <div className="col-6">
                   <p className="text-muted mb-2">This Week {selectedCountry && `(${selectedCountry})`}</p>
-                  <h3 className="text-dark mb-3">{selectedCountry ? countryData[selectedCountry].thisWeek : '23.5k'}</h3>
+                  <h3 className="text-dark mb-3">{selectedCountry ? getCountryStats(selectedCountry).thisWeek : '23.5k'}</h3>
                 </div>
                 <div className="col-6">
                   <p className="text-muted mb-2">Last Week {selectedCountry && `(${selectedCountry})`}</p>
-                  <h3 className="text-dark mb-3">{selectedCountry ? countryData[selectedCountry].lastWeek : '41.05k'}</h3>
+                  <h3 className="text-dark mb-3">{selectedCountry ? getCountryStats(selectedCountry).lastWeek : '41.05k'}</h3>
                 </div>
               </div>
+
+              {selectedCountry && (() => {
+                const stats = getCountryStats(selectedCountry);
+                return (
+                  <div className="mt-1 p-2 bg-light bg-opacity-75 rounded text-center border border-dashed border-secondary border-opacity-25" style={{ transition: 'all 0.3s ease' }}>
+                    <span className="text-muted fs-11 me-3">Bounce Rate: <strong className="text-dark">{stats.bounceRate}</strong></span>
+                    <span className="text-muted fs-11">Trend: <strong className={stats.isUp ? 'text-success' : 'text-danger'}>{stats.trend}</strong></span>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>

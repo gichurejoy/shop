@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getCmsPages, saveCmsPage, deleteCmsPage, CmsPage } from '../../../../actions';
+import { getCmsPages, saveCmsPage, deleteCmsPage } from '../../../../actions';
+import type { CmsPage } from '../../../../../lib/cms';
 import { TipTapEditor } from '../../../../../components/cms/TipTapEditor';
 import Link from 'next/link';
 

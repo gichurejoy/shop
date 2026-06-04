@@ -210,3 +210,4 @@ export function Lookbook() {
     </div>);
 
 }
+export default Lookbook;

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { getCmsNavigation, saveCmsNavigation } from '../../../../actions';
-import { CmsMenuNode } from '../../../../lib/cms';
+import type { CmsMenuNode } from '../../../../../lib/cms';
 
 export default function NavigationBuilder() {
   const [menu, setMenu] = useState<CmsMenuNode[]>([]);

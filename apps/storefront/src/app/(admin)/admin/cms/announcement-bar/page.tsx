@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getCmsAnnouncementBar, saveCmsAnnouncementBar } from '../../../../../actions';
-import { CmsAnnouncementBar } from '../../../../../lib/cms';
+import { getCmsAnnouncementBar, saveCmsAnnouncementBar } from '../../../../actions';
+import type { CmsAnnouncementBar } from '../../../../../lib/cms';
 
 export default function AnnouncementBarManager() {
   const [bar, setBar] = useState<CmsAnnouncementBar>({

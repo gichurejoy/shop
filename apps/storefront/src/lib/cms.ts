@@ -1,8 +1,10 @@
-import fs from 'fs/promises';
-import path from 'path';
 import { CmsSection, CmsDraft } from './cms-types';
 
-const DATA_FILE = path.join(process.cwd(), 'cms-data.json');
+async function getDataFile() {
+  if (typeof window !== 'undefined') return '';
+  const path = await import('path');
+  return path.join(process.cwd(), 'cms-data.json');
+}
 
 export type CmsPage = {
   id: string;
@@ -93,19 +95,28 @@ const DEFAULT_DATA: CmsData = {
 };
 
 async function ensureFile() {
-  try { await fs.access(DATA_FILE); }
-  catch { await fs.writeFile(DATA_FILE, JSON.stringify(DEFAULT_DATA, null, 2)); }
+  if (typeof window !== 'undefined') return;
+  const fs = await import('fs/promises');
+  const dataFile = await getDataFile();
+  try { await fs.access(dataFile); }
+  catch { await fs.writeFile(dataFile, JSON.stringify(DEFAULT_DATA, null, 2)); }
 }
 
 export async function getCmsData(): Promise<CmsData> {
+  if (typeof window !== 'undefined') return DEFAULT_DATA;
+  const fs = await import('fs/promises');
+  const dataFile = await getDataFile();
   await ensureFile();
   try {
-    const raw = await fs.readFile(DATA_FILE, 'utf-8');
+    const raw = await fs.readFile(dataFile, 'utf-8');
     return { ...DEFAULT_DATA, ...JSON.parse(raw) };
   } catch { return DEFAULT_DATA; }
 }
 
 export async function saveCmsData(data: CmsData): Promise<void> {
+  if (typeof window !== 'undefined') return;
+  const fs = await import('fs/promises');
+  const dataFile = await getDataFile();
   await ensureFile();
-  await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2));
+  await fs.writeFile(dataFile, JSON.stringify(data, null, 2));
 }

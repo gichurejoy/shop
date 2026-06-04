@@ -356,3 +356,4 @@ export function Membership() {
     </div>);
 
 }
+export default Membership;

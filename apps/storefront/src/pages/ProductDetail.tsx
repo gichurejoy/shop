@@ -1233,3 +1233,4 @@ export function ProductDetail() {
     </div>
   );
 }
+export default ProductDetail;

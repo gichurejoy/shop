@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CmsMenuNode } from '../lib/cms';
+import type { CmsMenuNode } from '../lib/cms';
 
 export function MainNav({ navigation = [] }: { navigation?: CmsMenuNode[] }) {
   const pathname = usePathname();
