@@ -1,0 +1,566 @@
+{
+  "products": [
+    {
+      "id": "1",
+      "title": "Classic Gold Band Ring",
+      "slug": "classic-gold-band-ring",
+      "description": "A minimalist 18k solid gold band ring with a comfort fit, perfect for everyday wear.",
+      "short_description": "Timeless solid 18k gold band with satin finish.",
+      "type": "simple",
+      "status": "active",
+      "price": 299,
+      "compare_at_price": 399,
+      "stock_quantity": 42,
+      "sku": "RNG-GLD-01",
+      "is_visible": true,
+      "category": {
+        "id": "cat-rings",
+        "name": "Rings",
+        "slug": "rings",
+        "description": "Artisanal rings handcrafted in 18k solid gold & gemstones.",
+        "image_url": "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=500&h=500&fit=crop",
+        "sort_order": 1,
+        "created_at": "2024-01-01T00:00:00.000Z",
+        "updated_at": "2024-01-01T00:00:00.000Z"
+      },
+      "created_at": "2024-01-10T00:00:00.000Z",
+      "updated_at": "2024-01-10T00:00:00.000Z"
+    },
+    {
+      "id": "2",
+      "title": "Diamond Stud Earrings",
+      "slug": "diamond-stud-earrings",
+      "description": "Brilliant round-cut conflict-free diamonds set in a secure 4-prong platinum basket.",
+      "short_description": "Round brilliant lab diamonds in platinum prongs.",
+      "type": "simple",
+      "status": "active",
+      "price": 499,
+      "compare_at_price": 649,
+      "stock_quantity": 28,
+      "sku": "EAR-DIA-02",
+      "is_visible": true,
+      "category": {
+        "id": "cat-earrings",
+        "name": "Earrings",
+        "slug": "earrings",
+        "description": "Diamond studs, pearls, and statement drop earrings.",
+        "image_url": "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=500&h=500&fit=crop",
+        "sort_order": 3,
+        "created_at": "2024-01-01T00:00:00.000Z",
+        "updated_at": "2024-01-01T00:00:00.000Z"
+      },
+      "created_at": "2024-01-12T00:00:00.000Z",
+      "updated_at": "2024-01-12T00:00:00.000Z"
+    },
+    {
+      "id": "3",
+      "title": "Cashmere Turtleneck Sweater",
+      "slug": "cashmere-turtleneck-sweater",
+      "description": "Ultra-soft 2-ply pure Mongolian cashmere turtleneck sweater designed for effortless winter warmth.",
+      "short_description": "100% Grade-A Mongolian cashmere.",
+      "type": "variable",
+      "status": "active",
+      "price": 189,
+      "compare_at_price": 249,
+      "stock_quantity": 31,
+      "sku": "SWT-CSH-03",
+      "is_visible": true,
+      "category": {
+        "id": "cat-sweaters",
+        "name": "Knitwear & Sweaters",
+        "slug": "sweaters",
+        "description": "Luxurious 100% Mongolian cashmere and merino wool knitwear.",
+        "image_url": "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=500&h=500&fit=crop",
+        "sort_order": 4,
+        "created_at": "2024-01-01T00:00:00.000Z",
+        "updated_at": "2024-01-01T00:00:00.000Z"
+      },
+      "created_at": "2024-01-15T00:00:00.000Z",
+      "updated_at": "2024-01-15T00:00:00.000Z"
+    },
+    {
+      "id": "4",
+      "title": "Pearl Strand Necklace",
+      "slug": "pearl-strand-necklace",
+      "description": "Lustrous Freshwater cultured pearls carefully hand-knotted on pure silk cord with a 14k gold filigree clasp.",
+      "short_description": "Hand-knotted cultured freshwater pearls.",
+      "type": "simple",
+      "status": "active",
+      "price": 349,
+      "compare_at_price": 449,
+      "stock_quantity": 19,
+      "sku": "NCK-PRL-04",
+      "is_visible": true,
+      "category": {
+        "id": "cat-necklaces",
+        "name": "Necklaces",
+        "slug": "necklaces",
+        "description": "Delicate pendants and layered chains designed for timeless elegance.",
+        "image_url": "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=500&h=500&fit=crop",
+        "sort_order": 2,
+        "created_at": "2024-01-01T00:00:00.000Z",
+        "updated_at": "2024-01-01T00:00:00.000Z"
+      },
+      "created_at": "2024-01-18T00:00:00.000Z",
+      "updated_at": "2024-01-18T00:00:00.000Z"
+    },
+    {
+      "id": "5",
+      "title": "Cable Knit Cardigan",
+      "slug": "cable-knit-cardigan",
+      "description": "Chunky cable knit cardigan with genuine horn buttons, spun from heavy Australian merino wool.",
+      "short_description": "100% Merino wool with genuine horn buttons.",
+      "type": "variable",
+      "status": "active",
+      "price": 159,
+      "compare_at_price": 199,
+      "stock_quantity": 50,
+      "sku": "SWT-CBL-05",
+      "is_visible": true,
+      "category": {
+        "id": "cat-sweaters",
+        "name": "Knitwear & Sweaters",
+        "slug": "sweaters",
+        "description": "Luxurious 100% Mongolian cashmere and merino wool knitwear.",
+        "image_url": "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=500&h=500&fit=crop",
+        "sort_order": 4,
+        "created_at": "2024-01-01T00:00:00.000Z",
+        "updated_at": "2024-01-01T00:00:00.000Z"
+      },
+      "created_at": "2024-01-20T00:00:00.000Z",
+      "updated_at": "2024-01-20T00:00:00.000Z"
+    },
+    {
+      "id": "6",
+      "title": "Emerald Cut Ring",
+      "slug": "emerald-cut-ring",
+      "description": "A striking emerald-cut lab-grown Colombian emerald flanked by tapered baguette side stones in 18k yellow gold.",
+      "short_description": "Colombian emerald with baguette side stones.",
+      "type": "simple",
+      "status": "active",
+      "price": 599,
+      "compare_at_price": 799,
+      "stock_quantity": 12,
+      "sku": "RNG-EMR-06",
+      "is_visible": true,
+      "category": {
+        "id": "cat-rings",
+        "name": "Rings",
+        "slug": "rings",
+        "description": "Artisanal rings handcrafted in 18k solid gold & gemstones.",
+        "image_url": "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=500&h=500&fit=crop",
+        "sort_order": 1,
+        "created_at": "2024-01-01T00:00:00.000Z",
+        "updated_at": "2024-01-01T00:00:00.000Z"
+      },
+      "created_at": "2024-01-22T00:00:00.000Z",
+      "updated_at": "2024-01-22T00:00:00.000Z"
+    }
+  ],
+  "categories": [
+    {
+      "id": "cat-rings",
+      "name": "Rings",
+      "slug": "rings",
+      "description": "Artisanal rings handcrafted in 18k solid gold & gemstones.",
+      "image_url": "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=500&h=500&fit=crop",
+      "sort_order": 1,
+      "created_at": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "cat-necklaces",
+      "name": "Necklaces",
+      "slug": "necklaces",
+      "description": "Delicate pendants and layered chains designed for timeless elegance.",
+      "image_url": "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=500&h=500&fit=crop",
+      "sort_order": 2,
+      "created_at": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "cat-earrings",
+      "name": "Earrings",
+      "slug": "earrings",
+      "description": "Diamond studs, pearls, and statement drop earrings.",
+      "image_url": "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=500&h=500&fit=crop",
+      "sort_order": 3,
+      "created_at": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "cat-sweaters",
+      "name": "Knitwear & Sweaters",
+      "slug": "sweaters",
+      "description": "Luxurious 100% Mongolian cashmere and merino wool knitwear.",
+      "image_url": "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=500&h=500&fit=crop",
+      "sort_order": 4,
+      "created_at": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "cat-accessories",
+      "name": "Accessories",
+      "slug": "accessories",
+      "description": "Scarves, leather goods, and premium seasonal accoutrements.",
+      "image_url": "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=500&h=500&fit=crop",
+      "sort_order": 5,
+      "created_at": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "orders": [
+    {
+      "customerName": "Sarah Johnson",
+      "customerEmail": "customer@waveron.com",
+      "customerPhone": "+1 (555) 123-4567",
+      "items": [
+        {
+          "id": "3",
+          "productId": "3",
+          "name": "Cashmere Turtleneck Sweater",
+          "price": 189,
+          "quantity": 1,
+          "selectedSize": "M",
+          "image": "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=400&fit=crop"
+        }
+      ],
+      "subtotal": 189,
+      "tax": 15.120000000000001,
+      "shippingFee": 0,
+      "discount": 0,
+      "total": 204.12,
+      "status": "processing",
+      "paymentStatus": "paid",
+      "paymentMethod": "mobile",
+      "shippingMethod": "standard",
+      "shippingAddress": {
+        "id": "1",
+        "label": "Home",
+        "name": "Sarah Johnson",
+        "phone": "+1 (555) 123-4567",
+        "line1": "123 Maple Street",
+        "city": "Portland",
+        "state": "OR",
+        "zip": "97201",
+        "country": "United States"
+      },
+      "orderNotes": "",
+      "giftWrap": true,
+      "id": "LK-2024-73285",
+      "orderNumber": "LK-2024-73285",
+      "timeline": [
+        {
+          "status": "pending",
+          "title": "Order Placed",
+          "description": "Order LK-2024-73285 was confirmed.",
+          "timestamp": "2026-10-29T05:34:45.354Z"
+        },
+        {
+          "status": "processing",
+          "title": "Status changed to PROCESSING",
+          "description": "Order status updated to processing.",
+          "timestamp": "2026-10-29T05:34:46.129Z"
+        }
+      ],
+      "createdAt": "2026-10-29T05:34:45.354Z",
+      "updatedAt": "2026-10-29T05:34:46.128Z"
+    },
+    {
+      "customerName": "Sarah Johnson",
+      "customerEmail": "customer@waveron.com",
+      "customerPhone": "+1 (555) 123-4567",
+      "items": [
+        {
+          "id": "1",
+          "productId": "1",
+          "name": "Classic Gold Band Ring",
+          "price": 299,
+          "quantity": 3,
+          "selectedSize": "M",
+          "image": "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=400&fit=crop"
+        },
+        {
+          "id": "3",
+          "productId": "3",
+          "name": "Cashmere Turtleneck Sweater",
+          "price": 189,
+          "quantity": 2,
+          "selectedSize": "L",
+          "image": "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=400&h=400&fit=crop"
+        }
+      ],
+      "subtotal": 1275,
+      "tax": 102,
+      "shippingFee": 0,
+      "discount": 0,
+      "total": 1377,
+      "status": "processing",
+      "paymentStatus": "paid",
+      "paymentMethod": "card",
+      "shippingMethod": "standard",
+      "shippingAddress": {
+        "id": "1",
+        "label": "Home",
+        "name": "Sarah Johnson",
+        "phone": "+1 (555) 123-4567",
+        "line1": "123 Maple Street",
+        "city": "Portland",
+        "state": "OR",
+        "zip": "97201",
+        "country": "United States"
+      },
+      "orderNotes": "",
+      "giftWrap": false,
+      "id": "LK-2024-81748",
+      "orderNumber": "LK-2024-81748",
+      "timeline": [
+        {
+          "status": "pending",
+          "title": "Order Placed",
+          "description": "Order LK-2024-81748 was confirmed.",
+          "timestamp": "2026-10-28T14:33:19.015Z"
+        },
+        {
+          "status": "processing",
+          "title": "Status changed to PROCESSING",
+          "description": "Order status updated to processing.",
+          "timestamp": "2026-10-28T14:33:22.913Z"
+        }
+      ],
+      "createdAt": "2026-10-28T14:33:19.015Z",
+      "updatedAt": "2026-10-28T14:33:22.913Z"
+    },
+    {
+      "id": "LK-2024-58291",
+      "orderNumber": "LK-2024-58291",
+      "customerId": "usr-cust-1",
+      "customerName": "Sarah Johnson",
+      "customerEmail": "customer@waveron.com",
+      "customerPhone": "+1 (555) 123-4567",
+      "items": [
+        {
+          "id": "item-1",
+          "productId": "1",
+          "name": "Classic Gold Band Ring",
+          "price": 299,
+          "quantity": 1,
+          "selectedSize": "M",
+          "image": "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=400&fit=crop"
+        }
+      ],
+      "subtotal": 299,
+      "tax": 23.92,
+      "shippingFee": 0,
+      "discount": 0,
+      "total": 322.92,
+      "status": "delivered",
+      "paymentStatus": "paid",
+      "paymentMethod": "card",
+      "shippingMethod": "standard",
+      "shippingAddress": {
+        "name": "Sarah Johnson",
+        "phone": "+1 (555) 123-4567",
+        "line1": "123 Maple Street",
+        "city": "Portland",
+        "state": "OR",
+        "zip": "97201",
+        "country": "United States"
+      },
+      "trackingNumber": "TRK-983271-US",
+      "timeline": [
+        {
+          "status": "pending",
+          "title": "Order Placed",
+          "description": "Order was placed successfully.",
+          "timestamp": "2024-04-20T10:00:00.000Z"
+        },
+        {
+          "status": "processing",
+          "title": "Payment Confirmed",
+          "description": "Credit card payment verified.",
+          "timestamp": "2024-04-20T10:05:00.000Z"
+        },
+        {
+          "status": "shipped",
+          "title": "Package Dispatched",
+          "description": "Carrier picked up parcel from warehouse.",
+          "timestamp": "2024-04-21T09:30:00.000Z"
+        },
+        {
+          "status": "delivered",
+          "title": "Delivered",
+          "description": "Delivered to recipient address.",
+          "timestamp": "2024-04-24T14:15:00.000Z"
+        }
+      ],
+      "createdAt": "2024-04-20T10:00:00.000Z",
+      "updatedAt": "2024-04-24T14:15:00.000Z"
+    },
+    {
+      "id": "LK-2024-69214",
+      "orderNumber": "LK-2024-69214",
+      "customerName": "Judith H. Fritsche",
+      "customerEmail": "judith@example.com",
+      "customerPhone": "+1 (555) 987-6543",
+      "items": [
+        {
+          "id": "item-2",
+          "productId": "3",
+          "name": "Cashmere Turtleneck Sweater",
+          "price": 189,
+          "quantity": 1,
+          "selectedSize": "L",
+          "image": "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=400&h=400&fit=crop"
+        }
+      ],
+      "subtotal": 189,
+      "tax": 15.12,
+      "shippingFee": 0,
+      "discount": 0,
+      "total": 204.12,
+      "status": "processing",
+      "paymentStatus": "paid",
+      "paymentMethod": "mpesa",
+      "shippingMethod": "express",
+      "shippingAddress": {
+        "name": "Judith H. Fritsche",
+        "phone": "+1 (555) 987-6543",
+        "line1": "456 Oak Avenue",
+        "city": "Portland",
+        "state": "OR",
+        "zip": "97204",
+        "country": "United States"
+      },
+      "trackingNumber": "TRK-551029-US",
+      "timeline": [
+        {
+          "status": "pending",
+          "title": "Order Placed",
+          "description": "Order was placed successfully.",
+          "timestamp": "2024-04-25T11:00:00.000Z"
+        },
+        {
+          "status": "processing",
+          "title": "Payment Confirmed",
+          "description": "M-Pesa STK push confirmed.",
+          "timestamp": "2024-04-25T11:02:00.000Z"
+        }
+      ],
+      "createdAt": "2024-04-25T11:00:00.000Z",
+      "updatedAt": "2024-04-25T11:02:00.000Z"
+    }
+  ],
+  "customers": [
+    {
+      "id": "usr-cust-1",
+      "name": "Sarah Johnson",
+      "email": "customer@waveron.com",
+      "phone": "+1 (555) 123-4567",
+      "addresses": [
+        {
+          "name": "Sarah Johnson",
+          "phone": "+1 (555) 123-4567",
+          "line1": "123 Maple Street",
+          "city": "Portland",
+          "state": "OR",
+          "zip": "97201",
+          "country": "United States"
+        }
+      ],
+      "totalOrders": 1,
+      "totalSpent": 322.92,
+      "createdAt": "2024-01-05T00:00:00.000Z",
+      "updatedAt": "2024-04-24T00:00:00.000Z"
+    }
+  ],
+  "coupons": [
+    {
+      "id": "coup-1",
+      "code": "WELCOME10",
+      "discountType": "percentage",
+      "discountValue": 10,
+      "minOrderAmount": 50,
+      "expiresAt": "2027-12-31T23:59:59.000Z",
+      "isActive": true,
+      "usageCount": 14
+    },
+    {
+      "id": "coup-2",
+      "code": "SAVE20",
+      "discountType": "percentage",
+      "discountValue": 20,
+      "minOrderAmount": 100,
+      "expiresAt": "2027-12-31T23:59:59.000Z",
+      "isActive": true,
+      "usageCount": 29
+    },
+    {
+      "id": "coup-3",
+      "code": "GOLD25",
+      "discountType": "fixed",
+      "discountValue": 25,
+      "minOrderAmount": 150,
+      "expiresAt": "2027-12-31T23:59:59.000Z",
+      "isActive": true,
+      "usageCount": 8
+    }
+  ],
+  "users": [
+    {
+      "id": "usr-admin-1",
+      "name": "Waveron Admin",
+      "email": "admin@waveron.com",
+      "role": "admin",
+      "avatar": "https://techzaa.in/larkon/admin/assets/images/users/avatar-1.jpg",
+      "passwordHash": "admin123",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "usr-cust-1",
+      "name": "Sarah Johnson",
+      "email": "customer@waveron.com",
+      "role": "customer",
+      "phone": "+1 (555) 123-4567",
+      "avatar": "https://techzaa.in/larkon/admin/assets/images/users/avatar-2.jpg",
+      "passwordHash": "customer123",
+      "createdAt": "2024-01-05T00:00:00.000Z"
+    }
+  ],
+  "transactions": [
+    {
+      "orderId": "LK-2024-73285",
+      "amount": 209.12,
+      "currency": "KES",
+      "method": "mpesa",
+      "status": "paid",
+      "reference": "ws_CO_1793252086124_8441",
+      "phoneNumber": "1(555)123-4567",
+      "receiptNumber": "QL19912020",
+      "metadata": {
+        "merchantRequestId": "MR_1793252086124",
+        "checkoutRequestId": "ws_CO_1793252086124_8441"
+      },
+      "id": "tx-1793252086125",
+      "createdAt": "2026-10-29T05:34:46.125Z",
+      "updatedAt": "2026-10-29T05:34:46.125Z"
+    },
+    {
+      "orderId": "LK-2024-81748",
+      "amount": 1377,
+      "currency": "USD",
+      "method": "card",
+      "status": "paid",
+      "reference": "ch_1793198002895_6321",
+      "receiptNumber": "AUTH_647103",
+      "metadata": {
+        "cardLast4": "4242",
+        "cardHolder": "Sarah Johnson",
+        "authCode": "AUTH_647103"
+      },
+      "id": "tx-1793198002898",
+      "createdAt": "2026-10-28T14:33:22.898Z",
+      "updatedAt": "2026-10-28T14:33:22.898Z"
+    }
+  ]
+}
