@@ -6,20 +6,12 @@ import { apiClient } from '@/lib/api-client';
 import { IOrder } from '@/types/order';
 import { IProduct } from '@/types/product';
 
-export default function InventoryReceivedOrders() {
+export default function ReceivedOrders() {
   const [orders, setOrders] = useState<IOrder[]>([]);
   const [products, setProducts] = useState<IProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-
-  // Intake modal state
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedProductId, setSelectedProductId] = useState('');
-  const [receiveQty, setReceiveQty] = useState('10');
-  const [shipmentNotes, setShipmentNotes] = useState('Supplier Delivery Batch PO-2024');
-  const [submittingIntake, setSubmittingIntake] = useState(false);
-  const [intakeSuccess, setIntakeSuccess] = useState<string | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -30,9 +22,6 @@ export default function InventoryReceivedOrders() {
       ]);
       setOrders(orderRes.orders || []);
       setProducts(prodRes.products || []);
-      if (prodRes.products?.length > 0 && !selectedProductId) {
-        setSelectedProductId(prodRes.products[0].id);
-      }
     } catch (err) {
       console.error('Failed to load inventory data:', err);
     } finally {
@@ -43,33 +32,6 @@ export default function InventoryReceivedOrders() {
   useEffect(() => {
     loadData();
   }, []);
-
-  const handleReceiveStock = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedProductId || !receiveQty || Number(receiveQty) <= 0) return;
-    setSubmittingIntake(true);
-    setIntakeSuccess(null);
-
-    try {
-      await apiClient.inventory.receive({
-        productId: selectedProductId,
-        quantity: Number(receiveQty),
-        notes: shipmentNotes,
-      });
-      setIntakeSuccess(`Successfully received ${receiveQty} units into inventory!`);
-      // Refresh products
-      const prodRes = await apiClient.products.list({ limit: 100 });
-      setProducts(prodRes.products || []);
-      setTimeout(() => {
-        setIsModalOpen(false);
-        setIntakeSuccess(null);
-      }, 1500);
-    } catch (err) {
-      alert('Failed to process shipment intake');
-    } finally {
-      setSubmittingIntake(false);
-    }
-  };
 
   const filteredOrders = orders.filter((o) => {
     const matchesSearch =
@@ -88,7 +50,7 @@ export default function InventoryReceivedOrders() {
     <>
       <div className="row g-3 mb-4">
         <div className="col-md-6 col-xl-3">
-          <div className="card">
+          <div className="card shadow-sm border-0">
             <div className="card-body d-flex align-items-center gap-3 py-3">
               <div className="avatar-md bg-warning bg-opacity-10 rounded d-flex align-items-center justify-content-center" style={{ minWidth: '52px', height: '52px' }}>
                 <iconify-icon icon="solar:clipboard-remove-broken" className="fs-28 text-warning"></iconify-icon>
@@ -102,42 +64,42 @@ export default function InventoryReceivedOrders() {
         </div>
 
         <div className="col-md-6 col-xl-3">
-          <div className="card">
+          <div className="card shadow-sm border-0">
             <div className="card-body d-flex align-items-center gap-3 py-3">
               <div className="avatar-md bg-danger bg-opacity-10 rounded d-flex align-items-center justify-content-center" style={{ minWidth: '52px', height: '52px' }}>
                 <iconify-icon icon="solar:clock-circle-broken" className="fs-28 text-danger"></iconify-icon>
               </div>
               <div>
-                <p className="text-muted mb-0 fs-13">Pending Payment</p>
-                <h4 className="fw-bold mb-0">{pendingPaymentCount}</h4>
+                <p className="text-muted mb-0 fs-13">Unpaid &amp; Pending</p>
+                <h4 className="fw-bold mb-0 text-danger">{pendingPaymentCount}</h4>
               </div>
             </div>
           </div>
         </div>
 
         <div className="col-md-6 col-xl-3">
-          <div className="card">
-            <div className="card-body d-flex align-items-center gap-3 py-3">
-              <div className="avatar-md bg-success bg-opacity-10 rounded d-flex align-items-center justify-content-center" style={{ minWidth: '52px', height: '52px' }}>
-                <iconify-icon icon="solar:clipboard-check-broken" className="fs-28 text-success"></iconify-icon>
-              </div>
-              <div>
-                <p className="text-muted mb-0 fs-13">Delivered Orders</p>
-                <h4 className="fw-bold mb-0 text-success">{deliveredCount}</h4>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="col-md-6 col-xl-3">
-          <div className="card">
+          <div className="card shadow-sm border-0">
             <div className="card-body d-flex align-items-center gap-3 py-3">
               <div className="avatar-md bg-primary bg-opacity-10 rounded d-flex align-items-center justify-content-center" style={{ minWidth: '52px', height: '52px' }}>
-                <iconify-icon icon="solar:inbox-line-broken" className="fs-28 text-primary"></iconify-icon>
+                <iconify-icon icon="solar:box-broken" className="fs-28 text-primary"></iconify-icon>
               </div>
               <div>
-                <p className="text-muted mb-0 fs-13">In Fulfillment</p>
+                <p className="text-muted mb-0 fs-13">In Progress / Shipped</p>
                 <h4 className="fw-bold mb-0 text-primary">{inProgressCount}</h4>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-md-6 col-xl-3">
+          <div className="card shadow-sm border-0">
+            <div className="card-body d-flex align-items-center gap-3 py-3">
+              <div className="avatar-md bg-success bg-opacity-10 rounded d-flex align-items-center justify-content-center" style={{ minWidth: '52px', height: '52px' }}>
+                <iconify-icon icon="solar:check-circle-broken" className="fs-28 text-success"></iconify-icon>
+              </div>
+              <div>
+                <p className="text-muted mb-0 fs-13">Delivered &amp; Fulfilled</p>
+                <h4 className="fw-bold mb-0 text-success">{deliveredCount}</h4>
               </div>
             </div>
           </div>
@@ -146,13 +108,13 @@ export default function InventoryReceivedOrders() {
 
       <div className="row">
         <div className="col-xl-12">
-          <div className="card">
+          <div className="card shadow-sm border-0">
             <div className="d-flex card-header justify-content-between align-items-center flex-wrap gap-2">
               <div>
-                <h4 className="card-title mb-1">Incoming Shipments & Received Orders</h4>
+                <h4 className="card-title mb-1">Incoming Shipments &amp; Received Orders</h4>
                 <p className="text-muted fs-13 mb-0">Record restock intakes and track order fulfillment statuses.</p>
               </div>
-              <div className="d-flex align-items-center gap-2">
+              <div className="d-flex align-items-center gap-2 flex-wrap">
                 <input
                   type="text"
                   className="form-control form-control-sm"
@@ -173,12 +135,12 @@ export default function InventoryReceivedOrders() {
                   <option value="shipped">Shipped</option>
                   <option value="delivered">Delivered</option>
                 </select>
-                <button
+                <Link
+                  href="/admin/inventory/received-orders/intake"
                   className="btn btn-sm btn-primary d-flex align-items-center gap-1"
-                  onClick={() => setIsModalOpen(true)}
                 >
                   <iconify-icon icon="solar:box-bold" className="fs-16"></iconify-icon> Receive Shipment
-                </button>
+                </Link>
               </div>
             </div>
 
@@ -186,7 +148,7 @@ export default function InventoryReceivedOrders() {
               <table className="table align-middle mb-0 table-hover table-centered">
                 <thead className="bg-light-subtle">
                   <tr>
-                    <th>Order ID</th>
+                    <th>Order Code</th>
                     <th>Customer</th>
                     <th>Items Count</th>
                     <th>Amount</th>
@@ -251,15 +213,15 @@ export default function InventoryReceivedOrders() {
                                 ? 'bg-info-subtle text-info'
                                 : ord.status === 'processing'
                                 ? 'bg-primary-subtle text-primary'
-                                : 'bg-secondary-subtle text-secondary'
+                                : 'bg-warning-subtle text-warning'
                             }`}
                           >
                             {ord.status.toUpperCase()}
                           </span>
                         </td>
                         <td className="text-end">
-                          <Link href={`/admin/orders/${ord.id}`} className="btn btn-sm btn-soft-primary">
-                            <iconify-icon icon="solar:eye-broken" className="fs-16 align-middle me-1"></iconify-icon> Inspect
+                          <Link href={`/admin/orders/${ord.id}`} className="btn btn-light btn-sm">
+                            <iconify-icon icon="solar:eye-broken" className="align-middle fs-16"></iconify-icon>
                           </Link>
                         </td>
                       </tr>
@@ -270,91 +232,14 @@ export default function InventoryReceivedOrders() {
             </div>
 
             <div className="card-footer border-top d-flex justify-content-between align-items-center">
-              <span className="text-muted fs-13">Showing {filteredOrders.length} orders</span>
-              <Link href="/admin/inventory/history" className="btn btn-sm btn-outline-secondary">
-                View Stock History →
+              <span className="text-muted fs-13">Showing {filteredOrders.length} received order fulfillment batches</span>
+              <Link href="/admin/orders/list" className="btn btn-sm btn-outline-secondary">
+                View All Customer Orders →
               </Link>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Restock Intake Modal */}
-      {isModalOpen && (
-        <div className="modal show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Record Incoming Shipment (Restock)</h5>
-                <button type="button" className="btn-close" onClick={() => setIsModalOpen(false)}></button>
-              </div>
-              <form onSubmit={handleReceiveStock}>
-                <div className="modal-body d-flex flex-column gap-3">
-                  {intakeSuccess && (
-                    <div className="alert alert-success py-2 fs-14">
-                      <iconify-icon icon="solar:check-circle-bold" className="align-middle me-1"></iconify-icon>
-                      {intakeSuccess}
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="form-label fw-semibold">Select Catalog Item *</label>
-                    <select
-                      className="form-select"
-                      value={selectedProductId}
-                      onChange={(e) => setSelectedProductId(e.target.value)}
-                      required
-                    >
-                      {products.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.title} (Current Vault Stock: {p.stock_quantity ?? (p as any).stockQuantity ?? 0})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="form-label fw-semibold">Received Quantity *</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      min="1"
-                      value={receiveQty}
-                      onChange={(e) => setReceiveQty(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="form-label fw-semibold">Shipment Ref / Vendor Notes</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={shipmentNotes}
-                      onChange={(e) => setShipmentNotes(e.target.value)}
-                      placeholder="e.g. Supplier Batch PO-2024-819"
-                    />
-                  </div>
-                </div>
-
-                <div className="modal-footer">
-                  <button type="button" className="btn btn-outline-secondary" onClick={() => setIsModalOpen(false)}>
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary" disabled={submittingIntake}>
-                    {submittingIntake ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                        Recording Restock...
-                      </>
-                    ) : 'Confirm Restock & Update Vault'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    if (id) {
+      const warehouse = await (db.warehouses as any).getById(id);
+      if (!warehouse) {
+        return NextResponse.json({ error: 'Warehouse facility not found' }, { status: 404 });
+      }
+      return NextResponse.json({ warehouse });
+    }
     const warehouses = await (db.warehouses as any).getAll();
     return NextResponse.json({ warehouses });
   } catch (error) {
@@ -36,3 +45,4 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to delete warehouse' }, { status: 500 });
   }
 }
+

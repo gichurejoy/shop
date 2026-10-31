@@ -22,7 +22,6 @@ export default function OrderCartPage() {
   const [items, setItems] = useState<ICartItem[]>([]);
   const [catalogProducts, setCatalogProducts] = useState<IProduct[]>([]);
   const [selectedProductToAdd, setSelectedProductToAdd] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
     // Load from sessionStorage if available, else load initial from MySQL
@@ -54,9 +53,10 @@ export default function OrderCartPage() {
 
     // Load full catalog for item picker
     apiClient.products.list({ limit: 50 }).then((res) => {
-      setCatalogProducts(res.products || []);
-      if (res.products?.length > 0) {
-        setSelectedProductToAdd(res.products[0].id);
+      const prods = res.products || [];
+      setCatalogProducts(prods);
+      if (prods.length > 0) {
+        setSelectedProductToAdd(prods[0].id);
       }
     });
   }, []);
@@ -100,7 +100,6 @@ export default function OrderCartPage() {
       };
       saveCart([...items, newItem]);
     }
-    setShowAddModal(false);
   };
 
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
@@ -125,18 +124,33 @@ export default function OrderCartPage() {
           </div>
           <h3 className="fw-bold text-dark mb-0">Admin Terminal Order Placement</h3>
         </div>
-        <button
-          className="btn btn-primary d-flex align-items-center gap-1"
-          onClick={() => setShowAddModal(true)}
-        >
-          <iconify-icon icon="solar:add-circle-bold" className="fs-18"></iconify-icon> Add Catalog Item
-        </button>
+        <div className="d-flex gap-2 align-items-center flex-wrap">
+          <select
+            className="form-select form-select-sm"
+            style={{ minWidth: '240px' }}
+            value={selectedProductToAdd}
+            onChange={(e) => setSelectedProductToAdd(e.target.value)}
+          >
+            {catalogProducts.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.title} — ${Number(p.price).toFixed(2)}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="btn btn-sm btn-primary d-flex align-items-center gap-1"
+            onClick={handleAddProduct}
+          >
+            <iconify-icon icon="solar:add-circle-bold" className="fs-16"></iconify-icon> Add to Cart
+          </button>
+        </div>
       </div>
 
       <div className="row g-4">
         {/* Cart table */}
         <div className="col-lg-8">
-          <div className="card">
+          <div className="card shadow-sm border-0">
             <div className="card-header border-bottom d-flex justify-content-between align-items-center">
               <h5 className="card-title mb-0">Cart Items ({items.length})</h5>
               <span className="text-muted fs-13">Ready for order creation</span>
@@ -157,7 +171,7 @@ export default function OrderCartPage() {
                   {items.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="text-center py-4 text-muted">
-                        No items in cart. Click "+ Add Catalog Item" above to add products.
+                        No items in cart. Select a product above and click "Add to Cart".
                       </td>
                     </tr>
                   ) : (
@@ -179,18 +193,18 @@ export default function OrderCartPage() {
                         </td>
                         <td className="fw-medium text-dark">${item.price.toFixed(2)}</td>
                         <td>
-                          <div className="d-flex align-items-center border rounded" style={{ width: 'fit-content' }}>
+                          <div className="d-flex align-items-center gap-2">
                             <button
                               type="button"
-                              className="btn btn-sm btn-light py-0 px-2"
+                              className="btn btn-sm btn-light border py-0 px-2"
                               onClick={() => updateQty(item.id, -1)}
                             >
-                              −
+                              -
                             </button>
-                            <span className="px-2 fw-semibold text-dark fs-13">{item.qty}</span>
+                            <span className="fw-semibold text-dark px-1">{item.qty}</span>
                             <button
                               type="button"
-                              className="btn btn-sm btn-light py-0 px-2"
+                              className="btn btn-sm btn-light border py-0 px-2"
                               onClick={() => updateQty(item.id, 1)}
                             >
                               +
@@ -203,7 +217,7 @@ export default function OrderCartPage() {
                             type="button"
                             className="btn btn-sm btn-soft-danger"
                             onClick={() => removeItem(item.id)}
-                            title="Remove Item"
+                            title="Remove"
                           >
                             <iconify-icon icon="solar:trash-bin-minimalistic-2-broken" className="fs-16"></iconify-icon>
                           </button>
@@ -214,39 +228,25 @@ export default function OrderCartPage() {
                 </tbody>
               </table>
             </div>
-
-            <div className="card-footer border-top d-flex justify-content-between align-items-center">
-              <Link href="/admin/products" className="btn btn-sm btn-outline-secondary">
-                ← Browse Catalog
-              </Link>
-              <button
-                type="button"
-                className="btn btn-sm btn-primary"
-                onClick={handleProceed}
-                disabled={items.length === 0}
-              >
-                Proceed to Checkout →
-              </button>
-            </div>
           </div>
         </div>
 
-        {/* Summary */}
+        {/* Summary side */}
         <div className="col-lg-4">
-          <div className="card">
+          <div className="card shadow-sm border-0">
             <div className="card-header border-bottom">
               <h5 className="card-title mb-0">Order Summary</h5>
             </div>
             <div className="card-body">
-              <div className="d-flex justify-content-between mb-2 fs-14 text-muted">
+              <div className="d-flex justify-content-between mb-2 text-muted">
                 <span>Subtotal</span>
                 <span className="fw-medium text-dark">${subtotal.toFixed(2)}</span>
               </div>
-              <div className="d-flex justify-content-between mb-2 fs-14 text-muted">
+              <div className="d-flex justify-content-between mb-2 text-muted">
                 <span>Shipping Fee</span>
                 <span className="fw-medium text-dark">${shipping.toFixed(2)}</span>
               </div>
-              <div className="d-flex justify-content-between mb-3 fs-14 text-muted">
+              <div className="d-flex justify-content-between mb-3 text-muted">
                 <span>Estimated Tax (8%)</span>
                 <span className="fw-medium text-dark">${tax.toFixed(2)}</span>
               </div>
@@ -261,48 +261,12 @@ export default function OrderCartPage() {
                 onClick={handleProceed}
                 disabled={items.length === 0}
               >
-                Create Order &amp; Proceed
+                Proceed to Checkout →
               </button>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Add Item Modal */}
-      {showAddModal && (
-        <div className="modal show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Select Item From Catalog</h5>
-                <button type="button" className="btn-close" onClick={() => setShowAddModal(false)}></button>
-              </div>
-              <div className="modal-body">
-                <label className="form-label fw-semibold">Choose Product</label>
-                <select
-                  className="form-select mb-3"
-                  value={selectedProductToAdd}
-                  onChange={(e) => setSelectedProductToAdd(e.target.value)}
-                >
-                  {catalogProducts.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.title} — ${p.price} (Vault Stock: {p.stock_quantity ?? (p as any).stockQuantity ?? 0})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-outline-secondary" onClick={() => setShowAddModal(false)}>
-                  Cancel
-                </button>
-                <button type="button" className="btn btn-primary" onClick={handleAddProduct}>
-                  Add to Cart
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -37,7 +37,6 @@ export default function AdminDashboard() {
 
   // Conversions widget state
   const [conversionGroup, setConversionGroup] = useState<'returning' | 'new' | 'referrals'>('returning');
-  const [showConversionsModal, setShowConversionsModal] = useState(false);
   const [animatedPercent, setAnimatedPercent] = useState(0);
 
   // Sessions by country state
@@ -662,14 +661,13 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <div className="text-center">
-                <button 
-                  type="button" 
-                  onClick={() => setShowConversionsModal(true)}
-                  className="btn bg-light bg-opacity-50 text-dark border-0 shadow-none w-100 py-2 fw-semibold"
+                <Link 
+                  href="/admin/orders"
+                  className="btn bg-light bg-opacity-50 text-dark border-0 shadow-none w-100 py-2 fw-semibold d-block text-decoration-none"
                   style={{ transition: 'all 0.2s ease' }}
                 >
                   View Details
-                </button>
+                </Link>
               </div>
             </div>
           </div>
@@ -1031,68 +1029,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
-
-      {/* Conversions Detailed Modal */}
-      {showConversionsModal && (
-        <div className="modal fade show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050 }} tabIndex={-1} role="dialog">
-          <div className="modal-dialog modal-dialog-centered" role="document">
-            <div className="modal-content shadow-lg border-0 rounded-4">
-              <div className="modal-header border-0 pb-0">
-                <h5 className="modal-title fw-bold text-dark">{currentConversion.label} Analysis</h5>
-                <button type="button" className="btn-close" onClick={() => setShowConversionsModal(false)}></button>
-              </div>
-              <div className="modal-body pt-3">
-                <div className="p-3 bg-light rounded mb-3">
-                  <div className="row g-2 text-center">
-                    <div className="col-6 border-end">
-                      <div className="text-muted small">Total Customers</div>
-                      <div className="fs-18 fw-bold text-dark">{currentConversion.details.totalCustomers.toLocaleString()}</div>
-                    </div>
-                    <div className="col-6">
-                      <div className="text-muted small">Avg Order Value</div>
-                      <div className="fs-18 fw-bold text-dark">{currentConversion.details.averageOrderValue}</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="mb-3">
-                  <h6 className="fw-semibold text-dark mb-2">Key Metrics</h6>
-                  <div className="d-flex justify-content-between py-2 border-bottom">
-                    <span className="text-muted">Repeat Purchase Rate</span>
-                    <span className="fw-medium text-dark">{currentConversion.details.repeatRate}</span>
-                  </div>
-                  <div className="d-flex justify-content-between py-2 border-bottom">
-                    <span className="text-muted">Revenue Contribution</span>
-                    <span className="fw-medium text-dark">{currentConversion.details.revenueContribution}</span>
-                  </div>
-                </div>
-                <div>
-                  <h6 className="fw-semibold text-dark mb-2">Monthly Conversion Rate Trend</h6>
-                  <div className="d-flex align-items-end gap-2 justify-content-between pt-3 pb-1" style={{ height: '110px' }}>
-                    {currentConversion.details.monthlyTrend.map((rate: any, i: number) => (
-                      <div key={i} className="d-flex flex-column align-items-center flex-grow-1">
-                        <div 
-                          className="rounded-top w-100" 
-                          style={{ 
-                            height: `${rate * 1.3}px`, 
-                            minHeight: '10px', 
-                            backgroundColor: '#ff6c2f',
-                            transition: 'height 0.4s ease-out'
-                          }} 
-                        />
-                        <span className="fs-10 text-muted mt-1">{['Jan', 'Feb', 'Mar', 'Apr', 'May'][i]}</span>
-                        <span className="fs-11 fw-semibold text-dark">{rate}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="modal-footer border-0">
-                <button type="button" className="btn btn-secondary border-0 px-4 py-2 rounded-3 fw-medium" onClick={() => setShowConversionsModal(false)}>Close</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Custom styles for map beacons */}
       <style>{`

@@ -1437,6 +1437,12 @@ export const db = {
 
   // WAREHOUSES
   warehouses: {
+    getById: async (id: string) => {
+      const all: any[] = await (db.warehouses as any).getAll();
+      const clean = id.replace(/^#/, '').toLowerCase();
+      return all.find((w: any) => w.id === id || w.id.replace(/^#/, '').toLowerCase() === clean) || null;
+    },
+
     getAll: async () => {
       const defaultWarehouses = [
         { id: '#WH-001', name: 'Central Atelier Vault', loc: 'Riverside Drive, Nairobi, Kenya', manager: 'Atelier Director', phone: '+254 700 000 001', avail: 6490, ship: 320, rev: '$125,750', status: 'Active' },
@@ -1462,10 +1468,14 @@ export const db = {
 
     save: async (item: { id?: string; name: string; loc: string; manager: string; phone: string; avail?: number; ship?: number; rev?: string; status?: string }) => {
       const all: any[] = await (db.warehouses as any).getAll();
-      const id = item.id || `#WH-${String(all.length + 1).padStart(3, '0')}`;
-      const existingIdx = all.findIndex((w) => w.id === id);
+      let id = item.id;
+      if (!id) {
+        id = `#WH-${String(all.length + 1).padStart(3, '0')}`;
+      }
+      const clean = id.replace(/^#/, '').toLowerCase();
+      const existingIdx = all.findIndex((w) => w.id === id || w.id.replace(/^#/, '').toLowerCase() === clean);
       const updatedItem = {
-        id,
+        id: existingIdx !== -1 ? all[existingIdx].id : id,
         name: item.name,
         loc: item.loc,
         manager: item.manager,
@@ -1496,7 +1506,8 @@ export const db = {
 
     delete: async (id: string) => {
       const all: any[] = await (db.warehouses as any).getAll();
-      const filtered = all.filter((w) => w.id !== id);
+      const clean = id.replace(/^#/, '').toLowerCase();
+      const filtered = all.filter((w) => w.id !== id && w.id.replace(/^#/, '').toLowerCase() !== clean);
       try {
         await prisma.cmsSetting.upsert({
           where: { key: 'store_warehouses' },

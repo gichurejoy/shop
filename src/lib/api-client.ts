@@ -238,6 +238,7 @@ export const apiClient = {
 
   warehouses: {
     list: () => fetchJson<{ warehouses: any[] }>('/api/inventory/warehouses'),
+    get: (id: string) => fetchJson<{ warehouse: any }>(`/api/inventory/warehouses?id=${encodeURIComponent(id)}`),
     save: (data: any) => fetchJson<{ warehouse: any }>('/api/inventory/warehouses', {
       method: 'POST',
       body: JSON.stringify(data),

@@ -13,3 +13,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to execute stock transfer' }, { status: 500 });
   }
 }
+

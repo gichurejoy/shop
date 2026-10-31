@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
 import { IOrder, PaymentMethod, PaymentStatus } from '@/types/order';
 
@@ -21,8 +22,6 @@ export default function OrderCheckoutPage() {
   const router = useRouter();
   const [cartItems, setCartItems] = useState<ICartItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [createdOrder, setCreatedOrder] = useState<IOrder | null>(null);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Customer & Shipping Info
   const [customer, setCustomer] = useState({
@@ -70,7 +69,7 @@ export default function OrderCheckoutPage() {
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (cartItems.length === 0) {
-      alert('Cart is empty. Please add items before checking out.');
+      toast.error('Cart is empty. Please add items before checking out.');
       return;
     }
 
@@ -112,13 +111,13 @@ export default function OrderCheckoutPage() {
       };
 
       const res = await apiClient.orders.create(orderPayload);
-      setCreatedOrder(res);
-      setShowSuccessModal(true);
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem('admin_pos_cart');
       }
+      toast.success(`Order #${res.orderNumber} placed successfully!`);
+      router.push(`/admin/orders/${res.id}`);
     } catch (err: any) {
-      alert('Failed to place order: ' + (err?.message || 'Database error'));
+      toast.error('Failed to place order: ' + (err?.message || 'Database error'));
     } finally {
       setSubmitting(false);
     }
@@ -137,8 +136,8 @@ export default function OrderCheckoutPage() {
         <div className="row g-4">
           <div className="col-lg-8">
             {/* Customer Details */}
-            <div className="card mb-3">
-              <div className="card-header border-bottom">
+            <div className="card shadow-sm border-0 mb-3">
+              <div className="card-header border-bottom bg-transparent">
                 <h5 className="card-title mb-0">Customer Dossier</h5>
               </div>
               <div className="card-body">
@@ -187,8 +186,8 @@ export default function OrderCheckoutPage() {
             </div>
 
             {/* Shipping Details */}
-            <div className="card mb-3">
-              <div className="card-header border-bottom">
+            <div className="card shadow-sm border-0 mb-3">
+              <div className="card-header border-bottom bg-transparent">
                 <h5 className="card-title mb-0">Delivery Address</h5>
               </div>
               <div className="card-body">
@@ -236,8 +235,8 @@ export default function OrderCheckoutPage() {
             </div>
 
             {/* Payment & Settlement Method */}
-            <div className="card">
-              <div className="card-header border-bottom">
+            <div className="card shadow-sm border-0">
+              <div className="card-header border-bottom bg-transparent">
                 <h5 className="card-title mb-0">Payment &amp; Settlement Method</h5>
               </div>
               <div className="card-body">
@@ -273,8 +272,8 @@ export default function OrderCheckoutPage() {
 
           {/* Right Summary */}
           <div className="col-lg-4">
-            <div className="card">
-              <div className="card-header border-bottom">
+            <div className="card shadow-sm border-0">
+              <div className="card-header border-bottom bg-transparent">
                 <h5 className="card-title mb-0">Order Review ({cartItems.length} items)</h5>
               </div>
               <div className="card-body">
@@ -345,59 +344,6 @@ export default function OrderCheckoutPage() {
           </div>
         </div>
       </form>
-
-      {/* Success Modal */}
-      {showSuccessModal && createdOrder && (
-        <div className="modal show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content border-0 shadow">
-              <div className="modal-body text-center p-4">
-                <div className="avatar-lg bg-success-subtle text-success rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3" style={{ width: '64px', height: '64px' }}>
-                  <iconify-icon icon="solar:check-circle-bold" className="fs-36"></iconify-icon>
-                </div>
-                <h4 className="fw-bold text-dark mb-1">Order Placed Successfully!</h4>
-                <p className="text-muted fs-13 mb-3">Persisted immediately in MySQL database.</p>
-
-                <div className="p-3 bg-light rounded text-start fs-14 mb-4">
-                  <div className="d-flex justify-content-between mb-2">
-                    <span className="text-muted">Order Number:</span>
-                    <strong className="text-primary">{createdOrder.orderNumber}</strong>
-                  </div>
-                  <div className="d-flex justify-content-between mb-2">
-                    <span className="text-muted">Customer:</span>
-                    <strong>{createdOrder.customerName}</strong>
-                  </div>
-                  <div className="d-flex justify-content-between mb-2">
-                    <span className="text-muted">Total Charged:</span>
-                    <strong className="text-dark fs-15">${Number(createdOrder.total).toFixed(2)}</strong>
-                  </div>
-                  <div className="d-flex justify-content-between">
-                    <span className="text-muted">Payment Status:</span>
-                    <span className="badge bg-success-subtle text-success">{createdOrder.paymentStatus.toUpperCase()}</span>
-                  </div>
-                </div>
-
-                <div className="d-flex gap-2">
-                  <Link
-                    href={`/admin/orders/${createdOrder.id}`}
-                    className="btn btn-primary flex-grow-1"
-                    onClick={() => setShowSuccessModal(false)}
-                  >
-                    View Order Details →
-                  </Link>
-                  <Link
-                    href="/admin/orders"
-                    className="btn btn-outline-secondary"
-                    onClick={() => setShowSuccessModal(false)}
-                  >
-                    Orders List
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
