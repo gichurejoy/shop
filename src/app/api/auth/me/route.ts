@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ user: null });
     }
 
-    const user = db.users.findByEmail(payload.email);
+    const user = await db.users.findByEmail(payload.email);
     if (!user) {
       return NextResponse.json({ user: null });
     }

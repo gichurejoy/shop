@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { getCmsSeoSettings, saveCmsSeoSettings } from '../../../../actions';
 import type { CmsSeoSettings } from '../../../../../lib/cms';
+import { toast } from 'sonner';
 
 export default function AdvancedSEO() {
   const [seo, setSeo] = useState<CmsSeoSettings>({
@@ -27,9 +28,14 @@ export default function AdvancedSEO() {
 
   const handleSave = async () => {
     setSaving(true);
-    await saveCmsSeoSettings(seo);
-    setSaving(false);
-    alert('SEO Settings saved!');
+    try {
+      await saveCmsSeoSettings(seo);
+      toast.success('SEO Settings successfully updated in database!');
+    } catch {
+      toast.error('Failed to save SEO settings');
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) return <div className="p-5 text-center text-muted">Loading...</div>;

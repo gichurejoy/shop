@@ -10,12 +10,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name, email, and password are required' }, { status: 400 });
     }
 
-    const existing = db.users.findByEmail(email);
+    const existing = await db.users.findByEmail(email);
     if (existing) {
       return NextResponse.json({ error: 'An account with this email already exists' }, { status: 409 });
     }
 
-    const safeUser = db.users.create({
+    const safeUser = await db.users.create({
       name,
       email,
       password,

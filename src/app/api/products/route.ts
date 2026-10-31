@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const page = searchParams.get('page') ? Number(searchParams.get('page')) : 1;
     const limit = searchParams.get('limit') ? Number(searchParams.get('limit')) : 50;
 
-    const result = db.products.getAll({ q, category, status, minPrice, maxPrice, page, limit });
+    const result = await db.products.getAll({ q, category, status, minPrice, maxPrice, page, limit });
     return NextResponse.json(result);
   } catch (err: any) {
     return NextResponse.json({ error: 'Failed to fetch products', message: err.message }, { status: 500 });
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Product title and price are required' }, { status: 400 });
     }
 
-    const created = db.products.create(body);
+    const created = await db.products.create(body);
     return NextResponse.json(created, { status: 201 });
   } catch (err: any) {
     return NextResponse.json({ error: 'Failed to create product', message: err.message }, { status: 500 });

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { getCmsAnnouncementBar, saveCmsAnnouncementBar } from '../../../../actions';
 import type { CmsAnnouncementBar } from '../../../../../lib/cms';
+import { toast } from 'sonner';
 
 export default function AnnouncementBarManager() {
   const [bar, setBar] = useState<CmsAnnouncementBar>({
@@ -28,9 +29,14 @@ export default function AnnouncementBarManager() {
 
   const handleSave = async () => {
     setSaving(true);
-    await saveCmsAnnouncementBar(bar);
-    setSaving(false);
-    alert('Announcement Bar saved!');
+    try {
+      await saveCmsAnnouncementBar(bar);
+      toast.success('Announcement Bar saved and published!');
+    } catch {
+      toast.error('Failed to save announcement bar');
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) return <div className="p-5 text-center text-muted">Loading...</div>;

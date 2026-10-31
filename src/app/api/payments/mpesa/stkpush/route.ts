@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const merchantRequestId = `MR_${Date.now()}`;
 
     // Record pending payment transaction
-    db.transactions.create({
+    await db.transactions.create({
       orderId,
       amount: Number(amount),
       currency: 'KES',
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Update order status if order exists
-    db.orders.updateStatus(orderId, 'processing', 'paid');
+    await db.orders.updateStatus(orderId, 'processing', 'paid');
 
     return NextResponse.json({
       success: true,

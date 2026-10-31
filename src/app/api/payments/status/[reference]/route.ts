@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const { reference } = await params;
-    const tx = db.transactions.getByReference(reference);
+    const tx = await db.transactions.getByReference(reference);
     if (!tx) {
       return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
     }

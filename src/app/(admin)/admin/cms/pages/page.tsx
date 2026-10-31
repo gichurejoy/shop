@@ -5,6 +5,7 @@ import { getCmsPages, saveCmsPage, deleteCmsPage } from '../../../../actions';
 import type { CmsPage } from '../../../../../lib/cms';
 import { TipTapEditor } from '../../../../../components/cms/TipTapEditor';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 export default function StaticPages() {
   const [view, setView] = useState<'list' | 'edit'>('list');
@@ -55,27 +56,41 @@ export default function StaticPages() {
   };
 
   const handleSave = async (publishStatus?: 'Published' | 'Draft') => {
-    if (!title || !slug) return alert('Title and Slug are required.');
+    if (!title || !slug) {
+      toast.error('Title and Slug are required.');
+      return;
+    }
     setSaving(true);
-    const finalStatus = publishStatus || status;
-    await saveCmsPage({
-      id: editId,
-      title,
-      slug,
-      content,
-      status: finalStatus,
-      seoTitle,
-      seoDescription
-    });
-    setSaving(false);
-    setView('list');
-    fetchPages();
+    try {
+      const finalStatus = publishStatus || status;
+      await saveCmsPage({
+        id: editId,
+        title,
+        slug,
+        content,
+        status: finalStatus,
+        seoTitle,
+        seoDescription
+      });
+      toast.success(`Page "${title}" saved successfully!`);
+      setView('list');
+      fetchPages();
+    } catch {
+      toast.error('Failed to save page.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this page?')) {
-      await deleteCmsPage(id);
-      fetchPages();
+      try {
+        await deleteCmsPage(id);
+        toast.success('Page deleted.');
+        fetchPages();
+      } catch {
+        toast.error('Failed to delete page.');
+      }
     }
   };
 

@@ -345,6 +345,13 @@
       "link": "/gift-cards",
       "isMega": false,
       "children": []
+    },
+    {
+      "id": "nav-7",
+      "label": "Journal",
+      "link": "/blog",
+      "isMega": false,
+      "children": []
     }
   ],
   "seo": {

@@ -1,0 +1,300 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ─── AUTH & USERS ────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  passwordHash  String
+  role          String    @default("customer") // admin, manager, customer, staff
+  phone         String?
+  avatar        String?   @db.Text
+  loyaltyPoints Int       @default(0)
+  tier          String    @default("Bronze")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  orders        Order[]
+  addresses     Address[]
+  reviews       Review[]
+
+  @@map("users")
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  userId    String?
+  label     String   @default("Home")
+  name      String
+  phone     String
+  line1     String
+  line2     String?
+  city      String
+  state     String
+  zip       String
+  country   String   @default("United States")
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+// ─── CATALOG: PRODUCTS & CATEGORIES ──────────────────────────────────────────
+
+model Category {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  description String?    @db.Text
+  imageUrl    String?    @db.Text
+  sortOrder   Int        @default(0)
+  parentId    String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Category[] @relation("CategoryHierarchy")
+  products    Product[]
+
+  @@index([parentId])
+  @@map("categories")
+}
+
+model Product {
+  id               String           @id @default(cuid())
+  title            String
+  slug             String           @unique
+  description      String?          @db.Text
+  shortDescription String?          @db.Text
+  type             String           @default("simple") // simple, variable, digital
+  status           String           @default("active") // active, draft, archived
+  price            Decimal          @db.Decimal(10, 2)
+  compareAtPrice   Decimal?         @db.Decimal(10, 2)
+  stockQuantity    Int              @default(0)
+  sku              String?          @unique
+  isVisible        Boolean          @default(true)
+  rating           Decimal          @default(5.0) @db.Decimal(3, 2)
+  reviewsCount     Int              @default(0)
+  images           Json?
+  categoryId       String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  category         Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  variants         ProductVariant[]
+  reviews          Review[]
+  orderItems       OrderItem[]
+
+  @@index([categoryId])
+  @@index([status])
+  @@map("products")
+}
+
+model ProductVariant {
+  id             String    @id @default(cuid())
+  productId      String
+  title          String
+  sku            String?   @unique
+  price          Decimal   @db.Decimal(10, 2)
+  compareAtPrice Decimal?  @db.Decimal(10, 2)
+  stockQuantity  Int       @default(0)
+  options        Json?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  product        Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_variants")
+}
+
+// ─── ORDERS & TRANSACTIONS ───────────────────────────────────────────────────
+
+model Order {
+  id              String               @id @default(cuid())
+  orderNumber     String               @unique
+  customerId      String?
+  customerName    String
+  customerEmail   String
+  customerPhone   String?
+  subtotal        Decimal              @db.Decimal(10, 2)
+  tax             Decimal              @default(0) @db.Decimal(10, 2)
+  shippingFee     Decimal              @default(0) @db.Decimal(10, 2)
+  discount        Decimal              @default(0) @db.Decimal(10, 2)
+  total           Decimal              @db.Decimal(10, 2)
+  status          String               @default("pending") // pending, processing, shipped, delivered, cancelled
+  paymentStatus   String               @default("unpaid") // unpaid, paid, refunded, partially_refunded
+  paymentMethod   String               @default("card") // card, mpesa, cod, paypal
+  shippingMethod  String               @default("standard")
+  shippingAddress Json
+  trackingNumber  String?
+  timeline        Json?
+  orderNotes      String?              @db.Text
+  giftWrap        Boolean              @default(false)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  customer        User?                @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items           OrderItem[]
+  transactions    PaymentTransaction[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@map("orders")
+}
+
+model OrderItem {
+  id            String   @id @default(cuid())
+  orderId       String
+  productId     String?
+  name          String
+  price         Decimal  @db.Decimal(10, 2)
+  quantity      Int      @default(1)
+  selectedSize  String?
+  selectedColor String?
+  image         String?  @db.Text
+  createdAt     DateTime @default(now())
+
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product       Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+model PaymentTransaction {
+  id            String   @id @default(cuid())
+  orderId       String
+  amount        Decimal  @db.Decimal(10, 2)
+  currency      String   @default("USD")
+  method        String   // card, mpesa, etc.
+  status        String   @default("pending") // pending, paid, failed, refunded
+  reference     String?  // txId or checkoutRequestId
+  phoneNumber   String?
+  receiptNumber String?  // M-Pesa receipt or Auth Code
+  metadata      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([reference])
+  @@map("payment_transactions")
+}
+
+model Coupon {
+  id             String    @id @default(cuid())
+  code           String    @unique
+  discountType   String    @default("percentage") // percentage, fixed
+  discountValue  Decimal   @db.Decimal(10, 2)
+  minOrderAmount Decimal?  @db.Decimal(10, 2)
+  maxUses        Int?
+  usageCount     Int       @default(0)
+  isActive       Boolean   @default(true)
+  expiresAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([code])
+  @@map("coupons")
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  productId  String
+  userId     String?
+  authorName String
+  rating     Int      @default(5)
+  title      String?
+  comment    String   @db.Text
+  isVerified Boolean  @default(false)
+  status     String   @default("approved") // pending, approved, rejected
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([productId])
+  @@index([userId])
+  @@map("reviews")
+}
+
+// ─── CMS (PAGES, POSTS, SECTIONS, SETTINGS) ──────────────────────────────────
+
+model CmsPage {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  title          String
+  content        String?  @db.LongText
+  status         String   @default("Published") // Published, Draft
+  seoTitle       String?
+  seoDescription String?  @db.Text
+  ogImage        String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([slug])
+  @@map("cms_pages")
+}
+
+model CmsPost {
+  id             String    @id @default(cuid())
+  slug           String    @unique
+  title          String
+  excerpt        String?   @db.Text
+  content        String?   @db.LongText
+  status         String    @default("Draft") // Published, Draft, Scheduled
+  author         String    @default("Admin")
+  categories     Json?
+  tags           Json?
+  featuredImage  String?   @db.Text
+  seoTitle       String?
+  seoDescription String?   @db.Text
+  publishDate    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([slug])
+  @@map("cms_posts")
+}
+
+model CmsSection {
+  id        String   @id @default(cuid())
+  pageSlug  String   @default("home")
+  type      String   // hero, category-grid, product-grid, promo-banner, promo-cards, stylist-banner, custom-html
+  title     String?
+  subtitle  String?
+  sortOrder Int      @default(0)
+  isVisible Boolean  @default(true)
+  config    Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([pageSlug])
+  @@map("cms_sections")
+}
+
+model CmsSetting {
+  key       String   @id // 'announcement-bar', 'navigation', 'seo', 'theme', 'general'
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("cms_settings")
+}
+

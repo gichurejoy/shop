@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ valid: false, discountAmount: 0, message: 'Promo code is required.' }, { status: 400 });
     }
 
-    const result = db.coupons.validate(code, Number(subtotal) || 0);
+    const result = await db.coupons.validate(code, Number(subtotal) || 0);
     return NextResponse.json(result);
   } catch (err: any) {
     return NextResponse.json({ valid: false, discountAmount: 0, message: err.message }, { status: 500 });

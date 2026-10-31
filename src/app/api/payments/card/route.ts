@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     const txId = `ch_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
     const authCode = `AUTH_${Math.floor(100000 + Math.random() * 900000)}`;
 
-    db.transactions.create({
+    await db.transactions.create({
       orderId,
       amount: Number(amount),
       currency: 'USD',
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Update order status
-    db.orders.updateStatus(orderId, 'processing', 'paid');
+    await db.orders.updateStatus(orderId, 'processing', 'paid');
 
     return NextResponse.json({
       success: true,

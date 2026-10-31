@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { getCmsNavigation, saveCmsNavigation } from '../../../../actions';
 import type { CmsMenuNode } from '../../../../../lib/cms';
+import { toast } from 'sonner';
 
 export default function NavigationBuilder() {
   const [menu, setMenu] = useState<CmsMenuNode[]>([]);
@@ -25,9 +26,14 @@ export default function NavigationBuilder() {
 
   const handleSave = async () => {
     setSaving(true);
-    await saveCmsNavigation(menu);
-    setSaving(false);
-    alert('Menu saved successfully!');
+    try {
+      await saveCmsNavigation(menu);
+      toast.success('Store navigation menu saved to database!');
+    } catch {
+      toast.error('Failed to save navigation menu');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const addTopLevel = () => {

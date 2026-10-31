@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const page = searchParams.get('page') ? Number(searchParams.get('page')) : 1;
     const limit = searchParams.get('limit') ? Number(searchParams.get('limit')) : 50;
 
-    const result = db.orders.getAll({ status, paymentStatus, search, page, limit });
+    const result = await db.orders.getAll({ status, paymentStatus, search, page, limit });
     return NextResponse.json(result);
   } catch (err: any) {
     return NextResponse.json({ error: 'Failed to fetch orders', message: err.message }, { status: 500 });
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       giftWrap: Boolean(body.giftWrap),
     };
 
-    const createdOrder = db.orders.create(orderPayload);
+    const createdOrder = await db.orders.create(orderPayload);
     return NextResponse.json(createdOrder, { status: 201 });
   } catch (err: any) {
     return NextResponse.json({ error: 'Failed to create order', message: err.message }, { status: 500 });

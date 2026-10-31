@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { getCmsPosts, saveCmsPost, deleteCmsPost } from '../../../../actions';
 import type { CmsPost } from '../../../../../lib/cms';
 import { TipTapEditor } from '../../../../../components/cms/TipTapEditor';
+import { toast } from 'sonner';
 
 export default function BlogManagement() {
   const [view, setView] = useState<'list' | 'edit'>('list');
@@ -69,32 +70,46 @@ export default function BlogManagement() {
   };
 
   const handleSave = async (publishStatus?: 'Published' | 'Draft') => {
-    if (!title || !slug) return alert('Title and Slug are required.');
+    if (!title || !slug) {
+      toast.error('Title and Slug are required.');
+      return;
+    }
     setSaving(true);
-    const finalStatus = publishStatus || status;
-    await saveCmsPost({
-      id: editId,
-      title,
-      slug,
-      content,
-      excerpt,
-      status: finalStatus,
-      author,
-      categories,
-      tags,
-      featuredImage,
-      seoTitle,
-      seoDescription,
-    });
-    setSaving(false);
-    setView('list');
-    fetchPosts();
+    try {
+      const finalStatus = publishStatus || status;
+      await saveCmsPost({
+        id: editId,
+        title,
+        slug,
+        content,
+        excerpt,
+        status: finalStatus,
+        author,
+        categories,
+        tags,
+        featuredImage,
+        seoTitle,
+        seoDescription,
+      });
+      toast.success(`Story "${title}" saved successfully!`);
+      setView('list');
+      fetchPosts();
+    } catch {
+      toast.error('Failed to save story.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Delete this post?')) {
-      await deleteCmsPost(id);
-      fetchPosts();
+      try {
+        await deleteCmsPost(id);
+        toast.success('Story deleted.');
+        fetchPosts();
+      } catch {
+        toast.error('Failed to delete story.');
+      }
     }
   };
 
@@ -105,9 +120,12 @@ export default function BlogManagement() {
     try {
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
       const data = await res.json();
-      if (data.url) setFeaturedImage(data.url);
+      if (data.url) {
+        setFeaturedImage(data.url);
+        toast.success('Featured image uploaded!');
+      }
     } catch (err) {
-      alert('Upload failed');
+      toast.error('Upload failed');
     }
   };
 

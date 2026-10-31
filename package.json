@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@emotion/react": "^11.13.3",
+    "@prisma/client": "^6.4.1",
     "@tiptap/extension-color": "^3.23.6",
     "@tiptap/extension-image": "^3.23.6",
     "@tiptap/extension-link": "^3.23.6",
@@ -24,6 +25,7 @@
     "framer-motion": "^12.38.0",
     "lucide-react": "0.454.0",
     "next": "^16.2.6",
+    "prisma": "^6.4.1",
     "react": "^19.2.6",
     "react-apexcharts": "^2.1.0",
     "react-dom": "^19.2.6",
