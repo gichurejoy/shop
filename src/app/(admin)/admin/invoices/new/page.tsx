@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { apiClient } from '@/lib/api-client';
 
 const PRODUCTS = [
   { id: 1, name: 'Men Black Slim Fit T-shirt', img: 'https://techzaa.in/larkon/admin/assets/images/product/p-1.png', price: 80 },
@@ -21,7 +22,42 @@ export default function InvoiceAddPage() {
   const [vendorLogo, setVendorLogo] = useState<string>('');
   const [clientLogo, setClientLogo] = useState<string>('');
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const router = useRouter();
+
+  const handleSaveInvoice = async () => {
+    try {
+      setSaving(true);
+      const clientName = (document.getElementById('client-name') as HTMLInputElement)?.value || 'Store Client';
+      const clientEmail = (document.getElementById('client-email') as HTMLInputElement)?.value || 'client@example.com';
+      await apiClient.orders.create({
+        customerName: clientName,
+        customerEmail: clientEmail,
+        items: items.map(item => ({
+          id: `inv-item-${item.productId}-${Date.now()}`,
+          productId: String(item.productId),
+          name: item.name,
+          price: item.price,
+          quantity: item.qty,
+          image: item.img,
+        })),
+        subtotal,
+        tax: taxAmt,
+        shippingFee: 0,
+        discount,
+        total,
+        status: 'delivered',
+        paymentStatus: 'paid',
+        paymentMethod: 'bank_transfer',
+        orderNotes: 'Official invoice generated via Admin Portal',
+      });
+      router.push('/admin/invoices');
+    } catch (err: any) {
+      alert('Failed to save invoice: ' + (err?.message || 'Error'));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const addItem = () => {
     const p = PRODUCTS[0];
@@ -244,8 +280,12 @@ export default function InvoiceAddPage() {
             <button className="btn btn-light flex-fill d-flex align-items-center justify-content-center gap-2" onClick={() => setIsPreviewOpen(true)}>
               <iconify-icon icon="solar:printer-bold-duotone"></iconify-icon> Preview
             </button>
-            <button className="btn btn-primary flex-fill d-flex align-items-center justify-content-center gap-2" onClick={() => router.push('/admin/invoices')}>
-              <iconify-icon icon="solar:check-circle-bold"></iconify-icon> Save
+            <button
+              className="btn btn-primary flex-fill d-flex align-items-center justify-content-center gap-2"
+              onClick={handleSaveInvoice}
+              disabled={saving}
+            >
+              <iconify-icon icon="solar:check-circle-bold"></iconify-icon> {saving ? 'Saving...' : 'Save & Issue Invoice'}
             </button>
           </div>
         </div>

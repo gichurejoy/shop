@@ -101,6 +101,11 @@ export default function CustomerListPage() {
               <iconify-icon icon="solar:magnifer-linear" style={{ position: 'absolute', left: '9px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: '15px' }}></iconify-icon>
             </div>
 
+            {/* Export CSV */}
+            <a href="/api/customers/export" download className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 text-decoration-none">
+              <iconify-icon icon="solar:export-bold"></iconify-icon> Export CSV
+            </a>
+
             {/* Refresh */}
             <button onClick={fetchCustomers} className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1">
               <iconify-icon icon="solar:refresh-broken"></iconify-icon> Refresh

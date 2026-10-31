@@ -108,6 +108,9 @@ export default function OrdersListPage() {
               <input type="search" className="form-control form-control-sm" placeholder="Search orders..." value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: '30px' }} />
               <iconify-icon icon="solar:magnifer-linear" style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}></iconify-icon>
             </div>
+            <a href="/api/orders/export" download className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 text-decoration-none">
+              <iconify-icon icon="solar:export-bold"></iconify-icon> Export CSV
+            </a>
             <button onClick={fetchOrders} className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1">
               <iconify-icon icon="solar:refresh-broken"></iconify-icon> Refresh
             </button>

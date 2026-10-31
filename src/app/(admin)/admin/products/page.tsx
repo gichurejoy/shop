@@ -74,6 +74,17 @@ export default function ProductsListPage() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (!confirm(`Are you sure you want to delete ${selected.length} selected products?`)) return;
+    for (const id of selected) {
+      try {
+        await apiClient.products.delete(String(id));
+      } catch {}
+    }
+    setSelected([]);
+    fetchProducts();
+  };
+
   const filtered = products.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -105,7 +116,12 @@ export default function ProductsListPage() {
                 <option value="draft">Draft</option>
                 <option value="archived">Archived</option>
               </select>
-              <button className="btn btn-sm btn-soft-danger d-flex align-items-center gap-1" style={{ fontSize: '12px', padding: '4px 8px' }}>
+              <button
+                type="button"
+                onClick={handleBulkDelete}
+                className="btn btn-sm btn-soft-danger d-flex align-items-center gap-1"
+                style={{ fontSize: '12px', padding: '4px 8px' }}
+              >
                 <iconify-icon icon="solar:trash-bin-minimalistic-bold" /> Delete
               </button>
             </div>
@@ -125,9 +141,14 @@ export default function ProductsListPage() {
                   <iconify-icon icon="solar:magnifer-linear" />
                 </span>
               </div>
-              <button className="btn btn-light" style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <iconify-icon icon="solar:import-bold-duotone" /> Import CSV
-              </button>
+              <a
+                href="/api/products/export"
+                download
+                className="btn btn-light"
+                style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none', color: 'inherit' }}
+              >
+                <iconify-icon icon="solar:export-bold-duotone" /> Export CSV
+              </a>
               <Link
                 href="/admin/products/grid"
                 style={{ padding: '8px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#334155', textDecoration: 'none', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}

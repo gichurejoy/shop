@@ -96,13 +96,23 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
 
   return (
     <div>
-      {/* Breadcrumb */}
-      <div className="d-flex align-items-center gap-2 mb-3 text-muted" style={{ fontSize: '13px' }}>
-        <Link href="/admin" className="text-muted text-decoration-none">Dashboard</Link>
-        <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>
-        <Link href="/admin/products" className="text-muted text-decoration-none">Products</Link>
-        <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>
-        <span className="text-dark fw-medium">{product.title}</span>
+      {/* Breadcrumb & Actions */}
+      <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div className="d-flex align-items-center gap-2 text-muted" style={{ fontSize: '13px' }}>
+          <Link href="/admin" className="text-muted text-decoration-none">Dashboard</Link>
+          <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>
+          <Link href="/admin/products" className="text-muted text-decoration-none">Products</Link>
+          <iconify-icon icon="solar:alt-arrow-right-linear"></iconify-icon>
+          <span className="text-dark fw-medium">{product.title}</span>
+        </div>
+        <div className="d-flex gap-2">
+          <Link
+            href={`/admin/products/${product.id}/edit`}
+            className="btn btn-sm btn-primary d-flex align-items-center gap-1"
+          >
+            <iconify-icon icon="solar:pen-2-broken" className="fs-16"></iconify-icon> Edit Product
+          </Link>
+        </div>
       </div>
 
       <div className="row g-3">
