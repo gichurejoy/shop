@@ -229,6 +229,22 @@ export const apiClient = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    transfer: (data: { productId: string; productName: string; fromWh: string; toWh: string; quantity: number; notes?: string }) =>
+      fetchJson<{ success: boolean }>('/api/inventory/transfer', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+  },
+
+  warehouses: {
+    list: () => fetchJson<{ warehouses: any[] }>('/api/inventory/warehouses'),
+    save: (data: any) => fetchJson<{ warehouse: any }>('/api/inventory/warehouses', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    delete: (id: string) => fetchJson<{ success: boolean }>(`/api/inventory/warehouses?id=${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    }),
   },
 
   staff: {

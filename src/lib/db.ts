@@ -1434,4 +1434,104 @@ export const db = {
       return newEntry;
     },
   },
+
+  // WAREHOUSES
+  warehouses: {
+    getAll: async () => {
+      const defaultWarehouses = [
+        { id: '#WH-001', name: 'Central Atelier Vault', loc: 'Riverside Drive, Nairobi, Kenya', manager: 'Atelier Director', phone: '+254 700 000 001', avail: 6490, ship: 320, rev: '$125,750', status: 'Active' },
+        { id: '#WH-002', name: 'European Distribution Hub', loc: '42 Avenue Montaigne, Paris, France', manager: 'Gaston Lapierre', phone: '+33 1 42 68 55 00', avail: 4360, ship: 450, rev: '$84,320', status: 'Active' },
+        { id: '#WH-003', name: 'North American Flagship Depot', loc: '740 Fifth Avenue, New York, USA', manager: 'Eleanor Vance', phone: '+1 (212) 555-0199', avail: 5840, ship: 210, rev: '$98,400', status: 'Active' },
+        { id: '#WH-004', name: 'Middle East Logistics Vault', loc: 'DIFC Precinct 4, Dubai, UAE', manager: 'Sarah M. Brooks', phone: '+971 4 362 7000', avail: 3450, ship: 180, rev: '$67,200', status: 'Active' },
+      ];
+      try {
+        const row = await prisma.cmsSetting.findUnique({ where: { key: 'store_warehouses' } });
+        if (row && Array.isArray(row.value) && (row.value as any[]).length > 0) {
+          return row.value;
+        }
+        await prisma.cmsSetting.upsert({
+          where: { key: 'store_warehouses' },
+          update: { value: defaultWarehouses },
+          create: { key: 'store_warehouses', value: defaultWarehouses },
+        });
+        return defaultWarehouses;
+      } catch {
+        return defaultWarehouses;
+      }
+    },
+
+    save: async (item: { id?: string; name: string; loc: string; manager: string; phone: string; avail?: number; ship?: number; rev?: string; status?: string }) => {
+      const all: any[] = await (db.warehouses as any).getAll();
+      const id = item.id || `#WH-${String(all.length + 1).padStart(3, '0')}`;
+      const existingIdx = all.findIndex((w) => w.id === id);
+      const updatedItem = {
+        id,
+        name: item.name,
+        loc: item.loc,
+        manager: item.manager,
+        phone: item.phone,
+        avail: item.avail ?? 1000,
+        ship: item.ship ?? 50,
+        rev: item.rev ?? '$0.00',
+        status: item.status || 'Active',
+      };
+
+      if (existingIdx !== -1) {
+        all[existingIdx] = { ...all[existingIdx], ...updatedItem };
+      } else {
+        all.push(updatedItem);
+      }
+
+      try {
+        await prisma.cmsSetting.upsert({
+          where: { key: 'store_warehouses' },
+          update: { value: all },
+          create: { key: 'store_warehouses', value: all },
+        });
+      } catch (err) {
+        console.error('Failed to save warehouse:', err);
+      }
+      return updatedItem;
+    },
+
+    delete: async (id: string) => {
+      const all: any[] = await (db.warehouses as any).getAll();
+      const filtered = all.filter((w) => w.id !== id);
+      try {
+        await prisma.cmsSetting.upsert({
+          where: { key: 'store_warehouses' },
+          update: { value: filtered },
+          create: { key: 'store_warehouses', value: filtered },
+        });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+
+    transfer: async (data: { productId: string; productName: string; fromWh: string; toWh: string; quantity: number; notes?: string }) => {
+      // 1. Log to inventory audit trail
+      await (db.inventoryLogs as any).log({
+        product: data.productName,
+        type: 'Warehouse Transfer',
+        typeClass: 'bg-info-subtle text-info',
+        qty: `-${data.quantity}`,
+        stock: 50, // indicative vault level
+        user: 'Logistics Manager',
+        ref: `Transfer from ${data.fromWh} to ${data.toWh}. ${data.notes || ''}`.trim(),
+      });
+
+      // 2. Log to system activity
+      await (db.activity as any).log({
+        user: 'Logistics Manager',
+        action: `Initiated stock transfer: ${data.quantity} units of ${data.productName}`,
+        module: 'Inventory',
+        color: 'info',
+        icon: 'solar:transfer-horizontal-bold',
+        details: `Route: ${data.fromWh} ➔ ${data.toWh}. Notes: ${data.notes || 'Routine rebalancing'}`,
+      });
+
+      return { success: true };
+    },
+  },
 };
