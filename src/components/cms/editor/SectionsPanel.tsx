@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useCms } from './cms-store';
-import { SectionType } from '../../../lib/cms-types';
+import { SectionType } from '@/lib/cms-types';
 import { SectionForms } from './SectionForms';
 
 const AVAILABLE_BLOCKS: { id: SectionType; name: string; icon: string; desc: string; color: string }[] = [

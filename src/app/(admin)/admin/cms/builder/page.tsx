@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { getHomepageDraft, saveHomepageDraft, publishHomepage } from '../../../../actions';
 import { CmsProvider } from '../../../../../components/cms/editor/cms-store';
 import { EditorShell } from '../../../../../components/cms/editor/EditorShell';
-import { CmsSection } from '../../../../../lib/cms-types';
+import { CmsSection } from '@/lib/cms-types';
 
 export default function BuilderPage() {
   const [initialData, setInitialData] = useState<CmsSection[] | null>(null);

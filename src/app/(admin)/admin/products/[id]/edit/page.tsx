@@ -5,18 +5,18 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
-import { IProduct, ProductStatus } from '@/types/product';
+import { IProduct } from '@/types/product';
 import { ICategory } from '@/types/category';
 
 const BASE = 'https://techzaa.in/larkon/admin/assets/images';
 
 const COLORS = [
-  { id: 'e-dark',   hex: '#1e293b', label: 'Dark' },
+  { id: 'e-dark', hex: '#1e293b', label: 'Dark' },
   { id: 'e-yellow', hex: '#f59e0b', label: 'Gold / Yellow' },
-  { id: 'e-white',  hex: '#f8fafc', label: 'Silver / White', border: '#e2e8f0' },
-  { id: 'e-red',    hex: '#ef4444', label: 'Ruby / Red' },
-  { id: 'e-green',  hex: '#22c55e', label: 'Emerald / Green' },
-  { id: 'e-blue',   hex: '#3b82f6', label: 'Sapphire / Blue' },
+  { id: 'e-white', hex: '#f8fafc', label: 'Silver / White', border: '#e2e8f0' },
+  { id: 'e-red', hex: '#ef4444', label: 'Ruby / Red' },
+  { id: 'e-green', hex: '#22c55e', label: 'Emerald / Green' },
+  { id: 'e-blue', hex: '#3b82f6', label: 'Sapphire / Blue' },
 ];
 
 const SIZES = ['Standard', 'XS', 'S', 'M', 'L', 'XL', 'XXL'];
@@ -104,7 +104,7 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
         compare_at_price: compareAtPrice ? Number(compareAtPrice) : undefined,
         stock_quantity: Number(stockQuantity) || 0,
         sku: sku.trim(),
-        status: status as ProductStatus,
+        status: status as any,
         category: selectedCategoryObj,
       };
 
@@ -212,10 +212,9 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
               <div>
                 <h6 className="fw-bold mb-2">Status:</h6>
                 <span
-                  className={`badge ${
-                    status === 'active' ? 'bg-success-subtle text-success' :
+                  className={`badge ${status === 'active' ? 'bg-success-subtle text-success' :
                     status === 'draft' ? 'bg-warning-subtle text-warning' : 'bg-secondary-subtle text-secondary'
-                  } px-2 py-1 text-capitalize`}
+                    } px-2 py-1 text-capitalize`}
                 >
                   {status}
                 </span>

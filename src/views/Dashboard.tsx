@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useStorefront, Address } from '../context/StorefrontContext';
-import { apiClient } from '../lib/api-client';
+import { apiClient } from '@/lib/api-client';
 import { toast } from 'sonner';
 import { InvoiceView } from '../components/InvoiceView';
 import { 
@@ -62,9 +62,9 @@ export function Dashboard() {
   useEffect(() => {
     setLoadingOrders(true);
     apiClient.orders.list()
-      .then((res) => {
+      .then((res: any) => {
         if (res.orders && res.orders.length > 0) {
-          const formatted = res.orders.map((o) => ({
+          const formatted = res.orders.map((o: any) => ({
             id: o.orderNumber || o.id,
             rawId: o.id,
             date: new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
@@ -72,7 +72,7 @@ export function Dashboard() {
             status: o.status.charAt(0).toUpperCase() + o.status.slice(1),
             trackingNo: o.trackingNumber || o.orderNumber || 'USPS94001111',
             items: o.items,
-            itemsSummary: o.items.map((i) => `${i.quantity}x ${i.name}`).join(', '),
+            itemsSummary: o.items.map((i: any) => `${i.quantity}x ${i.name}`).join(', '),
             carrier: o.shippingMethod === 'express' ? 'FedEx Priority' : 'Standard Carrier',
             estDelivery: 'Within 3-5 business days',
             shippingAddress: o.shippingAddress,

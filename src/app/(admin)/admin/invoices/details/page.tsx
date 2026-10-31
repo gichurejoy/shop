@@ -9,7 +9,7 @@ export default function InvoiceDetailsRedirect() {
 
   useEffect(() => {
     apiClient.orders.list({ limit: 1 })
-      .then((res) => {
+      .then((res: any) => {
         if (res.orders && res.orders.length > 0) {
           router.replace(`/admin/invoices/${res.orders[0].id}`);
         } else {

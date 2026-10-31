@@ -9,10 +9,10 @@ import { IProduct } from '@/types/product';
 const BASE = 'https://techzaa.in/larkon/admin/assets/images';
 
 const COLORS = [
-  { id: 'dark',   label: 'Dark',   hex: '#1e293b' },
-  { id: 'yellow', label: 'Gold',   hex: '#f59e0b' },
-  { id: 'white',  label: 'Silver', hex: '#f8fafc', border: '#e2e8f0' },
-  { id: 'green',  label: 'Emerald',hex: '#22c55e' },
+  { id: 'dark', label: 'Dark', hex: '#1e293b' },
+  { id: 'yellow', label: 'Gold', hex: '#f59e0b' },
+  { id: 'white', label: 'Silver', hex: '#f8fafc', border: '#e2e8f0' },
+  { id: 'green', label: 'Emerald', hex: '#22c55e' },
 ];
 const SIZES = ['Standard', 'S', 'M', 'L', 'XL'];
 
@@ -84,8 +84,8 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
   const rawImages: string[] = (product as any).images?.length
     ? (product as any).images
     : (product as any).image
-    ? [(product as any).image]
-    : [`${BASE}/product/p-1.png`];
+      ? [(product as any).image]
+      : [`${BASE}/product/p-1.png`];
 
   const images = rawImages.length > 0 ? rawImages : [`${BASE}/product/p-1.png`];
 
@@ -226,9 +226,8 @@ export default function ProductDetailsPage({ params }: { params: Promise<{ id: s
                 <div className="d-flex align-items-center gap-2">
                   <iconify-icon
                     icon="solar:box-bold-duotone"
-                    className={`fs-20 ${
-                      (product.stock_quantity ?? 0) > 5 ? 'text-success' : 'text-danger'
-                    }`}
+                    className={`fs-20 ${(product.stock_quantity ?? 0) > 5 ? 'text-success' : 'text-danger'
+                      }`}
                   ></iconify-icon>
                   <span className="fw-medium text-dark">
                     Stock Level: <strong>{product.stock_quantity ?? 0} units</strong> available in inventory

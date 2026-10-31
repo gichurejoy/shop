@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { getCmsSeoSettings, saveCmsSeoSettings } from '../../../../actions';
-import type { CmsSeoSettings } from '../../../../../lib/cms';
+import type { CmsSeoSettings } from '@/lib/cms';
 import { toast } from 'sonner';
 
 export default function AdvancedSEO() {

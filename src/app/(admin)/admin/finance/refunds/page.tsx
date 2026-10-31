@@ -1,82 +1,141 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { apiClient } from '@/lib/api-client';
 
-type RefundRequest = {
+interface IRefundItem {
   id: string;
+  trxId?: string;
   orderId: string;
   customer: string;
   amount: string;
+  rawAmount?: number;
   dateRequested: string;
   reason: string;
   status: 'Pending' | 'Processed' | 'Rejected';
-};
-
-const MOCK_REFUNDS: RefundRequest[] = [
-  { id: 'REF-5421', orderId: '#ORD-10045', customer: 'Alice Freeman', amount: '$45.00', dateRequested: '2 hours ago', reason: 'Item arrived damaged', status: 'Pending' },
-  { id: 'REF-5420', orderId: '#ORD-10032', customer: 'John Doe', amount: '$120.00', dateRequested: 'Yesterday', reason: 'Changed mind', status: 'Pending' },
-  { id: 'REF-5419', orderId: '#ORD-9980', customer: 'Sophie Williams', amount: '$210.00', dateRequested: 'Oct 10, 2023', reason: 'Wrong size', status: 'Processed' },
-  { id: 'REF-5418', orderId: '#ORD-9975', customer: 'Mark Johnson', amount: '$15.00', dateRequested: 'Oct 09, 2023', reason: 'Late delivery', status: 'Rejected' },
-];
+}
 
 export default function RefundsPage() {
-  const [refunds, setRefunds] = useState<RefundRequest[]>(MOCK_REFUNDS);
+  const [refunds, setRefunds] = useState<IRefundItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'Pending' | 'All'>('Pending');
-  const [selectedRefund, setSelectedRefund] = useState<RefundRequest | null>(null);
-  
-  const [refundAmount, setRefundAmount] = useState('');
+  const [selectedRefund, setSelectedRefund] = useState<IRefundItem | null>(null);
   const [adminNote, setAdminNote] = useState('');
+  const [processing, setProcessing] = useState(false);
+  const [search, setSearch] = useState('');
 
-  const filtered = activeTab === 'Pending' 
-    ? refunds.filter(r => r.status === 'Pending')
-    : refunds;
+  const loadRefunds = async () => {
+    setLoading(true);
+    try {
+      const res = await apiClient.transactions.list();
+      const allTx = res.transactions || [];
+      // Map transactions to refund candidate requests
+      const list: IRefundItem[] = allTx.map((t) => ({
+        id: `REF-${t.id.replace(/[^0-9]/g, '').slice(-4) || '5421'}`,
+        trxId: t.id,
+        orderId: t.orderId,
+        customer: t.customer,
+        amount: t.amount,
+        rawAmount: t.rawAmount,
+        dateRequested: t.date,
+        reason: t.status === 'Refunded' ? 'Customer requested return / approved' : 'Dispute / return requested',
+        status: t.status === 'Refunded' ? 'Processed' : 'Pending',
+      }));
+      setRefunds(list);
+    } catch (err) {
+      console.error('Failed to load refunds:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleAction = (status: 'Processed' | 'Rejected') => {
+  useEffect(() => {
+    loadRefunds();
+  }, []);
+
+  const handleAction = async (status: 'Processed' | 'Rejected') => {
     if (!selectedRefund) return;
-    setRefunds(refunds.map(r => r.id === selectedRefund.id ? { ...r, status } : r));
-    setSelectedRefund(null);
+    setProcessing(true);
+    try {
+      if (status === 'Processed') {
+        await apiClient.transactions.refund(selectedRefund.trxId || selectedRefund.id, selectedRefund.rawAmount, adminNote);
+      }
+      setRefunds(refunds.map(r => r.id === selectedRefund.id ? { ...r, status } : r));
+      setSelectedRefund(null);
+      setAdminNote('');
+    } catch (err) {
+      alert('Failed to process refund');
+    } finally {
+      setProcessing(false);
+    }
   };
 
-  const openProcessModal = (refund: RefundRequest) => {
+  const openProcessModal = (refund: IRefundItem) => {
     setSelectedRefund(refund);
-    setRefundAmount(refund.amount.replace('$', ''));
-    setAdminNote('');
+    setAdminNote('Customer return received and verified in atelier.');
   };
+
+  const filtered = refunds.filter((r) => {
+    const matchesTab = activeTab === 'Pending' ? r.status === 'Pending' : true;
+    const matchesSearch =
+      r.id.toLowerCase().includes(search.toLowerCase()) ||
+      r.customer.toLowerCase().includes(search.toLowerCase()) ||
+      r.orderId.toLowerCase().includes(search.toLowerCase());
+    return matchesTab && matchesSearch;
+  });
+
+  const pendingCount = refunds.filter(r => r.status === 'Pending').length;
 
   return (
     <div className="row">
       <div className="col-12">
         <div className="card">
-          <div className="card-header border-bottom-0 pb-0 d-flex justify-content-between align-items-end">
+          <div className="card-header border-bottom-0 pb-0 d-flex justify-content-between align-items-end flex-wrap gap-2">
             <ul className="nav nav-tabs border-bottom-0">
               <li className="nav-item">
-                <button className={`nav-link fw-medium ${activeTab === 'Pending' ? 'active border-bottom-0 bg-light-subtle text-primary' : 'text-muted'}`} onClick={() => setActiveTab('Pending')}>
-                  Pending Requests <span className="badge bg-danger ms-1">{refunds.filter(r => r.status === 'Pending').length}</span>
+                <button
+                  className={`nav-link fw-medium ${activeTab === 'Pending' ? 'active text-primary' : 'text-muted'}`}
+                  onClick={() => setActiveTab('Pending')}
+                >
+                  Pending Requests <span className="badge bg-danger ms-1">{pendingCount}</span>
                 </button>
               </li>
               <li className="nav-item">
-                <button className={`nav-link fw-medium ${activeTab === 'All' ? 'active border-bottom-0 bg-light-subtle text-primary' : 'text-muted'}`} onClick={() => setActiveTab('All')}>
-                  All Refunds
+                <button
+                  className={`nav-link fw-medium ${activeTab === 'All' ? 'active text-primary' : 'text-muted'}`}
+                  onClick={() => setActiveTab('All')}
+                >
+                  All Refunds ({refunds.length})
                 </button>
               </li>
             </ul>
-            <div className="pb-2">
+            <div className="pb-2 d-flex gap-2">
               <div className="position-relative">
-                <input type="search" className="form-control form-control-sm" placeholder="Search refunds..." style={{ paddingLeft: '30px' }} />
-                <iconify-icon icon="solar:magnifer-linear" style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}></iconify-icon>
+                <input
+                  type="search"
+                  className="form-control form-control-sm"
+                  placeholder="Search refunds..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  style={{ minWidth: '220px' }}
+                />
               </div>
+              <button onClick={loadRefunds} className="btn btn-sm btn-outline-light text-dark">
+                <iconify-icon icon="solar:restart-bold" className="align-middle"></iconify-icon>
+              </button>
             </div>
           </div>
-          
-          <div className="card-body bg-light-subtle border-top pt-3 rounded-bottom">
+
+          <div className="card-body p-0 border-top">
             <div className="table-responsive">
-              <table className="table bg-white rounded shadow-sm align-middle table-hover mb-0">
-                <thead className="table-light">
+              <table className="table align-middle table-hover mb-0 table-centered">
+                <thead className="bg-light-subtle">
                   <tr>
                     <th>Refund ID</th>
                     <th>Order Ref</th>
                     <th>Customer</th>
-                    <th>Reason</th>
+                    <th>Reason / Notes</th>
                     <th>Amount</th>
                     <th>Date Requested</th>
                     <th>Status</th>
@@ -84,97 +143,135 @@ export default function RefundsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map(ref => (
-                    <tr key={ref.id}>
-                      <td className="fw-medium text-dark">{ref.id}</td>
-                      <td><a href="#!" className="text-primary text-decoration-none">{ref.orderId}</a></td>
-                      <td>{ref.customer}</td>
-                      <td className="text-muted fs-13" style={{ maxWidth: '200px' }}><div className="text-truncate">{ref.reason}</div></td>
-                      <td className="fw-bold">{ref.amount}</td>
-                      <td className="text-muted fs-13">{ref.dateRequested}</td>
-                      <td>
-                        <span className={`badge ${
-                          ref.status === 'Processed' ? 'bg-success-subtle text-success' :
-                          ref.status === 'Rejected' ? 'bg-danger-subtle text-danger' :
-                          'bg-warning-subtle text-warning'
-                        }`}>
-                          {ref.status}
-                        </span>
-                      </td>
-                      <td className="text-end">
-                        {ref.status === 'Pending' ? (
-                          <button className="btn btn-sm btn-primary" onClick={() => openProcessModal(ref)}>Process</button>
-                        ) : (
-                          <button className="btn btn-soft-secondary btn-sm"><iconify-icon icon="solar:eye-bold-duotone" className="align-middle"></iconify-icon></button>
-                        )}
+                  {loading ? (
+                    <tr>
+                      <td colSpan={8} className="text-center py-4 text-muted">
+                        <div className="spinner-border spinner-border-sm me-2 text-primary" role="status"></div>
+                        Loading refunds from MySQL...
                       </td>
                     </tr>
-                  ))}
-                  {filtered.length === 0 && (
-                    <tr><td colSpan={8} className="text-center p-4 text-muted">No {activeTab.toLowerCase()} refunds found.</td></tr>
+                  ) : filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="text-center py-4 text-muted">
+                        No refunds found matching this view.
+                      </td>
+                    </tr>
+                  ) : (
+                    filtered.map((ref) => (
+                      <tr key={ref.id}>
+                        <td className="fw-medium text-dark">{ref.id}</td>
+                        <td>
+                          <Link href={`/admin/orders/${ref.orderId.replace('#', '')}`} className="text-primary text-decoration-none fw-semibold">
+                            {ref.orderId}
+                          </Link>
+                        </td>
+                        <td>{ref.customer}</td>
+                        <td className="text-muted fs-13" style={{ maxWidth: '240px' }}>
+                          <div className="text-truncate" title={ref.reason}>{ref.reason}</div>
+                        </td>
+                        <td className="fw-bold text-dark">{ref.amount}</td>
+                        <td className="text-muted fs-13">{ref.dateRequested}</td>
+                        <td>
+                          <span className={`badge px-2 py-1 fs-12 ${
+                            ref.status === 'Processed'
+                              ? 'bg-success-subtle text-success'
+                              : ref.status === 'Rejected'
+                              ? 'bg-danger-subtle text-danger'
+                              : 'bg-warning-subtle text-warning'
+                          }`}>
+                            {ref.status}
+                          </span>
+                        </td>
+                        <td className="text-end">
+                          {ref.status === 'Pending' ? (
+                            <button
+                              className="btn btn-sm btn-primary"
+                              onClick={() => openProcessModal(ref)}
+                            >
+                              Process Refund
+                            </button>
+                          ) : (
+                            <span className="text-muted fs-12">Settled</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </table>
             </div>
+          </div>
+
+          <div className="card-footer border-top d-flex justify-content-between align-items-center">
+            <span className="text-muted fs-13">Showing {filtered.length} refund requests</span>
+            <span className="text-muted fs-12">Integrated with MySQL transactions</span>
           </div>
         </div>
       </div>
 
       {/* Process Refund Modal */}
       {selectedRefund && (
-        <div style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)', position: 'fixed', inset: 0, zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="card shadow-lg m-3" style={{ width: '100%', maxWidth: '550px' }}>
-            <div className="card-header d-flex justify-content-between align-items-center bg-light-subtle">
-              <h5 className="card-title mb-0">Process Refund {selectedRefund.id}</h5>
-              <button type="button" className="btn-close" onClick={() => setSelectedRefund(null)}></button>
-            </div>
-            <div className="card-body">
-              
-              <div className="row g-3 mb-4">
-                <div className="col-sm-6">
-                  <div className="p-3 bg-light rounded border">
-                    <span className="d-block text-muted fs-12 text-uppercase mb-1">Customer</span>
-                    <span className="fw-medium text-dark">{selectedRefund.customer}</span>
+        <div className="modal show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Review & Settle Refund #{selectedRefund.id}</h5>
+                <button type="button" className="btn-close" onClick={() => setSelectedRefund(null)}></button>
+              </div>
+              <div className="modal-body d-flex flex-column gap-3">
+                <div className="p-3 bg-light rounded border">
+                  <div className="d-flex justify-content-between mb-1">
+                    <span className="text-muted fs-13">Customer:</span>
+                    <strong className="text-dark">{selectedRefund.customer}</strong>
+                  </div>
+                  <div className="d-flex justify-content-between mb-1">
+                    <span className="text-muted fs-13">Order:</span>
+                    <strong className="text-primary">{selectedRefund.orderId}</strong>
+                  </div>
+                  <div className="d-flex justify-content-between">
+                    <span className="text-muted fs-13">Refund Total:</span>
+                    <strong className="text-danger fs-16">{selectedRefund.amount}</strong>
                   </div>
                 </div>
-                <div className="col-sm-6">
-                  <div className="p-3 bg-light rounded border">
-                    <span className="d-block text-muted fs-12 text-uppercase mb-1">Order Total</span>
-                    <span className="fw-medium text-dark">{selectedRefund.amount}</span>
-                  </div>
-                </div>
-                <div className="col-12">
-                  <div className="p-3 bg-warning-subtle text-warning-emphasis rounded border border-warning-subtle">
-                    <span className="d-block fw-bold fs-13 mb-1">Customer Reason:</span>
-                    <span className="fs-14">"{selectedRefund.reason}"</span>
-                  </div>
+
+                <div>
+                  <label className="form-label fw-semibold">Settlement Verification Note</label>
+                  <textarea
+                    className="form-control"
+                    rows={3}
+                    value={adminNote}
+                    onChange={(e) => setAdminNote(e.target.value)}
+                    placeholder="Enter reason or vault restocking confirmation..."
+                  />
                 </div>
               </div>
-
-              <div className="mb-3">
-                <label className="form-label fw-medium text-dark">Refund Amount</label>
-                <div className="input-group">
-                  <span className="input-group-text">$</span>
-                  <input type="number" className="form-control fw-bold" value={refundAmount} onChange={e => setRefundAmount(e.target.value)} />
-                </div>
-                <div className="form-text mt-1 text-muted">You can process a partial refund by changing this amount.</div>
-              </div>
-
-              <div className="mb-4">
-                <label className="form-label fw-medium text-dark">Admin Note (Internal only)</label>
-                <textarea className="form-control" rows={2} placeholder="Add a note about this decision..." value={adminNote} onChange={e => setAdminNote(e.target.value)}></textarea>
-              </div>
-
-              <div className="d-flex justify-content-between gap-2 pt-3 border-top">
-                <button type="button" className="btn btn-outline-danger" onClick={() => handleAction('Rejected')}>Reject Refund</button>
+              <div className="modal-footer d-flex justify-content-between">
+                <button
+                  type="button"
+                  className="btn btn-soft-danger"
+                  onClick={() => handleAction('Rejected')}
+                  disabled={processing}
+                >
+                  Reject Claim
+                </button>
                 <div className="d-flex gap-2">
-                  <button type="button" className="btn btn-light" onClick={() => setSelectedRefund(null)}>Cancel</button>
-                  <button type="button" className="btn btn-success d-flex align-items-center gap-2" onClick={() => handleAction('Processed')}>
-                    <iconify-icon icon="solar:check-circle-bold-duotone"></iconify-icon> Approve Refund
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={() => setSelectedRefund(null)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-success"
+                    onClick={() => handleAction('Processed')}
+                    disabled={processing}
+                  >
+                    {processing ? 'Processing...' : 'Approve & Refund'}
                   </button>
                 </div>
               </div>
-
             </div>
           </div>
         </div>

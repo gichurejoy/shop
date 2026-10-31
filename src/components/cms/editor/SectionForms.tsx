@@ -1,6 +1,6 @@
 import React from 'react';
 import { useCms } from './cms-store';
-import { CmsSection } from '../../../lib/cms-types';
+import { CmsSection } from '@/lib/cms-types';
 
 function FieldGroup({ title, children }: { title: string, children: React.ReactNode }) {
   return (

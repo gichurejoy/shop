@@ -207,7 +207,7 @@ export default function CalendarPage() {
 
           {/* Calendar grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
-            {cells.map((day, idx) => {
+            {cells.map((day: any, idx: number) => {
               const dateStr = day ? getDateStr(day) : '';
               const dayEvents = day ? getEventsForDay(day) : [];
               const isToday = dateStr === todayStr;

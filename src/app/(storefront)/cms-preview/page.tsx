@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { CmsSection } from '../../../lib/cms-types';
+import { CmsSection } from '@/lib/cms-types';
 import { RenderSection } from '../../../components/cms/SectionRenderer';
 
 export default function CmsPreviewPage() {

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { getCmsAnnouncementBar, saveCmsAnnouncementBar } from '../../../../actions';
-import type { CmsAnnouncementBar } from '../../../../../lib/cms';
+import type { CmsAnnouncementBar } from '@/lib/cms';
 import { toast } from 'sonner';
 
 export default function AnnouncementBarManager() {

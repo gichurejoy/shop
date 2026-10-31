@@ -13,8 +13,8 @@ import {
   Calendar,
   Bell } from
 'lucide-react';
-import { apiClient } from '../lib/api-client';
-import { IOrder } from '../types/order';
+import { apiClient } from '@/lib/api-client';
+import { IOrder } from '@/types/order';
 import { InvoiceView } from '../components/InvoiceView';
 import { toast } from 'sonner';
 export function OrderTracking() {

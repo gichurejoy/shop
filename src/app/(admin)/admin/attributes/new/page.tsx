@@ -1,18 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { apiClient } from '@/lib/api-client';
 
-const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '9px 12px', borderRadius: '8px',
-  border: '1px solid #e2e8f0', fontSize: '13px', outline: 'none',
-  boxSizing: 'border-box', fontFamily: 'inherit', color: '#0f172a',
-};
+function AttributeFormContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-export default function AttributesFormPage({ isEdit = false }: { isEdit?: boolean }) {
-  const [terms, setTerms] = useState(isEdit ? ['Red', 'Blue', 'Green', 'Black'] : ['']);
-  const [name, setName] = useState(isEdit ? 'Color' : '');
-  const [type, setType] = useState('Select');
+  const editId = searchParams.get('id');
+  const initialName = searchParams.get('name') || '';
+  const initialType = searchParams.get('type') || 'Select';
+  const initialTermsRaw = searchParams.get('terms');
+
+  const [name, setName] = useState(initialName);
+  const [type, setType] = useState(initialType);
+  const [terms, setTerms] = useState<string[]>(
+    initialTermsRaw ? initialTermsRaw.split(',').filter(Boolean) : ['']
+  );
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const addTerm = () => setTerms([...terms, '']);
   const removeTerm = (i: number) => setTerms(terms.filter((_, idx) => idx !== i));
@@ -22,75 +30,177 @@ export default function AttributesFormPage({ isEdit = false }: { isEdit?: boolea
     setTerms(updated);
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      setError('Please provide an attribute name.');
+      return;
+    }
+    const cleanTerms = terms.map(t => t.trim()).filter(Boolean);
+    if (cleanTerms.length === 0) {
+      setError('Please provide at least one value/term for this attribute.');
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      await apiClient.attributes.save({
+        id: editId || undefined,
+        name: name.trim(),
+        type,
+        terms: cleanTerms,
+      });
+      router.push('/admin/attributes');
+    } catch (err: any) {
+      setError(err?.message || 'Failed to save attribute');
+      setSaving(false);
+    }
+  };
+
   return (
     <div>
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
-          <Link href="/admin/attributes" style={{ color: '#64748b', textDecoration: 'none' }}>Attributes</Link> › <span style={{ color: '#ff6c2f' }}>{isEdit ? 'Edit' : 'Add New'}</span>
+      <div className="mb-3">
+        <div className="text-muted fs-13 mb-1">
+          <Link href="/admin/attributes" className="text-muted text-decoration-none">Attributes</Link> › <span className="text-primary">{editId ? 'Edit Attribute' : 'Add New Attribute'}</span>
         </div>
-        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#0f172a' }}>{isEdit ? 'Edit Attribute' : 'Add Attribute'}</h2>
+        <h3 className="fw-bold text-dark mb-0">{editId ? 'Edit Attribute' : 'Create New Attribute'}</h3>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '20px' }}>
-        <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>
-            {isEdit ? 'Edit Attribute' : 'New Attribute'}
-          </div>
-          <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-            <div>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', display: 'block', marginBottom: '6px' }}>Attribute Name *</label>
-              <input type="text" placeholder="e.g. Color, Size, Material" value={name} onChange={e => setName(e.target.value)} style={inputStyle} />
-            </div>
-            <div>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', display: 'block', marginBottom: '6px' }}>Slug</label>
-              <input type="text" placeholder="auto-generated" value={name.toLowerCase().replace(/\s+/g, '-')} readOnly style={{ ...inputStyle, background: '#f8fafc', color: '#94a3b8' }} />
-              <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>Auto-generated from name. Used in URLs.</p>
-            </div>
-            <div>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', display: 'block', marginBottom: '6px' }}>Type</label>
-              <select value={type} onChange={e => setType(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
-                <option>Select</option>
-                <option>Color Swatch</option>
-                <option>Text</option>
-                <option>Image</option>
-              </select>
-            </div>
-            <div>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155', display: 'block', marginBottom: '10px' }}>Terms / Values</label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {terms.map((term, i) => (
-                  <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <input type="text" value={term} onChange={e => updateTerm(i, e.target.value)} placeholder={`Term ${i + 1}`} style={{ ...inputStyle, flex: 1 }} />
-                    <button onClick={() => removeTerm(i)} style={{ width: '34px', height: '34px', borderRadius: '8px', border: 'none', background: '#fee2e2', color: '#dc2626', cursor: 'pointer', fontSize: '16px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
-                  </div>
-                ))}
+      {error && (
+        <div className="alert alert-danger py-2 mb-3 fs-14">
+          <iconify-icon icon="solar:danger-triangle-bold" className="align-middle me-1"></iconify-icon>
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit}>
+        <div className="row g-4">
+          <div className="col-lg-8">
+            <div className="card">
+              <div className="card-header border-bottom">
+                <h5 className="card-title mb-0">Attribute Configuration</h5>
               </div>
-              <button onClick={addTerm} style={{ marginTop: '10px', padding: '7px 14px', border: '1px dashed #e2e8f0', borderRadius: '8px', background: '#f8fafc', color: '#64748b', cursor: 'pointer', fontSize: '13px' }}>
-                + Add Term
-              </button>
-            </div>
-            <div style={{ display: 'flex', gap: '10px', paddingTop: '8px' }}>
-              <button style={{ flex: 1, padding: '11px', borderRadius: '8px', background: '#ff6c2f', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '14px', fontWeight: 600 }}>
-                {isEdit ? 'Update Attribute' : 'Save Attribute'}
-              </button>
-              <Link href="/admin/attributes" style={{ padding: '11px 20px', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#64748b', textDecoration: 'none', fontSize: '13px', display: 'flex', alignItems: 'center' }}>
-                Cancel
-              </Link>
-            </div>
-          </div>
-        </div>
+              <div className="card-body d-flex flex-column gap-3">
+                <div>
+                  <label className="form-label fw-semibold">Attribute Name <span className="text-danger">*</span></label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="e.g. Ring Size, Metal Purity, Gemstone Grade"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                  />
+                </div>
 
-        {/* Tips */}
-        <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', alignSelf: 'start' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', fontWeight: 700, fontSize: '14px', color: '#0f172a' }}>Tips</div>
-          <div style={{ padding: '20px', fontSize: '13px', color: '#64748b', lineHeight: '1.7' }}>
-            <p style={{ marginTop: 0 }}>Attributes are used to define features of products. Customers can filter products by these attributes on the shop page.</p>
-            <p><strong style={{ color: '#0f172a' }}>Name:</strong> The visible name shown to customers (e.g. "Color").</p>
-            <p><strong style={{ color: '#0f172a' }}>Terms:</strong> Possible values for this attribute (e.g. "Red", "Blue").</p>
-            <p style={{ marginBottom: 0 }}><strong style={{ color: '#0f172a' }}>Type:</strong> How the terms are displayed on the product page.</p>
+                <div>
+                  <label className="form-label fw-semibold">Slug Identifier</label>
+                  <input
+                    type="text"
+                    className="form-control bg-light"
+                    placeholder="auto-generated-slug"
+                    value={name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}
+                    readOnly
+                  />
+                  <small className="text-muted">Unique machine key used for variant matching.</small>
+                </div>
+
+                <div>
+                  <label className="form-label fw-semibold">Control Display Type</label>
+                  <select className="form-select" value={type} onChange={(e) => setType(e.target.value)}>
+                    <option value="Select">Dropdown Select</option>
+                    <option value="Color Swatch">Color Swatch</option>
+                    <option value="Radio Button Pill">Radio Button Pill</option>
+                    <option value="Text">Text Pill</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="form-label fw-semibold d-flex justify-content-between align-items-center">
+                    <span>Terms / Options Values <span className="text-danger">*</span></span>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={addTerm}
+                    >
+                      <iconify-icon icon="solar:add-circle-bold" className="align-middle me-1"></iconify-icon> Add Term
+                    </button>
+                  </label>
+
+                  <div className="d-flex flex-column gap-2 mt-2">
+                    {terms.map((term, i) => (
+                      <div key={i} className="d-flex gap-2 align-items-center">
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={term}
+                          onChange={(e) => updateTerm(i, e.target.value)}
+                          placeholder={`Option ${i + 1} (e.g. 18k Yellow Gold, US 7, Obsidian)`}
+                        />
+                        {terms.length > 1 && (
+                          <button
+                            type="button"
+                            className="btn btn-soft-danger px-3"
+                            onClick={() => removeTerm(i)}
+                          >
+                            <iconify-icon icon="solar:trash-bin-minimalistic-2-broken" className="fs-18"></iconify-icon>
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="d-flex gap-2 pt-3 border-top mt-2">
+                  <button type="submit" className="btn btn-primary px-4" disabled={saving}>
+                    {saving ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                        Saving...
+                      </>
+                    ) : editId ? 'Update Attribute' : 'Save Attribute'}
+                  </button>
+                  <Link href="/admin/attributes" className="btn btn-outline-secondary px-4">
+                    Cancel
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="col-lg-4">
+            <div className="card">
+              <div className="card-header border-bottom">
+                <h5 className="card-title mb-0">Merchandising Guidance</h5>
+              </div>
+              <div className="card-body fs-13 text-muted" style={{ lineHeight: '1.8' }}>
+                <p>
+                  <strong>Attributes</strong> define selectable parameters for luxury goods on the storefront.
+                </p>
+                <ul className="ps-3 mb-3">
+                  <li><strong>Color Swatch:</strong> Visual palette selector for metals & fabrics.</li>
+                  <li><strong>Dropdown Select:</strong> Clean dropdown for large term lists like ring sizes.</li>
+                  <li><strong>Radio Button Pill:</strong> High-visibility buttons for standard sizes (S, M, L).</li>
+                </ul>
+                <div className="p-3 bg-light rounded border">
+                  <iconify-icon icon="solar:shield-check-bold" className="text-success align-middle me-1"></iconify-icon>
+                  <strong>Live Persistence:</strong> Saved attributes are immediately available for product tagging and catalog filtering.
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </form>
     </div>
+  );
+}
+
+export default function AttributesFormPage() {
+  return (
+    <Suspense fallback={<div className="p-4 text-center">Loading attribute editor...</div>}>
+      <AttributeFormContent />
+    </Suspense>
   );
 }

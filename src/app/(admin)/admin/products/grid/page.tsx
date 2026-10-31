@@ -1,31 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { toast } from 'sonner';
+import { apiClient } from '@/lib/api-client';
+import { IProduct } from '@/types/product';
+import { ICategory } from '@/types/category';
 
-const PRODUCTS = [
-  { id: 1,  name: 'Men Black Slim Fit T-shirt',  category: 'Fashion Men',    price: 100, sale: 80,  rating: 4.5, reviews: 55,  img: 'https://techzaa.in/larkon/admin/assets/images/product/p-1.png',  wishlisted: false },
-  { id: 2,  name: 'Olive Green Leather Bag',     category: 'Fashion Women',  price: 150, sale: 136, rating: 4.1, reviews: 143, img: 'https://techzaa.in/larkon/admin/assets/images/product/p-2.png',  wishlisted: true  },
-  { id: 3,  name: 'Women Golden Dress',           category: 'Fashion Women',  price: 250, sale: 219, rating: 4.4, reviews: 174, img: 'https://techzaa.in/larkon/admin/assets/images/product/p-3.png',  wishlisted: false },
-  { id: 4,  name: 'Gray Cap For Men',             category: 'Fashion Men',    price: 100, sale: 76,  rating: 4.2, reviews: 23,  img: 'https://techzaa.in/larkon/admin/assets/images/product/p-4.png',  wishlisted: false },
-  { id: 5,  name: 'Dark Green Cargo Pent',        category: 'Fashion Men',    price: 130, sale: 110, rating: 4.4, reviews: 109, img: 'https://techzaa.in/larkon/admin/assets/images/product/p-5.png',  wishlisted: false },
-  { id: 6,  name: 'Orange Headphone',             category: 'Electronics',    price: 250, sale: 231, rating: 4.2, reviews: 200, img: 'https://techzaa.in/larkon/admin/assets/images/product/p-6.png',  wishlisted: true  },
-  { id: 7,  name: "Kid's Yellow Shoes",           category: 'Foot Ware',      price: 100, sale: 89,  rating: 4.5, reviews: 321, img: 'https://techzaa.in/larkon/admin/assets/images/product/p-7.png',  wishlisted: false },
-  { id: 8,  name: 'Men Dark Brown Wallet',        category: 'Accessories',    price: 150, sale: 132, rating: 4.1, reviews: 190, img: 'https://techzaa.in/larkon/admin/assets/images/product/p-8.png',  wishlisted: false },
-  { id: 9,  name: 'Sky Blue Mat Sunglass',        category: 'Eye Ware',       price: 100, sale: 77,  rating: 3.5, reviews: 298, img: 'https://techzaa.in/larkon/admin/assets/images/product/p-9.png',  wishlisted: false },
-  { id: 10, name: "Kid's Yellow T-shirt",         category: 'Fashion Kids',   price: 140, sale: 110, rating: 4.1, reviews: 156, img: 'https://techzaa.in/larkon/admin/assets/images/product/p-10.png', wishlisted: false },
-  { id: 11, name: 'White Rubber Smart Watch',     category: 'Watches',        price: 110, sale: 77,  rating: 3.4, reviews: 201, img: 'https://techzaa.in/larkon/admin/assets/images/product/p-11.png', wishlisted: false },
-  { id: 12, name: 'Men Brown Leather Shoes',      category: 'Foot Ware',      price: 250, sale: 222, rating: 4.1, reviews: 370, img: 'https://techzaa.in/larkon/admin/assets/images/product/p-12.png', wishlisted: false },
-];
+const BASE = 'https://techzaa.in/larkon/admin/assets/images';
 
-// ── Collapsible filter section using React state (bypasses Bootstrap JS) ──────
+// Collapsible filter section
 function FilterSection({ title, children, className = '' }: { title: string; children: React.ReactNode; className?: string }) {
   const [open, setOpen] = useState(true);
   return (
     <div className={className}>
       <a
         href="#!"
-        className="btn-link d-flex align-items-center text-dark bg-light p-2 rounded fw-medium fs-16 mb-0"
+        className="btn-link d-flex align-items-center text-dark bg-light p-2 rounded fw-medium fs-16 mb-0 text-decoration-none"
         onClick={(e) => { e.preventDefault(); setOpen(!open); }}
       >
         {title}
@@ -38,304 +29,285 @@ function FilterSection({ title, children, className = '' }: { title: string; chi
   );
 }
 
-// ── Product card ──────────────────────────────────────────────────────────────
-function ProductCard({ product }: { product: typeof PRODUCTS[0] }) {
-  const [wishlisted, setWishlisted] = useState(product.wishlisted);
-  const discount = Math.round(((product.price - product.sale) / product.price) * 100);
+// Product Card
+function ProductCard({ product, onDelete }: { product: IProduct; onDelete: (id: string) => void }) {
+  const [wishlisted, setWishlisted] = useState(false);
+  const img = (product as any).image || (product.images && product.images[0]) || `${BASE}/product/p-1.png`;
+  const price = Number(product.price);
+  const compareAt = product.compare_at_price ? Number(product.compare_at_price) : null;
+  const discount = compareAt && compareAt > price ? Math.round(((compareAt - price) / compareAt) * 100) : null;
 
   return (
-    <div className="card" style={{ position: 'relative' }}>
-      <img src={product.img} alt={product.name} className="img-fluid" />
-      <div className="card-body bg-light-subtle rounded-bottom">
-        <Link href={`/admin/products/${product.id}`} className="text-dark fw-medium fs-16">
-          {product.name}
-        </Link>
-        <div className="my-1">
-          <div className="d-flex gap-2 align-items-center">
-            <ul className="d-flex text-warning m-0 fs-18 list-unstyled">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <li key={star}>
-                  <i className={`bx ${star <= Math.floor(product.rating) ? 'bxs-star' : star - 0.5 <= product.rating ? 'bxs-star-half' : 'bx-star'}`}></i>
-                </li>
-              ))}
-            </ul>
-            <p className="mb-0 fw-medium fs-15 text-dark">
-              {product.rating} <span className="text-muted fs-13">({product.reviews} Review)</span>
-            </p>
-          </div>
-        </div>
-        <h4 className="fw-semibold text-dark mt-2 d-flex align-items-center gap-2">
-          <span className="text-muted text-decoration-line-through">${product.price}</span> ${product.sale}{' '}
-          <small className="text-muted">({discount}% Off)</small>
-        </h4>
-        <div className="mt-3">
-          <div className="d-flex gap-2">
-            {/* Dropdown uses Bootstrap JS (works fine) */}
-            <div className="dropdown">
-              <a
-                href="#!"
-                className="btn btn-soft-primary border border-primary-subtle"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
-                <i className="bx bx-dots-horizontal-rounded"></i>
-              </a>
-              <div className="dropdown-menu">
-                <Link href={`/admin/products/${product.id}/edit`} className="dropdown-item">Edit</Link>
-                <Link href={`/admin/products/${product.id}`} className="dropdown-item">Overview</Link>
-                <a href="#!" className="dropdown-item">Delete</a>
-              </div>
+    <div className="card h-100 overflow-hidden" style={{ position: 'relative' }}>
+      <div style={{ height: '220px', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+        <img
+          src={img}
+          alt={product.title}
+          style={{ maxHeight: '180px', maxWidth: '85%', objectFit: 'contain' }}
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = `${BASE}/product/p-1.png`;
+          }}
+        />
+      </div>
+      <div className="card-body bg-light-subtle rounded-bottom d-flex flex-column justify-content-between">
+        <div>
+          <span className="badge bg-secondary-subtle text-secondary fs-11 mb-1">
+            {product.category?.name || 'General'}
+          </span>
+          <Link href={`/admin/products/${product.id}`} className="text-dark fw-medium fs-15 text-decoration-none d-block text-truncate">
+            {product.title}
+          </Link>
+          <div className="my-1">
+            <div className="d-flex gap-2 align-items-center">
+              <span className="text-warning fs-14">
+                <i className="bx bxs-star"></i>
+                <i className="bx bxs-star"></i>
+                <i className="bx bxs-star"></i>
+                <i className="bx bxs-star"></i>
+                <i className="bx bxs-star-half"></i>
+              </span>
+              <p className="mb-0 fw-medium fs-13 text-dark">
+                4.8 <span className="text-muted fs-12">(Atelier Edition)</span>
+              </p>
             </div>
+          </div>
+          <h5 className="fw-semibold text-dark mt-2 d-flex align-items-center gap-2 mb-0">
+            ${price.toFixed(2)}{' '}
+            {compareAt && (
+              <span className="text-muted text-decoration-line-through fs-13">${compareAt.toFixed(2)}</span>
+            )}
+            {discount && <small className="badge bg-danger-subtle text-danger fs-11">{discount}% Off</small>}
+          </h5>
+        </div>
+
+        <div className="mt-3 pt-2 border-top">
+          <div className="d-flex gap-2">
             <Link
-              href="/admin/orders/cart"
-              className="btn btn-outline-dark border border-secondary-subtle d-flex align-items-center justify-content-center gap-1 w-100"
+              href={`/admin/products/${product.id}/edit`}
+              className="btn btn-sm btn-soft-primary border border-primary-subtle flex-fill d-flex align-items-center justify-content-center gap-1"
             >
-              <i className="bx bx-cart align-middle"></i> Add To Cart
+              <iconify-icon icon="solar:pen-2-broken" className="fs-16"></iconify-icon> Edit
             </Link>
+            <Link
+              href={`/admin/products/${product.id}`}
+              className="btn btn-sm btn-light border flex-fill d-flex align-items-center justify-content-center gap-1"
+            >
+              <iconify-icon icon="solar:eye-broken" className="fs-16"></iconify-icon> View
+            </Link>
+            <button
+              type="button"
+              onClick={() => onDelete(product.id)}
+              className="btn btn-sm btn-soft-danger border border-danger-subtle px-2"
+              title="Delete Product"
+            >
+              <iconify-icon icon="solar:trash-bin-minimalistic-2-broken" className="fs-16"></iconify-icon>
+            </button>
           </div>
         </div>
       </div>
-      <span className="position-absolute top-0 end-0 p-3">
+
+      <span className="position-absolute top-0 end-0 p-2">
         <button
           type="button"
           onClick={() => setWishlisted(!wishlisted)}
-          className="btn btn-soft-danger avatar-sm d-inline-flex align-items-center justify-content-center fs-20 rounded-circle"
+          className="btn btn-soft-danger avatar-sm d-inline-flex align-items-center justify-content-center fs-18 rounded-circle"
+          style={{ width: '32px', height: '32px' }}
         >
-          <iconify-icon icon={wishlisted ? 'solar:heart-angle-bold-duotone' : 'solar:heart-broken'}></iconify-icon>
+          <iconify-icon icon={wishlisted ? 'solar:heart-bold' : 'solar:heart-broken'}></iconify-icon>
         </button>
       </span>
     </div>
   );
 }
 
-// ── Page ──────────────────────────────────────────────────────────────────────
 export default function ProductGridPage() {
+  const [products, setProducts] = useState<IProduct[]>([]);
+  const [categories, setCategories] = useState<ICategory[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const filtered = PRODUCTS.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [maxPriceFilter, setMaxPriceFilter] = useState<number>(1000);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const [prodRes, catRes] = await Promise.all([
+        apiClient.products.list({ limit: 100 }),
+        apiClient.categories.list().catch(() => ({ categories: [] })),
+      ]);
+      setProducts(prodRes.products || []);
+      setCategories(catRes.categories || []);
+    } catch (err: any) {
+      toast.error('Failed to load products: ' + (err.message || 'Unknown error'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this product?')) return;
+    try {
+      await apiClient.products.delete(id);
+      toast.success('Product deleted.');
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+    } catch (err: any) {
+      toast.error('Failed to delete product: ' + err.message);
+    }
+  };
+
+  const filtered = products.filter((p) => {
+    const matchesSearch =
+      p.title.toLowerCase().includes(search.toLowerCase()) ||
+      (p.description && p.description.toLowerCase().includes(search.toLowerCase()));
+
+    const matchesCategory =
+      selectedCategory === 'all' ||
+      p.category?.id === selectedCategory ||
+      p.category?.slug === selectedCategory;
+
+    const matchesPrice = Number(p.price) <= maxPriceFilter;
+
+    return matchesSearch && matchesCategory && matchesPrice;
+  });
 
   return (
     <div className="row">
-      {/* ── Left Sidebar ── */}
+      {/* Left Sidebar */}
       <div className="col-lg-3">
         {/* Search bar card */}
-        <div className="card bg-light-subtle mb-2">
-          <div className="card-header border-0">
-            <div className="search-bar me-3 mb-1">
-              <span><i className="bx bx-search-alt"></i></span>
+        <div className="card mb-3">
+          <div className="card-header">
+            <h4 className="card-title mb-0">Search Products</h4>
+          </div>
+          <div className="card-body">
+            <div className="position-relative">
               <input
-                type="search"
+                type="text"
                 className="form-control"
-                id="search"
-                placeholder="Search ..."
+                placeholder="Search..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                style={{ paddingLeft: '32px' }}
               />
+              <iconify-icon
+                icon="solar:magnifer-linear"
+                style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}
+              ></iconify-icon>
             </div>
           </div>
         </div>
 
-        {/* Filter card */}
-        <div className="card">
-          <div className="card-body border-light">
-
-            {/* Categories */}
-            <FilterSection title="Categories">
-              <div className="categories-list d-flex flex-column gap-2 mt-2">
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="all-categories" defaultChecked />
-                  <label className="form-check-label" htmlFor="all-categories">All Categories</label>
-                </div>
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="fashion-categories" />
-                  <label className="form-check-label" htmlFor="fashion-categories">Fashion Men , Women &amp; Kid&apos;s</label>
-                </div>
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="sunglass-categories" />
-                  <label className="form-check-label" htmlFor="sunglass-categories">Eye Ware &amp; Sunglass</label>
-                </div>
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="watches-categories" />
-                  <label className="form-check-label" htmlFor="watches-categories">Watches</label>
-                </div>
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="electronics-categories" />
-                  <label className="form-check-label" htmlFor="electronics-categories">Electronics Items</label>
-                </div>
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="furniture-categories" />
-                  <label className="form-check-label" htmlFor="furniture-categories">Furniture</label>
-                </div>
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="headphones-categories" />
-                  <label className="form-check-label" htmlFor="headphones-categories">Headphones</label>
-                </div>
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="beauty-categories" />
-                  <label className="form-check-label" htmlFor="beauty-categories">Beauty &amp; Health</label>
-                </div>
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="shoes-categories" />
-                  <label className="form-check-label" htmlFor="shoes-categories">Foot Ware</label>
-                </div>
-              </div>
-            </FilterSection>
-
-            {/* Product Price */}
-            <FilterSection title="Product Price" className="mt-4">
-              <div className="categories-list d-flex flex-column gap-2 mt-2">
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="all-price" />
-                  <label className="form-check-label" htmlFor="all-price">All Price</label>
-                </div>
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="price-1" />
-                  <label className="form-check-label" htmlFor="price-1">Below $200 (145)</label>
-                </div>
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="price-2" />
-                  <label className="form-check-label" htmlFor="price-2">$200 - $500 (1,885)</label>
-                </div>
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="price-3" />
-                  <label className="form-check-label" htmlFor="price-3">$500 - $800 (2,276)</label>
-                </div>
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="price-4" />
-                  <label className="form-check-label" htmlFor="price-4">$800 - $1000 (12,676)</label>
-                </div>
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="price-5" />
-                  <label className="form-check-label" htmlFor="price-5">$1000 - $1100 (13,123)</label>
-                </div>
-                <h5 className="text-dark fw-medium mt-3">Custom Price Range :</h5>
-                <div className="formCost d-flex gap-2 align-items-center mt-2">
-                  <input className="form-control form-control-sm text-center" type="text" id="minCost" defaultValue="0" />
-                  <span className="fw-semibold text-muted">to</span>
-                  <input className="form-control form-control-sm text-center" type="text" id="maxCost" defaultValue="1000" />
-                </div>
-              </div>
-            </FilterSection>
-
-            {/* Gender */}
-            <FilterSection title="Gender" className="mt-4">
-              <div className="categories-list d-flex flex-column gap-2 mt-2">
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="men" />
-                  <label className="form-check-label" htmlFor="men">Men (1,834)</label>
-                </div>
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="women" />
-                  <label className="form-check-label" htmlFor="women">Women (2,890)</label>
-                </div>
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="kids" />
-                  <label className="form-check-label" htmlFor="kids">Kid&apos;s (1,231)</label>
-                </div>
-              </div>
-            </FilterSection>
-
-            {/* Size & Fit */}
-            <FilterSection title="Size & Fit" className="mt-4">
-              <p className="text-muted mt-1">&quot;For better results, select gender and category&quot;</p>
-              <div className="categories-list d-flex flex-column gap-2 mt-2">
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="size-s" />
-                  <label className="form-check-label" htmlFor="size-s">S (1,437)</label>
-                </div>
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="size-m" />
-                  <label className="form-check-label" htmlFor="size-m">M (2,675)</label>
-                </div>
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="size-l" />
-                  <label className="form-check-label" htmlFor="size-l">L (4,870)</label>
-                </div>
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="size-xl" />
-                  <label className="form-check-label" htmlFor="size-xl">XL (7,543)</label>
-                </div>
-                <div className="form-check">
-                  <input type="checkbox" className="form-check-input" id="size-xxl" />
-                  <label className="form-check-label" htmlFor="size-xxl">XXL (1,099)</label>
-                </div>
-                <a href="#!" className="text-dark fw-medium">More</a>
-              </div>
-            </FilterSection>
-
-            {/* Rating */}
-            <FilterSection title="Rating" className="mt-3">
-              <div className="categories-list d-flex flex-column gap-2 mt-2">
-                <div className="form-check">
-                  <input type="radio" className="form-check-input" name="rating-number" id="rate-1" />
-                  <label className="form-check-label" htmlFor="rate-1">1 <i className="bx bxs-star text-warning"></i> &amp; Above (437)</label>
-                </div>
-                <div className="form-check">
-                  <input type="radio" className="form-check-input" name="rating-number" id="rate-2" />
-                  <label className="form-check-label" htmlFor="rate-2">2 <i className="bx bxs-star text-warning"></i> &amp; Above (657)</label>
-                </div>
-                <div className="form-check">
-                  <input type="radio" className="form-check-input" name="rating-number" id="rate-3" />
-                  <label className="form-check-label" htmlFor="rate-3">3 <i className="bx bxs-star text-warning"></i> &amp; Above (1,897)</label>
-                </div>
-                <div className="form-check">
-                  <input type="radio" className="form-check-input" name="rating-number" id="rate-4" />
-                  <label className="form-check-label" htmlFor="rate-4">4 <i className="bx bxs-star text-warning"></i> &amp; Above (3,571)</label>
-                </div>
-              </div>
-            </FilterSection>
-
+        {/* Filter categories */}
+        <div className="card mb-3">
+          <div className="card-header">
+            <h4 className="card-title mb-0">Categories</h4>
           </div>
-          <div className="card-footer">
-            <a href="#!" className="btn btn-primary w-100">Apply</a>
+          <div className="card-body">
+            <div className="d-flex flex-column gap-2">
+              <div className="form-check">
+                <input
+                  className="form-check-input"
+                  type="radio"
+                  name="catRadio"
+                  id="catAll"
+                  checked={selectedCategory === 'all'}
+                  onChange={() => setSelectedCategory('all')}
+                />
+                <label className="form-check-label fw-medium" htmlFor="catAll">
+                  All Collections ({products.length})
+                </label>
+              </div>
+              {categories.map((c) => (
+                <div key={c.id} className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="radio"
+                    name="catRadio"
+                    id={`cat-${c.id}`}
+                    checked={selectedCategory === c.id || selectedCategory === c.slug}
+                    onChange={() => setSelectedCategory(c.id)}
+                  />
+                  <label className="form-check-label" htmlFor={`cat-${c.id}`}>
+                    {c.name} {c.product_count !== undefined && <span className="text-muted fs-12">({c.product_count})</span>}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Price filter */}
+        <div className="card mb-3">
+          <div className="card-header">
+            <h4 className="card-title mb-0">Max Price: ${maxPriceFilter}</h4>
+          </div>
+          <div className="card-body">
+            <input
+              type="range"
+              className="form-range"
+              min="50"
+              max="2000"
+              step="50"
+              value={maxPriceFilter}
+              onChange={(e) => setMaxPriceFilter(Number(e.target.value))}
+            />
+            <div className="d-flex justify-content-between text-muted fs-12 mt-1">
+              <span>$50</span>
+              <span>$1,000</span>
+              <span>$2,000+</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ── Right Content ── */}
+      {/* Right Column: Grid and Toolbar */}
       <div className="col-lg-9">
-        {/* Toolbar */}
-        <div className="card bg-light-subtle">
-          <div className="card-header border-0">
-            <div className="row justify-content-between align-items-center">
-              <div className="col-lg-6">
-                <ol className="breadcrumb mb-0">
-                  <li className="breadcrumb-item fw-medium"><a href="#!" className="text-dark">Categories</a></li>
-                  <li className="breadcrumb-item active">All Product</li>
-                </ol>
-                <p className="mb-0 text-muted">Showing all <span className="text-dark fw-semibold">5,786</span> items results</p>
+        {/* Top Controls Toolbar */}
+        <div className="card mb-3">
+          <div className="card-body py-2">
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <div>
+                <p className="mb-0 text-muted fs-14">
+                  Showing <strong className="text-dark">{filtered.length}</strong> of {products.length} catalog items
+                </p>
               </div>
-              <div className="col-lg-6">
-                <div className="text-md-end mt-3 mt-md-0">
-                  <button type="button" className="btn btn-outline-secondary me-1"><i className="bx bx-cog me-1"></i>More Setting</button>
-                  <button type="button" className="btn btn-outline-secondary me-1"><i className="bx bx-filter-alt me-1"></i> Filters</button>
-                  <Link href="/admin/products/new" className="btn btn-success me-1"><i className="bx bx-plus"></i> New Product</Link>
-                </div>
+              <div className="d-flex gap-2 align-items-center">
+                <Link href="/admin/products" className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" title="Table View">
+                  <iconify-icon icon="solar:list-bold"></iconify-icon> Table View
+                </Link>
+                <Link href="/admin/products/new" className="btn btn-primary btn-sm d-flex align-items-center gap-1">
+                  <iconify-icon icon="solar:add-circle-bold"></iconify-icon> Add Product
+                </Link>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Product Grid */}
-        <div className="row g-3 mt-1" style={{ rowGap: '1rem' }}>
-          {filtered.map((p) => (
-            <div key={p.id} className="col-md-6 col-xl-3 mb-3">
-              <ProductCard product={p} />
-            </div>
-          ))}
-        </div>
-
-        {/* Pagination */}
-        <div className="py-3 border-top">
-          <nav aria-label="Page navigation example">
-            <ul className="pagination justify-content-end mb-0">
-              <li className="page-item"><a className="page-link" href="#!">Previous</a></li>
-              <li className="page-item active"><a className="page-link" href="#!">1</a></li>
-              <li className="page-item"><a className="page-link" href="#!">2</a></li>
-              <li className="page-item"><a className="page-link" href="#!">3</a></li>
-              <li className="page-item"><a className="page-link" href="#!">Next</a></li>
-            </ul>
-          </nav>
-        </div>
+        {/* Grid Cards */}
+        {loading ? (
+          <div className="card py-5 text-center">
+            <div className="spinner-border text-primary mx-auto mb-2" role="status"></div>
+            <p className="text-muted mb-0">Loading products from database...</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="card py-5 text-center">
+            <iconify-icon icon="solar:box-minimalistic-broken" className="fs-48 text-muted mb-2"></iconify-icon>
+            <h5>No products found</h5>
+            <p className="text-muted fs-13 mb-0">Try clearing your search query or adjusting your filters.</p>
+          </div>
+        ) : (
+          <div className="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-4">
+            {filtered.map((product) => (
+              <div key={product.id} className="col">
+                <ProductCard product={product} onDelete={handleDelete} />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

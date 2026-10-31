@@ -210,13 +210,13 @@ export default function InventoryStockPage() {
                         const statusClass = isOutOfStock
                           ? 'bg-danger-subtle text-danger'
                           : isLowStock
-                          ? 'bg-warning-subtle text-warning'
-                          : 'bg-success-subtle text-success';
+                            ? 'bg-warning-subtle text-warning'
+                            : 'bg-success-subtle text-success';
                         const statusText = isOutOfStock
                           ? 'Out of Stock'
                           : isLowStock
-                          ? 'Low Stock'
-                          : 'In Stock';
+                            ? 'Low Stock'
+                            : 'In Stock';
 
                         const img = (item as any).image || `${BASE}/product/p-1.png`;
                         const isSaving = savingId === item.id;

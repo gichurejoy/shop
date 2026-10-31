@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { CmsSection } from '../../lib/cms-types';
+import { CmsSection } from '@/lib/cms-types';
 import { Hero } from '../Hero';
 import { PromoCards } from '../PromoCards';
 import { PromoBanner } from '../PromoBanner';

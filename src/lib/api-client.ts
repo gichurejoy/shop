@@ -1,9 +1,9 @@
-import { IProduct } from '../types/product';
-import { ICategory } from '../types/category';
-import { IOrder, OrderStatus, PaymentStatus } from '../types/order';
-import { CouponValidationResult, ICoupon } from '../types/coupon';
-import { IUser, LoginCredentials, RegisterCredentials } from '../types/auth';
-import { MpesaStkPushResponse, CardPaymentResponse } from '../types/payment';
+import { IProduct } from '@/types/product';
+import { ICategory } from '@/types/category';
+import { IOrder, OrderStatus, PaymentStatus } from '@/types/order';
+import { CouponValidationResult, ICoupon } from '@/types/coupon';
+import { IUser, LoginCredentials, RegisterCredentials } from '@/types/auth';
+import { MpesaStkPushResponse, CardPaymentResponse } from '@/types/payment';
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -173,5 +173,82 @@ export const apiClient = {
     logout: () => fetchJson<{ success: boolean }>('/api/auth/logout', {
       method: 'POST',
     }),
-  }
+  },
+
+  attributes: {
+    list: () => fetchJson<{ attributes: any[] }>('/api/attributes'),
+    save: (data: { id?: string; name: string; slug?: string; type?: string; terms: string[] }) =>
+      fetchJson<{ attribute: any }>('/api/attributes', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    delete: (id: string) => fetchJson<{ success: boolean }>(`/api/attributes?id=${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    }),
+  },
+
+  reviews: {
+    list: () => fetchJson<{ reviews: any[] }>('/api/reviews'),
+    updateStatus: (id: string, status: 'approved' | 'rejected' | 'pending') =>
+      fetchJson<{ review: any }>('/api/reviews', {
+        method: 'PATCH',
+        body: JSON.stringify({ id, status }),
+      }),
+    delete: (id: string) => fetchJson<{ success: boolean }>(`/api/reviews?id=${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    }),
+  },
+
+  transactions: {
+    list: (params?: { search?: string; status?: string }) => {
+      const q = new URLSearchParams();
+      if (params?.search) q.set('search', params.search);
+      if (params?.status) q.set('status', params.status);
+      const qs = q.toString();
+      return fetchJson<{ transactions: any[] }>(`/api/transactions${qs ? `?${qs}` : ''}`);
+    },
+    create: (data: any) => fetchJson<{ transaction: any }>('/api/transactions', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    refund: (id: string, amount?: number, reason?: string) =>
+      fetchJson<{ success: boolean; transaction: any }>('/api/transactions/refunds', {
+        method: 'POST',
+        body: JSON.stringify({ id, amount, reason }),
+      }),
+  },
+
+  inventory: {
+    getHistory: () => fetchJson<{ logs: any[] }>('/api/inventory/history'),
+    logChange: (data: any) => fetchJson<{ entry: any }>('/api/inventory/history', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+    receive: (data: { productId: string; quantity: number; notes?: string }) =>
+      fetchJson<{ success: boolean; product: any }>('/api/inventory/receive', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+  },
+
+  staff: {
+    list: () => fetchJson<{ staff: any[] }>('/api/staff'),
+    create: (data: { name: string; email: string; role: string; phone?: string }) =>
+      fetchJson<{ member: any }>('/api/staff', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    delete: (id: string) => fetchJson<{ success: boolean }>(`/api/staff?id=${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    }),
+  },
+
+  activity: {
+    list: () => fetchJson<{ logs: any[] }>('/api/activity'),
+    log: (data: { user: string; action: string; module: string; details?: string; color?: string; icon?: string }) =>
+      fetchJson<{ entry: any }>('/api/activity', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+  },
 };

@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { products as defaultProducts, Product } from '../data/products';
 import { ProductCard } from '../components/ProductCard';
-import { apiClient } from '../lib/api-client';
+import { apiClient } from '@/lib/api-client';
 import { Search, SlidersHorizontal, ArrowUpDown, Grid, List, Check } from 'lucide-react';
 
 export function Catalog() {
@@ -39,9 +39,9 @@ export function Catalog() {
   useEffect(() => {
     setLoading(true);
     apiClient.products.list({ limit: 100 })
-      .then((res) => {
+      .then((res: any) => {
         if (res.products && res.products.length > 0) {
-          const mapped: Product[] = res.products.map((p, idx) => {
+          const mapped: Product[] = res.products.map((p: any, idx: number) => {
             const isSweater = p.category_id?.includes('sweater') || p.title.toLowerCase().includes('sweater') || p.title.toLowerCase().includes('cardigan') || p.title.toLowerCase().includes('knit');
             const mrp = p.compare_at_price || Math.round(p.price * 1.25);
             const discount = mrp > p.price ? Math.round(((mrp - p.price) / mrp) * 100) : 0;

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { getCmsNavigation, saveCmsNavigation } from '../../../../actions';
-import type { CmsMenuNode } from '../../../../../lib/cms';
+import type { CmsMenuNode } from '@/lib/cms';
 import { toast } from 'sonner';
 
 export default function NavigationBuilder() {

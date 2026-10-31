@@ -71,6 +71,15 @@ export default function HelpdeskChatPage() {
   const [filter, setFilter] = useState<'open' | 'closed'>('open');
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('waveron_helpdesk_convos') : null;
+    if (saved) {
+      try {
+        setConversations(JSON.parse(saved));
+      } catch {}
+    }
+  }, []);
+
   const activeChat = conversations.find(c => c.id === activeId);
   const filteredList = conversations.filter(c => c.status === filter);
 
@@ -79,9 +88,15 @@ export default function HelpdeskChatPage() {
     
     // Clear unread on select
     if (activeChat && activeChat.unread > 0) {
-      setConversations(prev => prev.map(c => 
-        c.id === activeId ? { ...c, unread: 0 } : c
-      ));
+      setConversations(prev => {
+        const next = prev.map(c => 
+          c.id === activeId ? { ...c, unread: 0 } : c
+        );
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('waveron_helpdesk_convos', JSON.stringify(next));
+        }
+        return next;
+      });
     }
   }, [activeId, activeChat?.messages.length]);
 
@@ -95,16 +110,22 @@ export default function HelpdeskChatPage() {
       timestamp: 'Just now'
     };
 
-    setConversations(prev => prev.map(c => {
-      if (c.id === activeId) {
-        return {
-          ...c,
-          messages: [...c.messages, newMessage],
-          lastMessageTime: 'Just now'
-        };
+    setConversations(prev => {
+      const next = prev.map(c => {
+        if (c.id === activeId) {
+          return {
+            ...c,
+            messages: [...c.messages, newMessage],
+            lastMessageTime: 'Just now'
+          };
+        }
+        return c;
+      });
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('waveron_helpdesk_convos', JSON.stringify(next));
       }
-      return c;
-    }));
+      return next;
+    });
     setInputText('');
   };
 

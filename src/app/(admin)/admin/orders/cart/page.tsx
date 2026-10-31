@@ -1,118 +1,308 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { apiClient } from '@/lib/api-client';
+import { IProduct } from '@/types/product';
 
-const CART_ITEMS = [
-  { id: 1, name: 'Men Black Slim Fit T-shirt', size: 'M', color: 'Black', price: 80, qty: 2, img: 'https://techzaa.in/larkon/admin/assets/images/product/p-1.png' },
-  { id: 2, name: 'Olive Green Leather Bag', size: 'Standard', color: 'Olive', price: 136, qty: 1, img: 'https://techzaa.in/larkon/admin/assets/images/product/p-2.png' },
-  { id: 3, name: 'Gray Cap For Men', size: 'One Size', color: 'Gray', price: 76, qty: 1, img: 'https://techzaa.in/larkon/admin/assets/images/product/p-4.png' },
-];
+interface ICartItem {
+  id: string;
+  productId: string;
+  name: string;
+  size: string;
+  color: string;
+  price: number;
+  qty: number;
+  img: string;
+}
 
 export default function OrderCartPage() {
-  const [items, setItems] = useState(CART_ITEMS.map(i => ({ ...i })));
-  const [coupon, setCoupon] = useState('');
+  const router = useRouter();
+  const [items, setItems] = useState<ICartItem[]>([]);
+  const [catalogProducts, setCatalogProducts] = useState<IProduct[]>([]);
+  const [selectedProductToAdd, setSelectedProductToAdd] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
 
-  const updateQty = (id: number, delta: number) => {
-    setItems(items.map(i => i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i));
+  useEffect(() => {
+    // Load from sessionStorage if available, else load initial from MySQL
+    const saved = typeof window !== 'undefined' ? sessionStorage.getItem('admin_pos_cart') : null;
+    if (saved) {
+      try {
+        setItems(JSON.parse(saved));
+      } catch {}
+    } else {
+      apiClient.products.list({ limit: 4 }).then((res) => {
+        const prods = res.products || [];
+        setCatalogProducts(prods);
+        if (prods.length > 0) {
+          const initialItems: ICartItem[] = prods.slice(0, 2).map((p) => ({
+            id: `ci-${p.id}`,
+            productId: p.id,
+            name: p.title,
+            size: 'Standard',
+            color: 'Default',
+            price: p.price,
+            qty: 1,
+            img: p.images?.[0] || 'https://techzaa.in/larkon/admin/assets/images/product/p-1.png',
+          }));
+          setItems(initialItems);
+          sessionStorage.setItem('admin_pos_cart', JSON.stringify(initialItems));
+        }
+      });
+    }
+
+    // Load full catalog for item picker
+    apiClient.products.list({ limit: 50 }).then((res) => {
+      setCatalogProducts(res.products || []);
+      if (res.products?.length > 0) {
+        setSelectedProductToAdd(res.products[0].id);
+      }
+    });
+  }, []);
+
+  const saveCart = (newItems: ICartItem[]) => {
+    setItems(newItems);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('admin_pos_cart', JSON.stringify(newItems));
+    }
   };
-  const removeItem = (id: number) => setItems(items.filter(i => i.id !== id));
+
+  const updateQty = (id: string, delta: number) => {
+    const updated = items.map((i) =>
+      i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i
+    );
+    saveCart(updated);
+  };
+
+  const removeItem = (id: string) => {
+    const updated = items.filter((i) => i.id !== id);
+    saveCart(updated);
+  };
+
+  const handleAddProduct = () => {
+    const prod = catalogProducts.find((p) => p.id === selectedProductToAdd);
+    if (!prod) return;
+
+    const existing = items.find((i) => i.productId === prod.id);
+    if (existing) {
+      updateQty(existing.id, 1);
+    } else {
+      const newItem: ICartItem = {
+        id: `ci-${prod.id}-${Date.now()}`,
+        productId: prod.id,
+        name: prod.title,
+        size: 'Standard',
+        color: 'Default',
+        price: prod.price,
+        qty: 1,
+        img: prod.images?.[0] || 'https://techzaa.in/larkon/admin/assets/images/product/p-1.png',
+      };
+      saveCart([...items, newItem]);
+    }
+    setShowAddModal(false);
+  };
 
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-  const shipping = 15;
-  const tax = Math.round(subtotal * 0.1);
+  const shipping = items.length > 0 ? 15 : 0;
+  const tax = Math.round(subtotal * 0.08);
   const total = subtotal + shipping + tax;
+
+  const handleProceed = () => {
+    if (items.length === 0) {
+      alert('Your cart is empty. Please add items before proceeding.');
+      return;
+    }
+    router.push('/admin/orders/checkout');
+  };
 
   return (
     <div>
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
-          <Link href="/admin/orders" style={{ color: '#64748b', textDecoration: 'none' }}>Orders</Link> › <span style={{ color: '#ff6c2f' }}>Cart</span>
+      <div className="mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+          <div className="text-muted fs-13 mb-1">
+            <Link href="/admin/orders" className="text-muted text-decoration-none">Orders</Link> › <span className="text-primary">Admin POS Cart</span>
+          </div>
+          <h3 className="fw-bold text-dark mb-0">Admin Terminal Order Placement</h3>
         </div>
-        <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#0f172a' }}>Shopping Cart</h2>
+        <button
+          className="btn btn-primary d-flex align-items-center gap-1"
+          onClick={() => setShowAddModal(true)}
+        >
+          <iconify-icon icon="solar:add-circle-bold" className="fs-18"></iconify-icon> Add Catalog Item
+        </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '20px' }}>
+      <div className="row g-4">
         {/* Cart table */}
-        <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>
-            Cart Items ({items.length})
-          </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-            <thead style={{ background: '#f8fafc' }}>
-              <tr>
-                {['Product', 'Size / Color', 'Unit Price', 'Quantity', 'Total', ''].map(h => (
-                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#64748b' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {items.map(item => (
-                <tr key={item.id} style={{ borderTop: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '16px 16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <img src={item.img} style={{ width: '52px', height: '52px', objectFit: 'contain', borderRadius: '8px', border: '1px solid #e2e8f0' }} />
-                      <span style={{ fontWeight: 600, color: '#0f172a' }}>{item.name}</span>
-                    </div>
-                  </td>
-                  <td style={{ padding: '16px 16px', color: '#64748b' }}>
-                    <div style={{ fontSize: '12px' }}>{item.size}</div>
-                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>{item.color}</div>
-                  </td>
-                  <td style={{ padding: '16px 16px', color: '#64748b' }}>${item.price}</td>
-                  <td style={{ padding: '16px 16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden', width: 'fit-content' }}>
-                      <button onClick={() => updateQty(item.id, -1)} style={{ width: '30px', height: '30px', background: '#f8fafc', border: 'none', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>−</button>
-                      <span style={{ width: '32px', textAlign: 'center', fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>{item.qty}</span>
-                      <button onClick={() => updateQty(item.id, 1)} style={{ width: '30px', height: '30px', background: '#f8fafc', border: 'none', cursor: 'pointer', fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>+</button>
-                    </div>
-                  </td>
-                  <td style={{ padding: '16px 16px', fontWeight: 700, color: '#0f172a' }}>${item.price * item.qty}</td>
-                  <td style={{ padding: '16px 16px' }}>
-                    <button onClick={() => removeItem(item.id)} style={{ background: '#fee2e2', border: 'none', borderRadius: '6px', padding: '6px 8px', cursor: 'pointer', color: '#dc2626', fontSize: '15px', display: 'flex', alignItems: 'center' }}>
-                      🗑
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div style={{ padding: '16px 20px', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '12px' }}>
-            <Link href="/admin/products" style={{ padding: '9px 18px', border: '1px solid #e2e8f0', borderRadius: '8px', color: '#334155', textDecoration: 'none', fontSize: '13px' }}>
-              ← Continue Shopping
-            </Link>
-            <Link href="/admin/orders/checkout" style={{ padding: '9px 18px', borderRadius: '8px', background: '#ff6c2f', color: '#fff', textDecoration: 'none', fontSize: '13px', fontWeight: 600 }}>
-              Proceed to Checkout →
-            </Link>
+        <div className="col-lg-8">
+          <div className="card">
+            <div className="card-header border-bottom d-flex justify-content-between align-items-center">
+              <h5 className="card-title mb-0">Cart Items ({items.length})</h5>
+              <span className="text-muted fs-13">Ready for order creation</span>
+            </div>
+            <div className="table-responsive">
+              <table className="table align-middle mb-0 table-hover table-centered">
+                <thead className="bg-light-subtle">
+                  <tr>
+                    <th>Product</th>
+                    <th>Attributes</th>
+                    <th>Unit Price</th>
+                    <th>Quantity</th>
+                    <th>Total</th>
+                    <th className="text-end">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="text-center py-4 text-muted">
+                        No items in cart. Click "+ Add Catalog Item" above to add products.
+                      </td>
+                    </tr>
+                  ) : (
+                    items.map((item) => (
+                      <tr key={item.id}>
+                        <td>
+                          <div className="d-flex align-items-center gap-3">
+                            <img
+                              src={item.img}
+                              alt={item.name}
+                              style={{ width: '48px', height: '48px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                            />
+                            <span className="fw-semibold text-dark">{item.name}</span>
+                          </div>
+                        </td>
+                        <td className="text-muted fs-13">
+                          <div>Size: <span className="text-dark">{item.size}</span></div>
+                          <div>Color: <span className="text-dark">{item.color}</span></div>
+                        </td>
+                        <td className="fw-medium text-dark">${item.price.toFixed(2)}</td>
+                        <td>
+                          <div className="d-flex align-items-center border rounded" style={{ width: 'fit-content' }}>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-light py-0 px-2"
+                              onClick={() => updateQty(item.id, -1)}
+                            >
+                              −
+                            </button>
+                            <span className="px-2 fw-semibold text-dark fs-13">{item.qty}</span>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-light py-0 px-2"
+                              onClick={() => updateQty(item.id, 1)}
+                            >
+                              +
+                            </button>
+                          </div>
+                        </td>
+                        <td className="fw-bold text-dark">${(item.price * item.qty).toFixed(2)}</td>
+                        <td className="text-end">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-soft-danger"
+                            onClick={() => removeItem(item.id)}
+                            title="Remove Item"
+                          >
+                            <iconify-icon icon="solar:trash-bin-minimalistic-2-broken" className="fs-16"></iconify-icon>
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="card-footer border-top d-flex justify-content-between align-items-center">
+              <Link href="/admin/products" className="btn btn-sm btn-outline-secondary">
+                ← Browse Catalog
+              </Link>
+              <button
+                type="button"
+                className="btn btn-sm btn-primary"
+                onClick={handleProceed}
+                disabled={items.length === 0}
+              >
+                Proceed to Checkout →
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Summary */}
-        <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', alignSelf: 'start' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid #e2e8f0', fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>Order Summary</div>
-          <div style={{ padding: '20px' }}>
-            {[['Subtotal', `$${subtotal}`], ['Shipping', `$${shipping}`], ['Tax (10%)', `$${tax}`]].map(([l, v]) => (
-              <div key={l as string} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '13px', color: '#64748b' }}>
-                <span>{l}</span><span>{v}</span>
-              </div>
-            ))}
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', fontWeight: 700, color: '#0f172a', padding: '12px 0', borderTop: '1px solid #e2e8f0', marginTop: '4px' }}>
-              <span>Total</span><span style={{ color: '#ff6c2f' }}>${total}</span>
+        <div className="col-lg-4">
+          <div className="card">
+            <div className="card-header border-bottom">
+              <h5 className="card-title mb-0">Order Summary</h5>
             </div>
-            {/* Coupon */}
-            <div style={{ marginTop: '16px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a', marginBottom: '8px' }}>Coupon Code</div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input value={coupon} onChange={e => setCoupon(e.target.value)} placeholder="Enter code..." style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', outline: 'none' }} />
-                <button style={{ padding: '8px 14px', borderRadius: '8px', background: '#0f172a', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>Apply</button>
+            <div className="card-body">
+              <div className="d-flex justify-content-between mb-2 fs-14 text-muted">
+                <span>Subtotal</span>
+                <span className="fw-medium text-dark">${subtotal.toFixed(2)}</span>
               </div>
+              <div className="d-flex justify-content-between mb-2 fs-14 text-muted">
+                <span>Shipping Fee</span>
+                <span className="fw-medium text-dark">${shipping.toFixed(2)}</span>
+              </div>
+              <div className="d-flex justify-content-between mb-3 fs-14 text-muted">
+                <span>Estimated Tax (8%)</span>
+                <span className="fw-medium text-dark">${tax.toFixed(2)}</span>
+              </div>
+              <div className="d-flex justify-content-between pt-3 border-top fs-16 fw-bold text-dark">
+                <span>Total Amount</span>
+                <span className="text-primary">${total.toFixed(2)}</span>
+              </div>
+
+              <button
+                type="button"
+                className="btn btn-primary w-100 mt-4 py-2 fw-semibold"
+                onClick={handleProceed}
+                disabled={items.length === 0}
+              >
+                Create Order &amp; Proceed
+              </button>
             </div>
-            <Link href="/admin/orders/checkout" style={{ display: 'block', marginTop: '16px', padding: '11px', borderRadius: '8px', background: '#ff6c2f', color: '#fff', textDecoration: 'none', fontSize: '13px', fontWeight: 600, textAlign: 'center' }}>
-              Checkout
-            </Link>
           </div>
         </div>
       </div>
+
+      {/* Add Item Modal */}
+      {showAddModal && (
+        <div className="modal show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Select Item From Catalog</h5>
+                <button type="button" className="btn-close" onClick={() => setShowAddModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                <label className="form-label fw-semibold">Choose Product</label>
+                <select
+                  className="form-select mb-3"
+                  value={selectedProductToAdd}
+                  onChange={(e) => setSelectedProductToAdd(e.target.value)}
+                >
+                  {catalogProducts.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.title} — ${p.price} (Vault Stock: {p.stock_quantity ?? (p as any).stockQuantity ?? 0})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-outline-secondary" onClick={() => setShowAddModal(false)}>
+                  Cancel
+                </button>
+                <button type="button" className="btn btn-primary" onClick={handleAddProduct}>
+                  Add to Cart
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

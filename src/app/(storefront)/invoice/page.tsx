@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { InvoiceView } from '../../../components/InvoiceView';
-import { apiClient } from '../../../lib/api-client';
+import { apiClient } from '@/lib/api-client';
 import { Loader2 } from 'lucide-react';
 
 export default function DefaultInvoicePage() {
@@ -11,7 +11,7 @@ export default function DefaultInvoicePage() {
 
   useEffect(() => {
     apiClient.orders.list()
-      .then((res) => {
+      .then((res: any) => {
         if (res.orders && res.orders.length > 0) {
           setOrder(res.orders[0]);
         } else {

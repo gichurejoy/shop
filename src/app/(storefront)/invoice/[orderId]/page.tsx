@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { InvoiceView } from '../../../../components/InvoiceView';
-import { apiClient } from '../../../../lib/api-client';
+import { apiClient } from '@/lib/api-client';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 

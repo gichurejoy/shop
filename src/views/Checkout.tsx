@@ -16,7 +16,7 @@ import {
   Edit2 } from
 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { apiClient } from '../lib/api-client';
+import { apiClient } from '@/lib/api-client';
 import { toast } from 'sonner';
 
 interface Address {

@@ -238,7 +238,7 @@ export default function AdminDashboard() {
         const pages = await getCmsPages();
         const list = [
           { path: '/', title: 'Home Page', views: 5240, exitRate: '2.1%', isSuccess: true },
-          ...pages.map((p, i) => {
+          ...pages.map((p: any, i: number) => {
             const mockViews = [1420, 895, 650, 480, 310][i % 5] || 250;
             const mockExitRates = ['4.8%', '12.4%', '8.2%', '15.1%', '22.0%'][i % 5] || '10.5%';
             const status: any = i % 3 === 0 ? true : (i % 3 === 1 ? 'warning' : false);
@@ -1000,7 +1000,7 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody>
                   {topPages.length > 0 ? (
-                    topPages.map((page, i) => (
+                    topPages.map((page: any, i: number) => (
                       <tr key={i}>
                         <td className="ps-3">
                           <Link href={page.path} target="_blank" className="text-muted d-block text-truncate" style={{ maxWidth: '170px' }} title={`${page.title} (${page.path})`}>
@@ -1068,7 +1068,7 @@ export default function AdminDashboard() {
                 <div>
                   <h6 className="fw-semibold text-dark mb-2">Monthly Conversion Rate Trend</h6>
                   <div className="d-flex align-items-end gap-2 justify-content-between pt-3 pb-1" style={{ height: '110px' }}>
-                    {currentConversion.details.monthlyTrend.map((rate, i) => (
+                    {currentConversion.details.monthlyTrend.map((rate: any, i: number) => (
                       <div key={i} className="d-flex flex-column align-items-center flex-grow-1">
                         <div 
                           className="rounded-top w-100" 

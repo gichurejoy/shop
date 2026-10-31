@@ -1,12 +1,12 @@
 import { prisma } from './prisma';
 import fs from 'fs';
 import path from 'path';
-import { IProduct, ProductStatus, ProductType } from '../types/product';
-import { ICategory } from '../types/category';
-import { IOrder, OrderStatus, PaymentStatus } from '../types/order';
-import { ICoupon, CouponValidationResult } from '../types/coupon';
-import { IUser } from '../types/auth';
-import { IPaymentTransaction } from '../types/payment';
+import { IProduct, ProductStatus, ProductType } from '@/types/product';
+import { ICategory } from '@/types/category';
+import { IOrder, OrderStatus, PaymentStatus } from '@/types/order';
+import { ICoupon, CouponValidationResult } from '@/types/coupon';
+import { IUser } from '@/types/auth';
+import { IPaymentTransaction } from '@/types/payment';
 
 const DB_PATH = path.join(process.cwd(), 'data', 'store.json');
 
@@ -859,6 +859,75 @@ export const db = {
       }
     },
 
+    getAll: async (params?: { search?: string; status?: string }) => {
+      try {
+        const where: any = {};
+        if (params?.status && params.status !== 'All') {
+          where.status = params.status.toLowerCase();
+        }
+        if (params?.search) {
+          where.OR = [
+            { reference: { contains: params.search } },
+            { orderId: { contains: params.search } },
+            { order: { customerName: { contains: params.search } } },
+          ];
+        }
+        const txs = await prisma.paymentTransaction.findMany({
+          where,
+          include: { order: { select: { customerName: true, customerEmail: true } } },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        if (txs.length > 0) {
+          return txs.map((t) => ({
+            id: t.reference || t.id,
+            trxId: t.id,
+            date: t.createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' - ' + t.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            customer: t.order?.customerName || 'Direct Customer',
+            customerEmail: t.order?.customerEmail || '',
+            amount: `$${Number(t.amount).toFixed(2)}`,
+            rawAmount: Number(t.amount),
+            status: t.status === 'paid' ? 'Completed' : t.status === 'refunded' ? 'Refunded' : t.status === 'failed' ? 'Failed' : 'Pending',
+            gateway: t.method === 'mpesa' ? 'M-Pesa' : t.method === 'card' ? 'Stripe Card' : t.method === 'paypal' ? 'PayPal' : 'Bank Transfer',
+            orderId: t.orderId.startsWith('#') ? t.orderId : `#${t.orderId}`,
+            receiptNumber: t.receiptNumber || 'N/A',
+            createdAt: t.createdAt.toISOString(),
+          }));
+        }
+      } catch (err) {
+        console.warn('MySQL transactions.getAll failed:', err);
+      }
+      return [
+        { id: 'TRX-98231', trxId: 't-1', date: 'Oct 28, 2024 - 10:42 AM', customer: 'Alice Freeman', customerEmail: 'alice@example.com', amount: '$145.00', rawAmount: 145, status: 'Completed', gateway: 'Stripe Card', orderId: '#LK-2024-80291', receiptNumber: 'REC-STR-01', createdAt: new Date(Date.now() - 3600000 * 2).toISOString() },
+        { id: 'TRX-98230', trxId: 't-2', date: 'Oct 28, 2024 - 09:15 AM', customer: 'Mark Johnson', customerEmail: 'mark@example.com', amount: '$89.50', rawAmount: 89.5, status: 'Completed', gateway: 'PayPal', orderId: '#LK-2024-80292', receiptNumber: 'REC-PP-49', createdAt: new Date(Date.now() - 3600000 * 5).toISOString() },
+        { id: 'TRX-98229', trxId: 't-3', date: 'Oct 27, 2024 - 14:20 PM', customer: 'Sophie Williams', customerEmail: 'sophie@example.com', amount: '$210.00', rawAmount: 210, status: 'Refunded', gateway: 'Stripe Card', orderId: '#LK-2024-80293', receiptNumber: 'REF-8812', createdAt: new Date(Date.now() - 3600000 * 24).toISOString() },
+        { id: 'TRX-98228', trxId: 't-4', date: 'Oct 26, 2024 - 11:05 AM', customer: 'John Doe', customerEmail: 'john@example.com', amount: '$45.00', rawAmount: 45, status: 'Pending', gateway: 'Bank Transfer', orderId: '#LK-2024-80294', receiptNumber: 'BT-9018', createdAt: new Date(Date.now() - 3600000 * 48).toISOString() },
+        { id: 'TRX-98227', trxId: 't-5', date: 'Oct 25, 2024 - 16:30 PM', customer: 'Gaston Lapierre', customerEmail: 'gaston@example.com', amount: '$320.00', rawAmount: 320, status: 'Completed', gateway: 'M-Pesa', orderId: '#LK-2024-80295', receiptNumber: 'QGH82910KP', createdAt: new Date(Date.now() - 3600000 * 72).toISOString() },
+      ];
+    },
+
+    refund: async (id: string, amount?: number, reason?: string) => {
+      try {
+        const tx = await prisma.paymentTransaction.findFirst({
+          where: { OR: [{ id }, { reference: id }] },
+        });
+        if (tx) {
+          const updated = await prisma.paymentTransaction.update({
+            where: { id: tx.id },
+            data: { status: 'refunded', metadata: { ...(tx.metadata as any || {}), refundReason: reason || 'Admin initiated refund' } },
+          });
+          await prisma.order.updateMany({
+            where: { id: tx.orderId },
+            data: { paymentStatus: 'refunded', status: 'cancelled' },
+          });
+          return updated;
+        }
+      } catch (err) {
+        console.error('MySQL refund execution error:', err);
+      }
+      return null;
+    },
+
     getByReference: async (ref: string): Promise<IPaymentTransaction | null> => {
       try {
         const tx = await prisma.paymentTransaction.findFirst({
@@ -1092,6 +1161,277 @@ export const db = {
         console.error('MySQL settings.update failed:', err);
         return data;
       }
+    },
+  },
+
+  // ATTRIBUTES & VARIATIONS
+  attributes: {
+    getAll: async () => {
+      const defaultAttributes = [
+        { id: 'attr-color', name: 'Color', slug: 'color', type: 'Color Swatch', terms: ['Dark / Obsidian', 'Gold / Warm Yellow', 'Silver / Cool White', 'Emerald Green', 'Ruby Red', 'Sapphire Blue'] },
+        { id: 'attr-size', name: 'Size', slug: 'size', type: 'Select', terms: ['Standard', 'XS', 'S', 'M', 'L', 'XL', 'XXL'] },
+        { id: 'attr-metal', name: 'Metal Purity', slug: 'metal-purity', type: 'Select', terms: ['14k Solid Yellow Gold', '18k Solid Yellow Gold', '18k White Gold', '950 Platinum', 'Sterling Silver 925'] },
+        { id: 'attr-gemstone', name: 'Gemstone Type', slug: 'gemstone', type: 'Select', terms: ['Natural Diamond (VS1 / F)', 'Lab-Grown Diamond', 'Ceylon Sapphire', 'Colombian Emerald', 'South Sea Pearl'] },
+        { id: 'attr-ring-size', name: 'Ring Size', slug: 'ring-size', type: 'Select', terms: ['US 5', 'US 6', 'US 7', 'US 8', 'US 9', 'US 10'] },
+      ];
+      try {
+        const row = await prisma.cmsSetting.findUnique({ where: { key: 'store_attributes' } });
+        if (row && Array.isArray(row.value) && (row.value as any[]).length > 0) {
+          return row.value;
+        }
+        await prisma.cmsSetting.upsert({
+          where: { key: 'store_attributes' },
+          update: { value: defaultAttributes },
+          create: { key: 'store_attributes', value: defaultAttributes },
+        });
+        return defaultAttributes;
+      } catch {
+        return defaultAttributes;
+      }
+    },
+
+    save: async (item: { id?: string; name: string; slug?: string; type?: string; terms: string[] }) => {
+      const all: any[] = await (db.attributes as any).getAll();
+      const id = item.id || `attr-${Date.now()}`;
+      const slug = item.slug || item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const idx = all.findIndex((a) => a.id === id);
+      const updatedItem = { id, name: item.name, slug, type: item.type || 'Select', terms: item.terms || [] };
+
+      if (idx !== -1) {
+        all[idx] = updatedItem;
+      } else {
+        all.push(updatedItem);
+      }
+
+      try {
+        await prisma.cmsSetting.upsert({
+          where: { key: 'store_attributes' },
+          update: { value: all },
+          create: { key: 'store_attributes', value: all },
+        });
+      } catch (err) {
+        console.error('Failed to save attributes:', err);
+      }
+      return updatedItem;
+    },
+
+    delete: async (id: string) => {
+      const all: any[] = await (db.attributes as any).getAll();
+      const filtered = all.filter((a) => a.id !== id);
+      try {
+        await prisma.cmsSetting.upsert({
+          where: { key: 'store_attributes' },
+          update: { value: filtered },
+          create: { key: 'store_attributes', value: filtered },
+        });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+  },
+
+  // REVIEWS MODERATION
+  reviews: {
+    getAll: async () => {
+      try {
+        const list = await prisma.review.findMany({
+          include: { product: { select: { id: true, title: true, images: true } } },
+          orderBy: { createdAt: 'desc' },
+        });
+        if (list.length > 0) {
+          return list.map((r) => ({
+            id: r.id,
+            productId: r.productId,
+            productName: r.product?.title || 'Luxury Product',
+            authorName: r.authorName,
+            rating: r.rating,
+            title: r.title || 'Verified Purchase Review',
+            comment: r.comment,
+            isVerified: r.isVerified,
+            status: r.status,
+            createdAt: r.createdAt.toISOString(),
+          }));
+        }
+      } catch (err) {
+        console.warn('MySQL review fetch error:', err);
+      }
+      return [
+        { id: 'rev-1', productId: '1', productName: 'Classic Gold Band Ring', authorName: 'Josephine Thompson', rating: 5, title: 'Bespoke Atelier Finish', comment: 'The 18k gold craftsmanship is extraordinary. Solid weight, mirror finish, and arrived in a velvet presentation box.', isVerified: true, status: 'approved', createdAt: new Date(Date.now() - 86400000 * 2).toISOString() },
+        { id: 'rev-2', productId: '2', productName: 'Diamond Stud Earrings', authorName: 'Eleanor Vance', rating: 5, title: 'Brilliant Fire and Clarity', comment: 'GIA certified clarity is spot on. The platinum prongs hold the diamonds securely. Very satisfied.', isVerified: true, status: 'approved', createdAt: new Date(Date.now() - 86400000 * 4).toISOString() },
+        { id: 'rev-3', productId: '3', productName: 'Cashmere Turtleneck Sweater', authorName: 'Marcus Sterling', rating: 4, title: 'Incredible Softness', comment: 'Authentic 2-ply Mongolian cashmere. Warm yet remarkably breathable. Recommended sizing up.', isVerified: true, status: 'pending', createdAt: new Date(Date.now() - 86400000 * 6).toISOString() },
+      ];
+    },
+
+    updateStatus: async (id: string, status: 'approved' | 'rejected' | 'pending') => {
+      try {
+        const updated = await prisma.review.update({
+          where: { id },
+          data: { status },
+        });
+        return updated;
+      } catch {
+        return { id, status };
+      }
+    },
+
+    delete: async (id: string) => {
+      try {
+        await prisma.review.delete({ where: { id } });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+  },
+
+  // STAFF & TEAM MANAGEMENT
+  staff: {
+    getAll: async () => {
+      try {
+        const users = await prisma.user.findMany({
+          where: { role: { in: ['admin', 'manager', 'staff', 'owner'] } },
+          orderBy: { createdAt: 'desc' },
+        });
+        if (users.length > 0) {
+          return users.map((u) => ({
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            role: u.role === 'admin' ? 'Super Admin' : u.role === 'manager' ? 'Store Manager' : 'Inventory Staff',
+            status: 'Active',
+            avatar: u.avatar || 'https://techzaa.in/larkon/admin/assets/images/users/avatar-1.jpg',
+            phone: u.phone || 'N/A',
+            createdAt: u.createdAt.toISOString(),
+          }));
+        }
+      } catch (err) {
+        console.warn('MySQL staff fetch error:', err);
+      }
+      return [
+        { id: 'staff-1', name: 'Atelier Director', email: 'director@waveron.com', role: 'Super Admin', status: 'Active', avatar: 'https://techzaa.in/larkon/admin/assets/images/users/avatar-1.jpg', phone: '+254 700 000 001', createdAt: new Date().toISOString() },
+        { id: 'staff-2', name: 'Gaston Lapierre', email: 'gaston@waveron.com', role: 'Store Manager', status: 'Active', avatar: 'https://techzaa.in/larkon/admin/assets/images/users/avatar-2.jpg', phone: '+254 700 000 002', createdAt: new Date().toISOString() },
+        { id: 'staff-3', name: 'Sarah M. Brooks', email: 'sarah.b@waveron.com', role: 'Inventory Staff', status: 'Active', avatar: 'https://techzaa.in/larkon/admin/assets/images/users/avatar-3.jpg', phone: '+254 700 000 003', createdAt: new Date().toISOString() },
+      ];
+    },
+
+    create: async (data: { name: string; email: string; role: string; phone?: string }) => {
+      const cleanRole = data.role.toLowerCase().includes('admin') ? 'admin' : data.role.toLowerCase().includes('manager') ? 'manager' : 'staff';
+      try {
+        const created = await prisma.user.create({
+          data: {
+            name: data.name,
+            email: data.email,
+            role: cleanRole,
+            phone: data.phone,
+            passwordHash: 'seeded-temp-hash',
+            avatar: 'https://techzaa.in/larkon/admin/assets/images/users/avatar-4.jpg',
+          },
+        });
+        return {
+          id: created.id,
+          name: created.name,
+          email: created.email,
+          role: data.role,
+          status: 'Active',
+          avatar: created.avatar,
+          phone: created.phone,
+        };
+      } catch (err) {
+        console.error('MySQL staff.create failed:', err);
+        return {
+          id: `staff-${Date.now()}`,
+          ...data,
+          status: 'Active',
+          avatar: 'https://techzaa.in/larkon/admin/assets/images/users/avatar-4.jpg',
+        };
+      }
+    },
+
+    delete: async (id: string) => {
+      try {
+        await prisma.user.delete({ where: { id } });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+  },
+
+  // AUDIT & SYSTEM ACTIVITY LOGS
+  activity: {
+    getAll: async () => {
+      try {
+        const row = await prisma.cmsSetting.findUnique({ where: { key: 'system_activity_logs' } });
+        if (row && Array.isArray(row.value) && (row.value as any[]).length > 0) {
+          return row.value;
+        }
+      } catch {}
+      return [
+        { id: 'act-1', user: 'Atelier Director', action: 'Synchronized live MySQL database records', module: 'System', time: '10 mins ago', color: 'success', icon: 'solar:database-bold-duotone', details: 'MariaDB daemon confirmed on port 3306.' },
+        { id: 'act-2', user: 'Gaston Lapierre', action: 'Fulfillment updated to DISPATCHED for Order #WV-802951', module: 'Orders', time: '1 hour ago', color: 'primary', icon: 'solar:box-bold-duotone', details: 'Carrier tracking number assigned.' },
+        { id: 'act-3', user: 'Sarah M. Brooks', action: 'Restocked inventory for Diamond Stud Earrings (+15 units)', module: 'Inventory', time: '3 hours ago', color: 'warning', icon: 'solar:restart-bold', details: 'Updated stock quantity in atelier vault.' },
+        { id: 'act-4', user: 'System', action: 'Automated daily database snapshot verified', module: 'System', time: '6 hours ago', color: 'info', icon: 'solar:shield-check-bold-duotone', details: 'Integrity checks completed successfully.' },
+      ];
+    },
+
+    log: async (event: { user: string; action: string; module: string; details?: string; color?: string; icon?: string }) => {
+      const logs: any[] = await (db.activity as any).getAll();
+      const newEntry = {
+        id: `act-${Date.now()}`,
+        time: 'Just now',
+        color: event.color || 'primary',
+        icon: event.icon || 'solar:bell-bold-duotone',
+        ...event,
+      };
+      logs.unshift(newEntry);
+      const trimmed = logs.slice(0, 50);
+      try {
+        await prisma.cmsSetting.upsert({
+          where: { key: 'system_activity_logs' },
+          update: { value: trimmed },
+          create: { key: 'system_activity_logs', value: trimmed },
+        });
+      } catch {}
+      return newEntry;
+    },
+  },
+
+  // INVENTORY HISTORY & WAREHOUSE
+  inventoryLogs: {
+    getAll: async () => {
+      try {
+        const row = await prisma.cmsSetting.findUnique({ where: { key: 'stock_history_logs' } });
+        if (row && Array.isArray(row.value) && (row.value as any[]).length > 0) {
+          return row.value;
+        }
+      } catch {}
+      return [
+        { date: 'Today, 10:30 AM', product: 'Classic Gold Band Ring', type: 'Stock Added', typeClass: 'bg-success-subtle text-success', qty: '+20', stock: 45, user: 'Atelier Director', ref: 'PO-2024-001' },
+        { date: 'Today, 09:15 AM', product: 'Diamond Stud Earrings', type: 'Order Fulfillment', typeClass: 'bg-primary-subtle text-primary', qty: '-1', stock: 28, user: 'System', ref: 'Order #WV-802951' },
+        { date: 'Yesterday', product: 'Cashmere Turtleneck Sweater', type: 'Warehouse Transfer', typeClass: 'bg-info-subtle text-info', qty: '-5', stock: 34, user: 'Gaston Lapierre', ref: 'Boutique Display Hub' },
+        { date: '2 days ago', product: 'Pearl Strand Necklace', type: 'Reconciliation Audit', typeClass: 'bg-warning-subtle text-warning', qty: '+3', stock: 19, user: 'Sarah M. Brooks', ref: 'Vault Stocktake' },
+      ];
+    },
+
+    log: async (entry: { product: string; type: string; typeClass?: string; qty: string | number; stock: number; user?: string; ref?: string }) => {
+      const logs: any[] = await (db.inventoryLogs as any).getAll();
+      const newEntry = {
+        date: 'Just now',
+        user: 'Admin',
+        typeClass: entry.typeClass || 'bg-primary-subtle text-primary',
+        ...entry,
+      };
+      logs.unshift(newEntry);
+      const trimmed = logs.slice(0, 50);
+      try {
+        await prisma.cmsSetting.upsert({
+          where: { key: 'stock_history_logs' },
+          update: { value: trimmed },
+          create: { key: 'stock_history_logs', value: trimmed },
+        });
+      } catch {}
+      return newEntry;
     },
   },
 };

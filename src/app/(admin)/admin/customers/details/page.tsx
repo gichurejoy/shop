@@ -9,7 +9,7 @@ export default function CustomerDetailsDefaultPage() {
 
   useEffect(() => {
     apiClient.customers.list()
-      .then((res) => {
+      .then((res: any) => {
         if (res.customers && res.customers.length > 0) {
           router.replace(`/admin/customers/${res.customers[0].id}`);
         } else {

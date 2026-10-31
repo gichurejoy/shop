@@ -42,7 +42,7 @@ export default function OrdersListPage() {
             customer: o.customerName || 'Customer',
             avatar: 'https://techzaa.in/larkon/admin/assets/images/users/avatar-1.jpg',
             total: `$${o.total.toFixed(2)}`,
-            qty: o.items.reduce((s, i) => s + i.quantity, 0),
+            qty: (o.items || []).reduce((s: number, i: any) => s + (i.quantity || 0), 0),
             payment: o.paymentMethod.toUpperCase() + (o.paymentStatus === 'paid' ? ' (Paid)' : ' (Unpaid)'),
             status: o.status.charAt(0).toUpperCase() + o.status.slice(1),
           }));

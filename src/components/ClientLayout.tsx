@@ -6,7 +6,7 @@ import { MainNav } from './MainNav';
 import { CategoryStrip } from './CategoryStrip';
 import { Footer } from './Footer';
 import { CartDrawer } from './CartDrawer';
-import type { CmsMenuNode } from '../lib/cms';
+import type { CmsMenuNode } from '@/lib/cms';
 import { StorefrontProvider } from '../context/StorefrontContext';
 import { CartProvider, useCart } from '../context/CartContext';
 import { AddressDrawer } from './AddressDrawer';

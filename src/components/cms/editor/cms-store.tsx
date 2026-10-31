@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useCallback } from 'react';
-import { CmsSection, SectionType, createDefaultSection } from '../../../lib/cms-types';
+import { CmsSection, SectionType, createDefaultSection } from '@/lib/cms-types';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 type State = {

@@ -6,7 +6,7 @@ import { Trash2, Minus, Plus, ShoppingCart, Tag, Check } from 'lucide-react';
 import { products } from '../data/products';
 import { ProductCard } from '../components/ProductCard';
 import { useCart } from '../context/CartContext';
-import { apiClient } from '../lib/api-client';
+import { apiClient } from '@/lib/api-client';
 import { toast } from 'sonner';
 
 export function Cart() {

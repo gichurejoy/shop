@@ -58,7 +58,7 @@ export default function CategoryList() {
     <>
       {/* Top 4 Quick Category Cards */}
       <div className="row g-3 mb-4">
-        {categories.slice(0, 4).map((cat, idx) => {
+        {categories.slice(0, 4).map((cat: any, idx: number) => {
           const colors = ['secondary', 'primary', 'warning', 'info'];
           const color = colors[idx % colors.length];
           const img = cat.image || DEFAULT_CATEGORY_IMAGES[idx % DEFAULT_CATEGORY_IMAGES.length];
@@ -162,7 +162,7 @@ export default function CategoryList() {
                         </td>
                       </tr>
                     ) : (
-                      filtered.map((cat, idx) => {
+                      filtered.map((cat: any, idx: number) => {
                         const img = cat.image || DEFAULT_CATEGORY_IMAGES[idx % DEFAULT_CATEGORY_IMAGES.length];
                         return (
                           <tr key={cat.id}>

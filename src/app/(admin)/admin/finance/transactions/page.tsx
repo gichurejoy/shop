@@ -1,88 +1,200 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { apiClient } from '@/lib/api-client';
 
-type Transaction = {
+interface ITransaction {
   id: string;
+  trxId?: string;
   date: string;
   customer: string;
+  customerEmail?: string;
   amount: string;
+  rawAmount?: number;
   status: 'Completed' | 'Pending' | 'Failed' | 'Refunded';
   gateway: string;
   orderId: string;
-};
-
-const MOCK_TRANSACTIONS: Transaction[] = [
-  { id: 'TRX-98231', date: 'Oct 12, 2023 - 10:42 AM', customer: 'Alice Freeman', amount: '$145.00', status: 'Completed', gateway: 'Stripe', orderId: '#ORD-10023' },
-  { id: 'TRX-98230', date: 'Oct 12, 2023 - 09:15 AM', customer: 'Mark Johnson', amount: '$89.50', status: 'Completed', gateway: 'PayPal', orderId: '#ORD-10022' },
-  { id: 'TRX-98229', date: 'Oct 11, 2023 - 14:20 PM', customer: 'Sophie Williams', amount: '$210.00', status: 'Refunded', gateway: 'Stripe', orderId: '#ORD-10021' },
-  { id: 'TRX-98228', date: 'Oct 11, 2023 - 11:05 AM', customer: 'John Doe', amount: '$45.00', status: 'Pending', gateway: 'Bank Transfer', orderId: '#ORD-10020' },
-  { id: 'TRX-98227', date: 'Oct 10, 2023 - 16:30 PM', customer: 'Jane Smith', amount: '$320.00', status: 'Completed', gateway: 'M-Pesa', orderId: '#ORD-10019' },
-  { id: 'TRX-98226', date: 'Oct 10, 2023 - 10:15 AM', customer: 'Bob Brown', amount: '$15.00', status: 'Failed', gateway: 'Stripe', orderId: '#ORD-10018' },
-];
+  receiptNumber?: string;
+}
 
 export default function TransactionsPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
+  const [transactions, setTransactions] = useState<ITransaction[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     amount: '',
     customer: '',
     orderId: '',
     gateway: 'Bank Transfer',
-    date: new Date().toISOString().slice(0, 10),
+    status: 'paid',
   });
 
+  const loadTransactions = async () => {
+    setLoading(true);
+    try {
+      const res = await apiClient.transactions.list();
+      setTransactions(res.transactions || []);
+    } catch (err) {
+      console.error('Failed to load transactions:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTransactions();
+  }, []);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.amount || !formData.customer) return;
+    setSaving(true);
+    try {
+      await apiClient.transactions.create({
+        amount: parseFloat(formData.amount),
+        orderId: formData.orderId || `ORD-${Date.now().toString().slice(-5)}`,
+        method: formData.gateway.toLowerCase().includes('mpesa') ? 'mpesa' : formData.gateway.toLowerCase().includes('stripe') ? 'card' : 'bank_transfer',
+        status: formData.status,
+        reference: `TRX-${Math.floor(10000 + Math.random() * 90000)}`,
+        metadata: { customerName: formData.customer },
+      });
+      setIsModalOpen(false);
+      setFormData({ amount: '', customer: '', orderId: '', gateway: 'Bank Transfer', status: 'paid' });
+      await loadTransactions();
+    } catch (err) {
+      alert('Failed to record transaction');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleExportCSV = () => {
+    const headers = ['Transaction ID', 'Date', 'Customer', 'Amount', 'Status', 'Gateway', 'Order ID', 'Receipt Number'];
+    const rows = filtered.map(t => [
+      `"${t.id}"`,
+      `"${t.date}"`,
+      `"${t.customer.replace(/"/g, '""')}"`,
+      `"${t.amount}"`,
+      `"${t.status}"`,
+      `"${t.gateway}"`,
+      `"${t.orderId}"`,
+      `"${t.receiptNumber || ''}"`,
+    ]);
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `transactions_ledger_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const filtered = transactions.filter(t => {
-    const matchesSearch = t.id.toLowerCase().includes(search.toLowerCase()) || 
-                          t.customer.toLowerCase().includes(search.toLowerCase()) ||
-                          t.orderId.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch =
+      t.id.toLowerCase().includes(search.toLowerCase()) ||
+      t.customer.toLowerCase().includes(search.toLowerCase()) ||
+      t.orderId.toLowerCase().includes(search.toLowerCase());
     const matchesFilter = filter === 'All' || t.status === filter;
     return matchesSearch && matchesFilter;
   });
 
-  const handleSave = () => {
-    setTransactions([{
-      id: `TRX-${Math.floor(10000 + Math.random() * 90000)}`,
-      date: formData.date + ' - Just now',
-      customer: formData.customer,
-      amount: `$${parseFloat(formData.amount).toFixed(2)}`,
-      status: 'Completed',
-      gateway: formData.gateway,
-      orderId: formData.orderId || '#ORD-MANUAL'
-    }, ...transactions]);
-    setIsModalOpen(false);
-    setFormData({ amount: '', customer: '', orderId: '', gateway: 'Bank Transfer', date: new Date().toISOString().slice(0, 10) });
-  };
+  const totalVolume = transactions
+    .filter(t => t.status === 'Completed')
+    .reduce((sum, t) => sum + (t.rawAmount || parseFloat(t.amount.replace(/[^0-9.]/g, '')) || 0), 0);
 
   return (
-    <div className="row">
+    <div className="row g-3">
+      {/* KPI Cards */}
+      <div className="col-12">
+        <div className="row g-3">
+          <div className="col-md-6 col-xl-3">
+            <div className="card">
+              <div className="card-body d-flex align-items-center gap-3">
+                <div className="avatar-md bg-success-subtle text-success rounded d-flex align-items-center justify-content-center" style={{ width: '48px', height: '48px' }}>
+                  <iconify-icon icon="solar:wallet-money-bold-duotone" className="fs-24"></iconify-icon>
+                </div>
+                <div>
+                  <p className="text-muted mb-0 fs-13">Completed Ledger Volume</p>
+                  <h4 className="fw-bold mb-0 text-success">${totalVolume.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h4>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-6 col-xl-3">
+            <div className="card">
+              <div className="card-body d-flex align-items-center gap-3">
+                <div className="avatar-md bg-primary-subtle text-primary rounded d-flex align-items-center justify-content-center" style={{ width: '48px', height: '48px' }}>
+                  <iconify-icon icon="solar:card-2-bold-duotone" className="fs-24"></iconify-icon>
+                </div>
+                <div>
+                  <p className="text-muted mb-0 fs-13">Total Transactions</p>
+                  <h4 className="fw-bold mb-0">{transactions.length}</h4>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-6 col-xl-3">
+            <div className="card">
+              <div className="card-body d-flex align-items-center gap-3">
+                <div className="avatar-md bg-warning-subtle text-warning rounded d-flex align-items-center justify-content-center" style={{ width: '48px', height: '48px' }}>
+                  <iconify-icon icon="solar:clock-circle-bold" className="fs-24"></iconify-icon>
+                </div>
+                <div>
+                  <p className="text-muted mb-0 fs-13">Pending Settlements</p>
+                  <h4 className="fw-bold mb-0 text-warning">{transactions.filter(t => t.status === 'Pending').length}</h4>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-6 col-xl-3">
+            <div className="card">
+              <div className="card-body d-flex align-items-center gap-3">
+                <div className="avatar-md bg-info-subtle text-info rounded d-flex align-items-center justify-content-center" style={{ width: '48px', height: '48px' }}>
+                  <iconify-icon icon="solar:restart-circle-bold" className="fs-24 text-info"></iconify-icon>
+                </div>
+                <div>
+                  <p className="text-muted mb-0 fs-13">Refunded Payments</p>
+                  <h4 className="fw-bold mb-0">{transactions.filter(t => t.status === 'Refunded').length}</h4>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Ledger Table */}
       <div className="col-12">
         <div className="card">
           <div className="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <h4 className="card-title mb-0">All Transactions</h4>
+            <div>
+              <h4 className="card-title mb-1">Financial Transactions Ledger</h4>
+              <p className="text-muted fs-13 mb-0">Audited payment receipts across Stripe, M-Pesa, PayPal and Wire.</p>
+            </div>
             <div className="d-flex gap-2 align-items-center flex-wrap">
               <div className="position-relative">
-                <input 
-                  type="search" 
-                  className="form-control form-control-sm" 
-                  placeholder="Search TRX, Order, Customer..." 
-                  value={search} 
-                  onChange={e => setSearch(e.target.value)} 
-                  style={{ paddingLeft: '30px', minWidth: '240px' }} 
+                <input
+                  type="search"
+                  className="form-control form-control-sm"
+                  placeholder="Search TRX, Order, Client..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  style={{ minWidth: '220px' }}
                 />
-                <iconify-icon icon="solar:magnifer-linear" style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}></iconify-icon>
               </div>
-              <select className="form-select form-select-sm w-auto" value={filter} onChange={e => setFilter(e.target.value)}>
+              <select className="form-select form-select-sm w-auto" value={filter} onChange={(e) => setFilter(e.target.value)}>
                 <option value="All">All Statuses</option>
                 <option value="Completed">Completed</option>
                 <option value="Pending">Pending</option>
                 <option value="Refunded">Refunded</option>
                 <option value="Failed">Failed</option>
               </select>
-              <button className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1">
+              <button className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" onClick={handleExportCSV}>
                 <iconify-icon icon="solar:export-bold"></iconify-icon> Export CSV
               </button>
               <button className="btn btn-sm btn-primary d-flex align-items-center gap-1" onClick={() => setIsModalOpen(true)}>
@@ -90,125 +202,152 @@ export default function TransactionsPage() {
               </button>
             </div>
           </div>
-          
-          <div className="card-body">
+
+          <div className="card-body p-0">
             <div className="table-responsive">
-              <table className="table align-middle table-hover mb-0">
+              <table className="table align-middle table-hover mb-0 table-centered">
                 <thead className="bg-light-subtle">
                   <tr>
-                    <th>Transaction ID</th>
-                    <th>Date</th>
+                    <th>Transaction Reference</th>
+                    <th>Date & Time</th>
                     <th>Customer</th>
-                    <th>Order Ref</th>
-                    <th>Gateway</th>
                     <th>Amount</th>
+                    <th>Gateway</th>
+                    <th>Order Reference</th>
                     <th>Status</th>
-                    <th className="text-end">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map(trx => (
-                    <tr key={trx.id}>
-                      <td><span className="fw-bold text-dark">{trx.id}</span></td>
-                      <td className="text-muted fs-13">{trx.date}</td>
-                      <td>{trx.customer}</td>
-                      <td><a href="#!" className="text-primary text-decoration-none">{trx.orderId}</a></td>
-                      <td>
-                        <div className="d-flex align-items-center gap-1">
-                          <iconify-icon icon={
-                            trx.gateway === 'Stripe' ? 'fa6-brands:stripe' : 
-                            trx.gateway === 'PayPal' ? 'fa6-brands:paypal' : 
-                            trx.gateway === 'M-Pesa' ? 'solar:smartphone-bold-duotone' : 
-                            'solar:banknote-bold-duotone'
-                          } className={`fs-16 ${trx.gateway === 'Stripe' ? 'text-primary' : trx.gateway === 'PayPal' ? 'text-info' : trx.gateway === 'M-Pesa' ? 'text-success' : 'text-muted'}`}></iconify-icon>
-                          {trx.gateway}
-                        </div>
-                      </td>
-                      <td className="fw-bold">{trx.amount}</td>
-                      <td>
-                        <span className={`badge ${
-                          trx.status === 'Completed' ? 'bg-success-subtle text-success' :
-                          trx.status === 'Refunded' ? 'bg-danger-subtle text-danger' :
-                          trx.status === 'Failed' ? 'bg-secondary-subtle text-secondary' :
-                          'bg-warning-subtle text-warning'
-                        }`}>
-                          {trx.status}
-                        </span>
-                      </td>
-                      <td className="text-end">
-                        <button className="btn btn-soft-secondary btn-sm"><iconify-icon icon="solar:eye-bold-duotone" className="align-middle"></iconify-icon></button>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={7} className="text-center py-4 text-muted">
+                        <div className="spinner-border spinner-border-sm me-2 text-primary" role="status"></div>
+                        Loading financial ledger from MySQL...
                       </td>
                     </tr>
-                  ))}
-                  {filtered.length === 0 && (
-                    <tr><td colSpan={8} className="text-center p-4 text-muted">No transactions found.</td></tr>
+                  ) : filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="text-center py-4 text-muted">
+                        No transactions found matching this filter.
+                      </td>
+                    </tr>
+                  ) : (
+                    filtered.map((t) => (
+                      <tr key={t.id}>
+                        <td>
+                          <code className="fw-bold">{t.id}</code>
+                          {t.receiptNumber && t.receiptNumber !== 'N/A' && (
+                            <div className="text-muted fs-11">Rec: {t.receiptNumber}</div>
+                          )}
+                        </td>
+                        <td className="text-muted fs-13">{t.date}</td>
+                        <td>
+                          <span className="fw-medium text-dark">{t.customer}</span>
+                        </td>
+                        <td className="fw-bold text-dark">{t.amount}</td>
+                        <td>
+                          <span className="badge bg-light text-dark border">{t.gateway}</span>
+                        </td>
+                        <td>
+                          <span className="text-primary fw-medium">{t.orderId}</span>
+                        </td>
+                        <td>
+                          <span
+                            className={`badge px-2 py-1 fs-12 ${
+                              t.status === 'Completed'
+                                ? 'bg-success-subtle text-success'
+                                : t.status === 'Refunded'
+                                ? 'bg-danger-subtle text-danger'
+                                : t.status === 'Failed'
+                                ? 'bg-secondary-subtle text-secondary'
+                                : 'bg-warning-subtle text-warning'
+                            }`}
+                          >
+                            {t.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </table>
             </div>
-            
-            <div className="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
-              <span className="text-muted fs-13">Showing {filtered.length} of {transactions.length} transactions</span>
-              <ul className="pagination pagination-sm mb-0">
-                <li className="page-item disabled"><a className="page-link" href="#!">Previous</a></li>
-                <li className="page-item active"><a className="page-link" href="#!">1</a></li>
-                <li className="page-item"><a className="page-link" href="#!">2</a></li>
-                <li className="page-item"><a className="page-link" href="#!">Next</a></li>
-              </ul>
-            </div>
+          </div>
+
+          <div className="card-footer border-top d-flex justify-content-between align-items-center">
+            <span className="text-muted fs-13">Showing {filtered.length} transactions</span>
+            <span className="text-muted fs-12">Synced with MySQL `payment_transactions`</span>
           </div>
         </div>
       </div>
 
       {/* Manual Payment Modal */}
       {isModalOpen && (
-        <div style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)', position: 'fixed', inset: 0, zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="card shadow-lg m-3" style={{ width: '100%', maxWidth: '500px' }}>
-            <div className="card-header d-flex justify-content-between align-items-center bg-light-subtle">
-              <h5 className="card-title mb-0">Record Manual Payment</h5>
-              <button type="button" className="btn-close" onClick={() => setIsModalOpen(false)}></button>
-            </div>
-            <div className="card-body">
-              <div className="alert alert-info fs-13 py-2 mb-3">
-                <iconify-icon icon="solar:info-circle-bold-duotone" className="me-1 align-middle"></iconify-icon>
-                Use this form to log payments received outside the standard digital checkout flow (e.g. Cash, Wire Transfer, manual M-Pesa).
+        <div className="modal show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Record Manual Payment Receipt</h5>
+                <button type="button" className="btn-close" onClick={() => setIsModalOpen(false)}></button>
               </div>
-              <div className="row g-3">
-                <div className="col-12">
-                  <label className="form-label fw-medium text-dark">Amount Received</label>
-                  <div className="input-group">
-                    <span className="input-group-text">$</span>
-                    <input type="number" className="form-control" placeholder="0.00" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} />
+              <form onSubmit={handleSave}>
+                <div className="modal-body d-flex flex-column gap-3">
+                  <div>
+                    <label className="form-label fw-semibold">Customer Name *</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="e.g. Eleanor Vance"
+                      value={formData.customer}
+                      onChange={(e) => setFormData({ ...formData, customer: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label fw-semibold">Payment Amount ($ USD) *</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="form-control"
+                      placeholder="0.00"
+                      value={formData.amount}
+                      onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label fw-semibold">Associated Order ID</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="#LK-2024-XXXX"
+                      value={formData.orderId}
+                      onChange={(e) => setFormData({ ...formData, orderId: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label fw-semibold">Payment Method</label>
+                    <select
+                      className="form-select"
+                      value={formData.gateway}
+                      onChange={(e) => setFormData({ ...formData, gateway: e.target.value })}
+                    >
+                      <option value="Bank Transfer">Bank Wire Transfer</option>
+                      <option value="M-Pesa">M-Pesa Express</option>
+                      <option value="Stripe Card">Stripe Credit Card</option>
+                      <option value="Cash / POS">Boutique Cash / POS Terminal</option>
+                    </select>
                   </div>
                 </div>
-                <div className="col-12">
-                  <label className="form-label fw-medium text-dark">Customer Name / Email</label>
-                  <input type="text" className="form-control" placeholder="Search or enter customer details..." value={formData.customer} onChange={e => setFormData({...formData, customer: e.target.value})} />
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-outline-secondary" onClick={() => setIsModalOpen(false)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary" disabled={saving}>
+                    {saving ? 'Recording...' : 'Record Payment'}
+                  </button>
                 </div>
-                <div className="col-md-6">
-                  <label className="form-label fw-medium text-dark">Payment Method</label>
-                  <select className="form-select" value={formData.gateway} onChange={e => setFormData({...formData, gateway: e.target.value})}>
-                    <option value="Cash">Cash</option>
-                    <option value="Bank Transfer">Bank Transfer</option>
-                    <option value="Cheque">Cheque</option>
-                    <option value="Manual M-Pesa">Manual M-Pesa</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-                <div className="col-md-6">
-                  <label className="form-label fw-medium text-dark">Date Received</label>
-                  <input type="date" className="form-control" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
-                </div>
-                <div className="col-12">
-                  <label className="form-label fw-medium text-dark">Order Reference (Optional)</label>
-                  <input type="text" className="form-control" placeholder="e.g. #ORD-10045" value={formData.orderId} onChange={e => setFormData({...formData, orderId: e.target.value})} />
-                </div>
-              </div>
-              
-              <div className="d-flex justify-content-end gap-2 pt-4 mt-2 border-top">
-                <button type="button" className="btn btn-light" onClick={() => setIsModalOpen(false)}>Cancel</button>
-                <button type="button" className="btn btn-primary" onClick={handleSave} disabled={!formData.amount || !formData.customer}>Record Payment</button>
-              </div>
+              </form>
             </div>
           </div>
         </div>

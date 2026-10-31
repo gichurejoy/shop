@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '../../../lib/db';
-import { IOrder } from '../../../types/order';
+import { db } from '@/lib/db';
+import { IOrder } from '@/types/order';
 
 export async function GET(request: NextRequest) {
   try {

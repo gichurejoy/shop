@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { getCmsPosts, saveCmsPost, deleteCmsPost } from '../../../../actions';
-import type { CmsPost } from '../../../../../lib/cms';
+import type { CmsPost } from '@/lib/cms';
 import { TipTapEditor } from '../../../../../components/cms/TipTapEditor';
 import { toast } from 'sonner';
 

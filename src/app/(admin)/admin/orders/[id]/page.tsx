@@ -171,13 +171,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                       <span className={`badge ${isPaid ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning'} px-2 py-1 fs-13 text-capitalize`}>
                         {order.paymentStatus}
                       </span>
-                      <span className={`badge ${
-                        order.status === 'delivered' ? 'bg-success-subtle text-success border border-success' :
+                      <span className={`badge ${order.status === 'delivered' ? 'bg-success-subtle text-success border border-success' :
                         order.status === 'shipped' ? 'bg-primary-subtle text-primary border border-primary' :
-                        order.status === 'processing' ? 'bg-warning-subtle text-warning border border-warning' :
-                        order.status === 'cancelled' ? 'bg-danger-subtle text-danger border border-danger' :
-                        'bg-secondary-subtle text-secondary border border-secondary'
-                      } fs-13 px-2 py-1 rounded text-capitalize`}>
+                          order.status === 'processing' ? 'bg-warning-subtle text-warning border border-warning' :
+                            order.status === 'cancelled' ? 'bg-danger-subtle text-danger border border-danger' :
+                              'bg-secondary-subtle text-secondary border border-secondary'
+                        } fs-13 px-2 py-1 rounded text-capitalize`}>
                         {order.status}
                       </span>
                     </h4>
@@ -414,12 +413,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                               </div>
                             </td>
                             <td>
-                              <span className={`badge ${
-                                order.status === 'delivered' ? 'bg-success-subtle text-success' :
+                              <span className={`badge ${order.status === 'delivered' ? 'bg-success-subtle text-success' :
                                 order.status === 'shipped' ? 'bg-info-subtle text-info' :
-                                order.status === 'processing' ? 'bg-warning-subtle text-warning' :
-                                'bg-light text-dark'
-                              } px-2 py-1 fs-13 text-capitalize`}>
+                                  order.status === 'processing' ? 'bg-warning-subtle text-warning' :
+                                    'bg-light text-dark'
+                                } px-2 py-1 fs-13 text-capitalize`}>
                                 {order.status === 'delivered' ? 'Delivered' : order.status === 'shipped' ? 'Dispatched' : order.status === 'processing' ? 'Packaging' : 'Ready'}
                               </span>
                             </td>
@@ -446,12 +444,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   <span className="position-absolute start-0 top-0 border border-dashed h-100"></span>
 
                   {order.timeline && order.timeline.length > 0 ? (
-                    order.timeline.map((event, idx) => (
+                    order.timeline.map((event: any, idx: number) => (
                       <div key={idx} className="position-relative ps-4">
                         <div className="mb-4">
-                          <span className={`position-absolute start-0 avatar-sm translate-middle-x bg-light d-inline-flex align-items-center justify-content-center rounded-circle ${
-                            idx === order.timeline.length - 1 ? 'text-primary' : 'text-success'
-                          } fs-20`}>
+                          <span className={`position-absolute start-0 avatar-sm translate-middle-x bg-light d-inline-flex align-items-center justify-content-center rounded-circle ${idx === order.timeline.length - 1 ? 'text-primary' : 'text-success'
+                            } fs-20`}>
                             {idx === order.timeline.length - 1 ? (
                               <i className="bx bx-current-location"></i>
                             ) : (
@@ -721,4 +718,3 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     </div>
   );
 }
-

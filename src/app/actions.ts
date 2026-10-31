@@ -1,8 +1,8 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getCmsData, saveCmsData, CmsPage, CmsPost } from '../lib/cms';
-import { CmsSection } from '../lib/cms-types';
+import { getCmsData, saveCmsData, CmsPage, CmsPost } from '@/lib/cms';
+import { CmsSection } from '@/lib/cms-types';
 
 // ─── Homepage draft/publish ─────────────────────────────────────────────────
 export async function getHomepageDraft(): Promise<CmsSection[]> {

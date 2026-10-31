@@ -25,7 +25,7 @@ import {
 import { products } from '../data/products';
 import { ProductCard } from '../components/ProductCard';
 import { useCart } from '../context/CartContext';
-import { apiClient } from '../lib/api-client';
+import { apiClient } from '@/lib/api-client';
 import { toast } from 'sonner';
 const PRODUCT_GALLERIES: Record<string, string[]> = {
   '1': [ // Classic Gold Band Ring
