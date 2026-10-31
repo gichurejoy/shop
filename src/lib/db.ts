@@ -15,7 +15,7 @@ function readBackupStore(): any {
     if (fs.existsSync(DB_PATH)) {
       return JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
     }
-  } catch {}
+  } catch { }
   return { products: [], categories: [], orders: [], coupons: [], users: [], transactions: [] };
 }
 
@@ -72,15 +72,15 @@ function mapOrder(o: any): IOrder {
     customerPhone: o.customerPhone || '',
     items: Array.isArray(o.items)
       ? o.items.map((i: any) => ({
-          id: i.id,
-          productId: i.productId || i.id,
-          name: i.name,
-          price: Number(i.price),
-          quantity: i.quantity,
-          selectedSize: i.selectedSize || undefined,
-          selectedColor: i.selectedColor || undefined,
-          image: i.image || '',
-        }))
+        id: i.id,
+        productId: i.productId || i.id,
+        name: i.name,
+        price: Number(i.price),
+        quantity: i.quantity,
+        selectedSize: i.selectedSize || undefined,
+        selectedColor: i.selectedColor || undefined,
+        image: i.image || '',
+      }))
       : [],
     subtotal: Number(o.subtotal),
     tax: Number(o.tax || 0),
@@ -357,6 +357,35 @@ export const db = {
         store.categories.push(newCat);
         writeBackupStore(store);
         return newCat;
+      }
+    },
+
+    update: async (id: string, data: Partial<ICategory>): Promise<ICategory | null> => {
+      try {
+        const updated = await prisma.category.update({
+          where: { id },
+          data: {
+            name: data.name,
+            slug: data.slug,
+            description: data.description,
+            imageUrl: data.image_url,
+            sortOrder: data.sort_order,
+          },
+        });
+        return mapCategory(updated);
+      } catch (err) {
+        console.error('MySQL category update failed:', err);
+        return null;
+      }
+    },
+
+    delete: async (id: string): Promise<boolean> => {
+      try {
+        await prisma.category.delete({ where: { id } });
+        return true;
+      } catch (err) {
+        console.error('MySQL category delete failed:', err);
+        return false;
       }
     },
   },
@@ -661,6 +690,64 @@ export const db = {
         };
       }
     },
+
+    create: async (data: { code: string; discountType: string; discountValue: number; minOrderAmount?: number; expiresAt?: string }): Promise<ICoupon> => {
+      try {
+        const created = await prisma.coupon.create({
+          data: {
+            code: data.code.trim().toUpperCase(),
+            discountType: data.discountType,
+            discountValue: data.discountValue,
+            minOrderAmount: data.minOrderAmount || 0,
+            expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+          },
+        });
+        return {
+          id: created.id,
+          code: created.code,
+          discountType: created.discountType as any,
+          discountValue: Number(created.discountValue),
+          minOrderAmount: Number(created.minOrderAmount || 0),
+          isActive: created.isActive,
+          usageCount: created.usageCount,
+          expiresAt: created.expiresAt ? created.expiresAt.toISOString() : new Date().toISOString(),
+        };
+      } catch (err: any) {
+        throw new Error(err.message || 'Failed to create coupon');
+      }
+    },
+
+    delete: async (id: string): Promise<boolean> => {
+      try {
+        await prisma.coupon.delete({ where: { id } });
+        return true;
+      } catch {
+        return false;
+      }
+    },
+
+    toggleActive: async (id: string): Promise<ICoupon | null> => {
+      try {
+        const c = await prisma.coupon.findUnique({ where: { id } });
+        if (!c) return null;
+        const updated = await prisma.coupon.update({
+          where: { id },
+          data: { isActive: !c.isActive },
+        });
+        return {
+          id: updated.id,
+          code: updated.code,
+          discountType: updated.discountType as any,
+          discountValue: Number(updated.discountValue),
+          minOrderAmount: Number(updated.minOrderAmount || 0),
+          isActive: updated.isActive,
+          usageCount: updated.usageCount,
+          expiresAt: updated.expiresAt ? updated.expiresAt.toISOString() : new Date().toISOString(),
+        };
+      } catch {
+        return null;
+      }
+    },
   },
 
   // USERS & AUTH
@@ -762,7 +849,6 @@ export const db = {
         const store = readBackupStore();
         const fallback: IPaymentTransaction = {
           ...tx,
-          reference: tx.reference || `ref-${Date.now()}`,
           id: `tx-${Date.now()}`,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -834,6 +920,177 @@ export const db = {
         if (receiptNumber) tx.receiptNumber = receiptNumber;
         writeBackupStore(store);
         return tx;
+      }
+    },
+  },
+
+  // CUSTOMERS
+  customers: {
+    getAll: async () => {
+      try {
+        const users = await prisma.user.findMany({
+          where: { role: 'customer' },
+          include: {
+            orders: { select: { id: true, total: true, createdAt: true } },
+            addresses: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        return users.map((u) => {
+          const totalOrders = u.orders.length;
+          const totalSpent = u.orders.reduce((sum, ord) => sum + Number(ord.total), 0);
+          const latestOrder = u.orders[0];
+          return {
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            phone: u.phone || 'N/A',
+            avatar: u.avatar || 'https://techzaa.in/larkon/admin/assets/images/users/avatar-2.jpg',
+            totalOrders,
+            totalSpent: Number(totalSpent.toFixed(2)),
+            latestOrderDate: latestOrder ? latestOrder.createdAt.toISOString() : null,
+            loyaltyPoints: u.loyaltyPoints,
+            tier: u.tier,
+            createdAt: u.createdAt.toISOString(),
+          };
+        });
+      } catch (err) {
+        console.error('MySQL customers.getAll failed:', err);
+        return [];
+      }
+    },
+
+    getById: async (id: string) => {
+      try {
+        const u = await prisma.user.findUnique({
+          where: { id },
+          include: {
+            orders: {
+              include: { items: true },
+              orderBy: { createdAt: 'desc' },
+            },
+            addresses: true,
+          },
+        });
+        if (!u) return null;
+
+        const totalOrders = u.orders.length;
+        const totalSpent = u.orders.reduce((sum, ord) => sum + Number(ord.total), 0);
+        return {
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          phone: u.phone || '',
+          avatar: u.avatar || 'https://techzaa.in/larkon/admin/assets/images/users/avatar-2.jpg',
+          totalOrders,
+          totalSpent: Number(totalSpent.toFixed(2)),
+          loyaltyPoints: u.loyaltyPoints,
+          tier: u.tier,
+          addresses: u.addresses,
+          orders: u.orders.map(mapOrder),
+          createdAt: u.createdAt.toISOString(),
+        };
+      } catch {
+        return null;
+      }
+    },
+  },
+
+  // DASHBOARD STATS
+  stats: {
+    getOverview: async () => {
+      try {
+        const [orders, products, customers, transactions] = await Promise.all([
+          prisma.order.findMany({
+            include: { items: true },
+            orderBy: { createdAt: 'desc' },
+          }),
+          prisma.product.findMany({ select: { id: true, stockQuantity: true, price: true } }),
+          prisma.user.count({ where: { role: 'customer' } }),
+          prisma.paymentTransaction.findMany({ orderBy: { createdAt: 'desc' }, take: 10 }),
+        ]);
+
+        const totalOrdersCount = orders.length;
+        const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total), 0);
+        const paidOrders = orders.filter((o) => o.paymentStatus === 'paid');
+        const lowStockProducts = products.filter((p) => p.stockQuantity <= 5);
+
+        // Daily revenue breakdown for charts
+        const revenueByMonth: Record<string, number> = {};
+        orders.forEach((o) => {
+          const month = new Date(o.createdAt).toLocaleDateString('en-US', { month: 'short' });
+          revenueByMonth[month] = (revenueByMonth[month] || 0) + Number(o.total);
+        });
+
+        return {
+          totalRevenue: Number(totalRevenue.toFixed(2)),
+          totalOrders: totalOrdersCount,
+          totalCustomers: customers,
+          lowStockCount: lowStockProducts.length,
+          paidOrdersCount: paidOrders.length,
+          recentOrders: orders.slice(0, 5).map(mapOrder),
+          recentTransactions: transactions,
+          revenueByMonth,
+        };
+      } catch (err) {
+        console.error('MySQL stats.getOverview failed:', err);
+        return {
+          totalRevenue: 0,
+          totalOrders: 0,
+          totalCustomers: 0,
+          lowStockCount: 0,
+          paidOrdersCount: 0,
+          recentOrders: [],
+          recentTransactions: [],
+          revenueByMonth: {},
+        };
+      }
+    },
+  },
+
+  // GENERAL SETTINGS
+  settings: {
+    get: async () => {
+      try {
+        const row = await prisma.cmsSetting.findUnique({ where: { key: 'general' } });
+        return row?.value || {
+          storeName: 'Waveron Luxury',
+          metaTitle: 'Waveron | Fine Jewelry & Mongolian Cashmere',
+          metaKeywords: 'jewelry, 18k gold, cashmere, sweaters, luxury',
+          contactEmail: 'contact@waveron.com',
+          phone: '+1 (555) 123-4567',
+          currency: 'USD',
+          taxRate: 8.0,
+          theme: 'Default',
+          layout: 'Fashion',
+        };
+      } catch {
+        return {
+          storeName: 'Waveron Luxury',
+          metaTitle: 'Waveron | Fine Jewelry & Mongolian Cashmere',
+          metaKeywords: 'jewelry, 18k gold, cashmere, sweaters, luxury',
+          contactEmail: 'contact@waveron.com',
+          phone: '+1 (555) 123-4567',
+          currency: 'USD',
+          taxRate: 8.0,
+          theme: 'Default',
+          layout: 'Fashion',
+        };
+      }
+    },
+
+    update: async (data: any) => {
+      try {
+        const row = await prisma.cmsSetting.upsert({
+          where: { key: 'general' },
+          update: { value: data },
+          create: { key: 'general', value: data },
+        });
+        return row.value;
+      } catch (err) {
+        console.error('MySQL settings.update failed:', err);
+        return data;
       }
     },
   },

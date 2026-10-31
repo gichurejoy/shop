@@ -4,8 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { apiClient } from '../../../../../lib/api-client';
-import { ProductStatus, ProductType } from '../../../../../types/product';
+import { apiClient } from '@/lib/api-client';
+import { ProductStatus, ProductType } from '@/types/product';
 
 const COLORS = [
   { id: 'c-dark',   hex: '#1e293b', label: 'Dark' },

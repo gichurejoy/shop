@@ -57,9 +57,20 @@ export const apiClient = {
   categories: {
     list: () => fetchJson<{ categories: ICategory[] }>('/api/categories'),
 
+    get: (id: string) => fetchJson<ICategory>(`/api/categories/${id}`),
+
     create: (data: Partial<ICategory>) => fetchJson<ICategory>('/api/categories', {
       method: 'POST',
       body: JSON.stringify(data),
+    }),
+
+    update: (id: string, data: Partial<ICategory>) => fetchJson<ICategory>(`/api/categories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+    delete: (id: string) => fetchJson<{ success: boolean }>(`/api/categories/${id}`, {
+      method: 'DELETE',
     }),
   },
 
@@ -93,9 +104,40 @@ export const apiClient = {
   coupons: {
     list: () => fetchJson<{ coupons: ICoupon[] }>('/api/coupons'),
 
+    create: (data: { code: string; discountType: string; discountValue: number; minOrderAmount?: number; expiresAt?: string }) =>
+      fetchJson<ICoupon>('/api/coupons', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+
+    delete: (id: string) => fetchJson<{ success: boolean }>(`/api/coupons/${id}`, {
+      method: 'DELETE',
+    }),
+
+    toggleActive: (id: string) => fetchJson<ICoupon>(`/api/coupons/${id}`, {
+      method: 'PATCH',
+    }),
+
     apply: (code: string, subtotal: number) => fetchJson<CouponValidationResult>('/api/coupons/apply', {
       method: 'POST',
       body: JSON.stringify({ code, subtotal }),
+    }),
+  },
+
+  customers: {
+    list: () => fetchJson<{ customers: any[] }>('/api/customers'),
+    get: (id: string) => fetchJson<{ customer: any }>(`/api/customers/${id}`),
+  },
+
+  stats: {
+    overview: () => fetchJson<any>('/api/stats/overview'),
+  },
+
+  settings: {
+    get: () => fetchJson<{ settings: any }>('/api/settings'),
+    update: (data: any) => fetchJson<{ settings: any; success: boolean }>('/api/settings', {
+      method: 'POST',
+      body: JSON.stringify(data),
     }),
   },
 

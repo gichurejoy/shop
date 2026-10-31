@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { apiClient } from '../../../../lib/api-client';
-import { IOrder } from '../../../../types/order';
+import { apiClient } from '@/lib/api-client';
+import { IOrder } from '@/types/order';
 
 const DEFAULT_ORDERS: any[] = [
   { id: '#RB5625', date: '29 Apr 2024', customer: 'Anna M. Hines', avatar: 'https://techzaa.in/larkon/admin/assets/images/users/avatar-2.jpg', total: '$124.00', qty: 3, payment: 'Credit Card', status: 'Delivered' },
@@ -139,7 +139,11 @@ export default function OrdersListPage() {
               {filtered.map((o, i) => (
                 <tr key={o.id}>
                   <td><div className="form-check"><input className="form-check-input" type="checkbox" id={`orderCheck${i}`} /><label className="form-check-label" htmlFor={`orderCheck${i}`}></label></div></td>
-                  <td><span className="text-body fw-medium">{o.id}</span></td>
+                  <td>
+                    <Link href={`/admin/orders/${o.rawId || o.id}`} className="text-body fw-medium link-primary">
+                      {o.id}
+                    </Link>
+                  </td>
                   <td>
                     <img alt={o.customer} className="avatar-sm rounded-circle me-2" src={o.avatar} />
                     {o.customer}
@@ -150,8 +154,11 @@ export default function OrdersListPage() {
                   <td><span className={STATUS_BADGE[o.status] || 'badge bg-secondary-subtle text-secondary py-1 px-2'}>{o.status}</span></td>
                   <td>
                     <div className="d-flex gap-2">
-                      <Link href={`/tracking/${o.rawId || o.id}`} className="btn btn-light btn-sm" title="Track Live Order">
+                      <Link href={`/admin/orders/${o.rawId || o.id}`} className="btn btn-light btn-sm" title="View & Manage Order Details">
                         <iconify-icon className="align-middle fs-18" icon="solar:eye-broken"></iconify-icon>
+                      </Link>
+                      <Link href={`/tracking/${o.rawId || o.id}`} target="_blank" className="btn btn-light btn-sm" title="Customer Tracking View">
+                        <iconify-icon className="align-middle fs-18" icon="solar:routing-2-broken"></iconify-icon>
                       </Link>
                     </div>
                   </td>

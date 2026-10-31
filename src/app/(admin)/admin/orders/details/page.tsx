@@ -1,31 +1,239 @@
 'use client';
 
+import { Suspense, useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { toast } from 'sonner';
+import { apiClient } from '@/lib/api-client';
+import { IOrder, OrderStatus, PaymentStatus } from '@/types/order';
+
 const BASE = 'https://techzaa.in/larkon/admin/assets/images';
 
-export default function OrderDetailPage() {
+function OrderDetailsContent() {
+  const searchParams = useSearchParams();
+  const requestedId = searchParams.get('id');
+
+  const [order, setOrder] = useState<IOrder | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+  const [trackingInput, setTrackingInput] = useState('');
+  const [showTrackingEdit, setShowTrackingEdit] = useState(false);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      if (requestedId) {
+        const data = await apiClient.orders.get(requestedId);
+        setOrder(data);
+        if (data.trackingNumber) setTrackingInput(data.trackingNumber);
+      } else {
+        const res = await apiClient.orders.list({ limit: 1 });
+        if (res.orders && res.orders.length > 0) {
+          const latest = res.orders[0];
+          setOrder(latest);
+          if (latest.trackingNumber) setTrackingInput(latest.trackingNumber);
+        } else {
+          setOrder(null);
+        }
+      }
+    } catch (err: any) {
+      toast.error('Could not load order: ' + (err.message || 'Unknown error'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [requestedId]);
+
+  const handleStatusChange = async (newStatus: OrderStatus) => {
+    if (!order) return;
+    try {
+      setUpdating(true);
+      const updated = await apiClient.orders.updateStatus(order.id, newStatus, order.paymentStatus, order.trackingNumber);
+      setOrder(updated);
+      toast.success(`Order #${updated.orderNumber} status changed to ${newStatus.toUpperCase()}`);
+    } catch (err: any) {
+      toast.error('Failed to update status: ' + err.message);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handlePaymentStatusToggle = async () => {
+    if (!order) return;
+    const nextPaymentStatus: PaymentStatus = order.paymentStatus === 'paid' ? 'unpaid' : 'paid';
+    try {
+      setUpdating(true);
+      const updated = await apiClient.orders.updateStatus(order.id, order.status, nextPaymentStatus, order.trackingNumber);
+      setOrder(updated);
+      toast.success(`Order payment status marked as ${nextPaymentStatus.toUpperCase()}`);
+    } catch (err: any) {
+      toast.error('Failed to update payment status: ' + err.message);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleSaveTracking = async () => {
+    if (!order) return;
+    try {
+      setUpdating(true);
+      const updated = await apiClient.orders.updateStatus(order.id, order.status, order.paymentStatus, trackingInput);
+      setOrder(updated);
+      setShowTrackingEdit(false);
+      toast.success('Tracking number updated successfully!');
+    } catch (err: any) {
+      toast.error('Failed to update tracking: ' + err.message);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center py-5" style={{ minHeight: '400px' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading order details...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="card">
+        <div className="card-body text-center py-5">
+          <iconify-icon icon="solar:bag-smile-bold-duotone" className="fs-50 text-muted mb-3"></iconify-icon>
+          <h4>No Orders Found</h4>
+          <p className="text-muted">There are currently no orders in your store database.</p>
+          <Link href="/admin/orders" className="btn btn-primary mt-2">
+            View Orders Hub
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const isPaid = order.paymentStatus === 'paid';
+  const createdDate = new Date(order.createdAt);
+  const formattedDate = createdDate.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  }) + ' at ' + createdDate.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+  const getProgressState = (stage: 'confirming' | 'payment' | 'processing' | 'shipping' | 'delivered') => {
+    const status = order.status;
+    if (stage === 'confirming') return { width: '100%', color: 'bg-success', label: 'Order Confirmed' };
+    if (stage === 'payment') {
+      return isPaid
+        ? { width: '100%', color: 'bg-success', label: 'Payment Paid' }
+        : { width: '50%', color: 'bg-warning', label: 'Payment Pending' };
+    }
+    if (stage === 'processing') {
+      if (status === 'pending') return { width: '0%', color: 'bg-primary', label: 'Processing' };
+      if (status === 'processing') return { width: '60%', color: 'bg-warning', label: 'Processing', active: true };
+      return { width: '100%', color: 'bg-success', label: 'Processed' };
+    }
+    if (stage === 'shipping') {
+      if (status === 'pending' || status === 'processing') return { width: '0%', color: 'bg-primary', label: 'Shipping' };
+      if (status === 'shipped') return { width: '70%', color: 'bg-warning', label: 'In Transit', active: true };
+      return { width: '100%', color: 'bg-success', label: 'Shipped' };
+    }
+    if (stage === 'delivered') {
+      if (status === 'delivered') return { width: '100%', color: 'bg-success', label: 'Delivered' };
+      return { width: '0%', color: 'bg-primary', label: 'Delivered' };
+    }
+    return { width: '0%', color: 'bg-primary', label: '' };
+  };
+
+  const confirmingProg = getProgressState('confirming');
+  const paymentProg = getProgressState('payment');
+  const processingProg = getProgressState('processing');
+  const shippingProg = getProgressState('shipping');
+  const deliveredProg = getProgressState('delivered');
+
   return (
     <div className="row">
-      {/* ── Left Column (9/12) ── */}
+      {/* Left Column (9/12) */}
       <div className="col-xl-9 col-lg-8">
         <div className="row">
           <div className="col-lg-12">
 
-            {/* ── Order Header Card ── */}
+            {/* Order Header Card */}
             <div className="card mb-3">
               <div className="card-body">
                 <div className="d-flex flex-wrap align-items-center justify-content-between gap-2">
                   <div>
-                    <h4 className="fw-medium text-dark d-flex align-items-center gap-2">
-                      #0758267/90{' '}
-                      <span className="badge bg-success-subtle text-success px-2 py-1 fs-13">Paid</span>
-                      <span className="border border-warning text-warning fs-13 px-2 py-1 rounded">In Progress</span>
+                    <h4 className="fw-medium text-dark d-flex align-items-center gap-2 mb-1">
+                      #{order.orderNumber || order.id}{' '}
+                      <span className={`badge ${isPaid ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning'} px-2 py-1 fs-13 text-capitalize`}>
+                        {order.paymentStatus}
+                      </span>
+                      <span className={`badge ${
+                        order.status === 'delivered' ? 'bg-success-subtle text-success border border-success' :
+                        order.status === 'shipped' ? 'bg-primary-subtle text-primary border border-primary' :
+                        order.status === 'processing' ? 'bg-warning-subtle text-warning border border-warning' :
+                        order.status === 'cancelled' ? 'bg-danger-subtle text-danger border border-danger' :
+                        'bg-secondary-subtle text-secondary border border-secondary'
+                      } fs-13 px-2 py-1 rounded text-capitalize`}>
+                        {order.status}
+                      </span>
                     </h4>
-                    <p className="mb-0">Order / Order Details / #0758267/90 - April 23 , 2024 at 6:23 pm</p>
+                    <p className="mb-0 text-muted fs-13">
+                      Order / Order Details / #{order.orderNumber || order.id} &mdash; {formattedDate}
+                    </p>
                   </div>
-                  <div>
-                    <a href="#!" className="btn btn-outline-secondary">Refund</a>{' '}
-                    <a href="#!" className="btn btn-outline-secondary">Return</a>{' '}
-                    <a href="#!" className="btn btn-primary">Edit Order</a>
+                  <div className="d-flex flex-wrap gap-2 align-items-center">
+                    <div className="btn-group">
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary dropdown-toggle btn-sm text-capitalize"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                        disabled={updating}
+                      >
+                        Status: <strong className="ms-1">{order.status}</strong>
+                      </button>
+                      <ul className="dropdown-menu dropdown-menu-end shadow">
+                        <li><h6 className="dropdown-header">Change Fulfillment Status</h6></li>
+                        {(['pending', 'processing', 'shipped', 'delivered', 'cancelled'] as OrderStatus[]).map((st) => (
+                          <li key={st}>
+                            <button
+                              type="button"
+                              className={`dropdown-item text-capitalize ${order.status === st ? 'active' : ''}`}
+                              onClick={() => handleStatusChange(st)}
+                            >
+                              {st}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handlePaymentStatusToggle}
+                      className={`btn btn-sm ${isPaid ? 'btn-outline-warning' : 'btn-outline-success'}`}
+                      disabled={updating}
+                    >
+                      {isPaid ? 'Mark Unpaid' : 'Mark As Paid'}
+                    </button>
+
+                    <Link
+                      href={`/tracking/${order.orderNumber || order.id}`}
+                      target="_blank"
+                      className="btn btn-sm btn-primary d-flex align-items-center gap-1"
+                    >
+                      <iconify-icon icon="solar:routing-2-broken" className="fs-16"></iconify-icon>
+                      Customer Tracking View
+                    </Link>
                   </div>
                 </div>
 
@@ -36,214 +244,271 @@ export default function OrderDetailPage() {
                 <div className="row row-cols-xxl-5 row-cols-md-2 row-cols-1">
                   <div className="col">
                     <div className="progress mt-3" style={{ height: '10px' }}>
-                      <div className="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style={{ width: '100%' }} aria-valuenow={70} aria-valuemin={0} aria-valuemax={100}></div>
+                      <div className={`progress-bar progress-bar-striped progress-bar-animated ${confirmingProg.color}`} role="progressbar" style={{ width: confirmingProg.width }}></div>
                     </div>
-                    <p className="mb-0 mt-2">Order Confirming</p>
+                    <p className="mb-0 mt-2">{confirmingProg.label}</p>
                   </div>
                   <div className="col">
                     <div className="progress mt-3" style={{ height: '10px' }}>
-                      <div className="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style={{ width: '100%' }} aria-valuenow={70} aria-valuemin={0} aria-valuemax={100}></div>
+                      <div className={`progress-bar progress-bar-striped progress-bar-animated ${paymentProg.color}`} role="progressbar" style={{ width: paymentProg.width }}></div>
                     </div>
-                    <p className="mb-0 mt-2">Payment Pending</p>
+                    <p className="mb-0 mt-2">{paymentProg.label}</p>
                   </div>
                   <div className="col">
                     <div className="progress mt-3" style={{ height: '10px' }}>
-                      <div className="progress-bar progress-bar-striped progress-bar-animated bg-warning" role="progressbar" style={{ width: '60%' }} aria-valuenow={60} aria-valuemin={0} aria-valuemax={100}></div>
+                      <div className={`progress-bar progress-bar-striped progress-bar-animated ${processingProg.color}`} role="progressbar" style={{ width: processingProg.width }}></div>
                     </div>
                     <div className="d-flex align-items-center gap-2 mt-2">
-                      <p className="mb-0">Processing</p>
-                      <div className="spinner-border spinner-border-sm text-warning" role="status">
-                        <span className="visually-hidden">Loading...</span>
-                      </div>
+                      <p className="mb-0">{processingProg.label}</p>
+                      {processingProg.active && (
+                        <div className="spinner-border spinner-border-sm text-warning" role="status">
+                          <span className="visually-hidden">Loading...</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="col">
                     <div className="progress mt-3" style={{ height: '10px' }}>
-                      <div className="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style={{ width: '0%' }} aria-valuenow={0} aria-valuemin={0} aria-valuemax={100}></div>
+                      <div className={`progress-bar progress-bar-striped progress-bar-animated ${shippingProg.color}`} role="progressbar" style={{ width: shippingProg.width }}></div>
                     </div>
-                    <p className="mb-0 mt-2">Shipping</p>
+                    <div className="d-flex align-items-center gap-2 mt-2">
+                      <p className="mb-0">{shippingProg.label}</p>
+                      {shippingProg.active && (
+                        <div className="spinner-border spinner-border-sm text-warning" role="status">
+                          <span className="visually-hidden">In Transit...</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="col">
                     <div className="progress mt-3" style={{ height: '10px' }}>
-                      <div className="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style={{ width: '0%' }} aria-valuenow={0} aria-valuemin={0} aria-valuemax={100}></div>
+                      <div className={`progress-bar progress-bar-striped progress-bar-animated ${deliveredProg.color}`} role="progressbar" style={{ width: deliveredProg.width }}></div>
                     </div>
-                    <p className="mb-0 mt-2">Delivered</p>
+                    <p className="mb-0 mt-2">{deliveredProg.label}</p>
                   </div>
                 </div>
               </div>
+
               <div className="card-footer d-flex flex-wrap align-items-center justify-content-between bg-light-subtle gap-2">
-                <p className="border rounded mb-0 px-2 py-1 bg-body">
-                  <i className="bx bx-arrow-from-left align-middle fs-16"></i>{' '}
-                  Estimated shipping date : <span className="text-dark fw-medium">Apr 25 , 2024</span>
-                </p>
+                <div className="d-flex align-items-center gap-2">
+                  <p className="border rounded mb-0 px-2 py-1 bg-body fs-13">
+                    <i className="bx bx-arrow-from-left align-middle fs-16 me-1"></i>
+                    Tracking Number:{' '}
+                    <span className="text-dark fw-medium">
+                      {order.trackingNumber || 'Not assigned'}
+                    </span>
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowTrackingEdit(!showTrackingEdit)}
+                    className="btn btn-sm btn-link text-decoration-none text-muted p-0 ms-1"
+                    title="Edit tracking number"
+                  >
+                    <i className="bx bx-edit-alt fs-16"></i>
+                  </button>
+                </div>
+
+                {showTrackingEdit && (
+                  <div className="d-flex align-items-center gap-2 my-1">
+                    <input
+                      type="text"
+                      className="form-control form-control-sm"
+                      placeholder="e.g. TRK-98234-KE"
+                      value={trackingInput}
+                      onChange={(e) => setTrackingInput(e.target.value)}
+                      style={{ width: '200px' }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-primary"
+                      onClick={handleSaveTracking}
+                      disabled={updating}
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary"
+                      onClick={() => setShowTrackingEdit(false)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+
                 <div>
-                  <a href="#!" className="btn btn-primary">Make As Ready To Ship</a>
+                  {order.status === 'pending' && (
+                    <button
+                      type="button"
+                      className="btn btn-warning btn-sm"
+                      onClick={() => handleStatusChange('processing')}
+                      disabled={updating}
+                    >
+                      Mark As Processing
+                    </button>
+                  )}
+                  {order.status === 'processing' && (
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      onClick={() => handleStatusChange('shipped')}
+                      disabled={updating}
+                    >
+                      Make As Ready To Ship
+                    </button>
+                  )}
+                  {order.status === 'shipped' && (
+                    <button
+                      type="button"
+                      className="btn btn-success btn-sm"
+                      onClick={() => handleStatusChange('delivered')}
+                      disabled={updating}
+                    >
+                      Mark As Delivered
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* ── Product Table Card ── */}
+            {/* Product Table Card */}
             <div className="card mb-3">
-              <div className="card-header">
-                <h4 className="card-title">Product</h4>
+              <div className="card-header d-flex justify-content-between align-items-center">
+                <h4 className="card-title mb-0">Ordered Items ({order.items.length})</h4>
               </div>
               <div className="card-body">
                 <div className="table-responsive">
                   <table className="table align-middle mb-0 table-hover table-centered">
                     <thead className="bg-light-subtle border-bottom">
                       <tr>
-                        <th>Product Name &amp; Size</th>
+                        <th>Product Name &amp; Spec</th>
                         <th>Status</th>
                         <th>Quantity</th>
-                        <th>Price</th>
-                        <th>Text</th>
+                        <th>Unit Price</th>
+                        <th>Est. Tax</th>
                         <th>Amount</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {[
-                        { img: 'p-1.png',  name: 'Men Black Slim Fit T-shirt', size: 'M', status: 'Ready',     statusClass: 'bg-success-subtle text-success', qty: 1,  price: '$80.00',  tax: '$3.00',  amount: '$83.00'  },
-                        { img: 'p-5.png',  name: 'Dark Green Cargo Pent',      size: 'M', status: 'Packaging', statusClass: 'bg-light text-dark',            qty: 3,  price: '$330.00', tax: '$4.00',  amount: '$334.00' },
-                        { img: 'p-8.png',  name: 'Men Dark Brown Wallet',      size: 'S', status: 'Ready',     statusClass: 'bg-success-subtle text-success', qty: 1,  price: '$132.00', tax: '$5.00',  amount: '$137.00' },
-                        { img: 'p-10.png', name: "Kid's Yellow T-shirt",       size: 'S', status: 'Packaging', statusClass: 'bg-light text-dark',            qty: 2,  price: '$220.00', tax: '$3.00',  amount: '$223.00' },
-                      ].map((item, i) => (
-                        <tr key={i}>
-                          <td>
-                            <div className="d-flex align-items-center gap-2">
-                              <div className="rounded bg-light avatar-md d-flex align-items-center justify-content-center">
-                                <img src={`${BASE}/product/${item.img}`} alt="" className="avatar-md" />
+                      {order.items.map((item, i) => {
+                        const itemTax = ((order.tax || 0) / (order.items.length || 1)).toFixed(2);
+                        const itemTotal = (item.price * item.quantity).toFixed(2);
+                        return (
+                          <tr key={item.id || i}>
+                            <td>
+                              <div className="d-flex align-items-center gap-2">
+                                <div className="rounded bg-light avatar-md d-flex align-items-center justify-content-center overflow-hidden border">
+                                  <img
+                                    src={item.image || `${BASE}/product/p-1.png`}
+                                    alt={item.name}
+                                    className="avatar-md object-fit-cover"
+                                    onError={(e) => {
+                                      (e.currentTarget as HTMLImageElement).src = `${BASE}/product/p-1.png`;
+                                    }}
+                                  />
+                                </div>
+                                <div>
+                                  <span className="text-dark fw-medium fs-15">{item.name}</span>
+                                  <p className="text-muted mb-0 mt-1 fs-13">
+                                    {item.selectedSize && <span className="me-2">Size: {item.selectedSize}</span>}
+                                    {item.selectedColor && <span>Color: {item.selectedColor}</span>}
+                                    {!item.selectedSize && !item.selectedColor && <span>Standard Edition</span>}
+                                  </p>
+                                </div>
                               </div>
-                              <div>
-                                <a href="#!" className="text-dark fw-medium fs-15">{item.name}</a>
-                                <p className="text-muted mb-0 mt-1 fs-13"><span>Size : </span>{item.size}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td><span className={`badge ${item.statusClass} px-2 py-1 fs-13`}>{item.status}</span></td>
-                          <td>{item.qty}</td>
-                          <td>{item.price}</td>
-                          <td>{item.tax}</td>
-                          <td>{item.amount}</td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td>
+                              <span className={`badge ${
+                                order.status === 'delivered' ? 'bg-success-subtle text-success' :
+                                order.status === 'shipped' ? 'bg-info-subtle text-info' :
+                                order.status === 'processing' ? 'bg-warning-subtle text-warning' :
+                                'bg-light text-dark'
+                              } px-2 py-1 fs-13 text-capitalize`}>
+                                {order.status === 'delivered' ? 'Delivered' : order.status === 'shipped' ? 'Dispatched' : order.status === 'processing' ? 'Packaging' : 'Ready'}
+                              </span>
+                            </td>
+                            <td>{item.quantity}</td>
+                            <td>${Number(item.price).toFixed(2)}</td>
+                            <td>${itemTax}</td>
+                            <td className="fw-medium text-dark">${itemTotal}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
               </div>
             </div>
 
-            {/* ── Order Timeline Card ── */}
+            {/* Order Timeline Card */}
             <div className="card mb-3">
               <div className="card-header">
-                <h4 className="card-title">Order Timeline</h4>
+                <h4 className="card-title mb-0">Order Timeline</h4>
               </div>
               <div className="card-body">
                 <div className="position-relative ms-2">
                   <span className="position-absolute start-0 top-0 border border-dashed h-100"></span>
 
-                  {/* Timeline item 1 – spinner (in progress) */}
-                  <div className="position-relative ps-4">
-                    <div className="mb-4">
-                      <span className="position-absolute start-0 avatar-sm translate-middle-x bg-light d-inline-flex align-items-center justify-content-center rounded-circle">
-                        <div className="spinner-border spinner-border-sm text-warning" role="status">
-                          <span className="visually-hidden">Loading...</span>
-                        </div>
-                      </span>
-                      <div className="ms-2 d-flex flex-wrap gap-2 align-items-center justify-content-between">
-                        <div>
-                          <h5 className="mb-1 text-dark fw-medium fs-15">The packing has been started</h5>
-                          <p className="mb-0">Confirmed by Gaston Lapierre</p>
-                        </div>
-                        <p className="mb-0">April 23, 2024, 09:40 am</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Timeline item 2 */}
-                  <div className="position-relative ps-4">
-                    <div className="mb-4">
-                      <span className="position-absolute start-0 avatar-sm translate-middle-x bg-light d-inline-flex align-items-center justify-content-center rounded-circle text-success fs-20">
-                        <i className="bx bx-check-circle"></i>
-                      </span>
-                      <div className="ms-2 d-flex flex-wrap gap-2 align-items-center justify-content-between">
-                        <div>
-                          <h5 className="mb-1 text-dark fw-medium fs-15">The Invoice has been sent to the customer</h5>
-                          <p className="mb-2">Invoice email was sent to <a href="#!" className="link-primary">hello@dundermuffilin.com</a></p>
-                          <a href="#!" className="btn btn-light">Resend Invoice</a>
-                        </div>
-                        <p className="mb-0">April 23, 2024, 09:40 am</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Timeline item 3 */}
-                  <div className="position-relative ps-4">
-                    <div className="mb-4">
-                      <span className="position-absolute start-0 avatar-sm translate-middle-x bg-light d-inline-flex align-items-center justify-content-center rounded-circle text-success fs-20">
-                        <i className="bx bx-check-circle"></i>
-                      </span>
-                      <div className="ms-2 d-flex flex-wrap gap-2 align-items-center justify-content-between">
-                        <div>
-                          <h5 className="mb-1 text-dark fw-medium fs-15">The Invoice has been created</h5>
-                          <p className="mb-2">Invoice created by Gaston Lapierre</p>
-                          <a href="#!" className="btn btn-primary">Download Invoice</a>
-                        </div>
-                        <p className="mb-0">April 23, 2024, 09:40 am</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Timeline item 4 */}
-                  <div className="position-relative ps-4">
-                    <div className="mb-4">
-                      <span className="position-absolute start-0 avatar-sm translate-middle-x bg-light d-inline-flex align-items-center justify-content-center rounded-circle text-success fs-20">
-                        <i className="bx bx-check-circle"></i>
-                      </span>
-                      <div className="ms-2 d-flex flex-wrap gap-2 align-items-center justify-content-between">
-                        <div>
-                          <h5 className="mb-1 text-dark fw-medium fs-15">Order Payment</h5>
-                          <p className="mb-2">Using Master Card</p>
-                          <div className="d-flex align-items-center gap-2">
-                            <p className="mb-1 text-dark fw-medium">Status :</p>
-                            <span className="badge bg-success-subtle text-success px-2 py-1 fs-13">Paid</span>
+                  {order.timeline && order.timeline.length > 0 ? (
+                    order.timeline.map((event, idx) => (
+                      <div key={idx} className="position-relative ps-4">
+                        <div className="mb-4">
+                          <span className={`position-absolute start-0 avatar-sm translate-middle-x bg-light d-inline-flex align-items-center justify-content-center rounded-circle ${
+                            idx === order.timeline.length - 1 ? 'text-primary' : 'text-success'
+                          } fs-20`}>
+                            {idx === order.timeline.length - 1 ? (
+                              <i className="bx bx-current-location"></i>
+                            ) : (
+                              <i className="bx bx-check-circle"></i>
+                            )}
+                          </span>
+                          <div className="ms-2 d-flex flex-wrap gap-2 align-items-center justify-content-between">
+                            <div>
+                              <h5 className="mb-1 text-dark fw-medium fs-15">{event.title}</h5>
+                              <p className="mb-0 text-muted fs-13">{event.description}</p>
+                            </div>
+                            <p className="mb-0 text-muted fs-12">
+                              {new Date(event.timestamp).toLocaleString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </p>
                           </div>
                         </div>
-                        <p className="mb-0">April 23, 2024, 09:40 am</p>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Timeline item 5 */}
-                  <div className="position-relative ps-4">
-                    <div className="mb-2">
-                      <span className="position-absolute start-0 avatar-sm translate-middle-x bg-light d-inline-flex align-items-center justify-content-center rounded-circle text-success fs-20">
-                        <i className="bx bx-check-circle"></i>
-                      </span>
-                      <div className="ms-2 d-flex flex-wrap gap-2 align-items-center justify-content-between">
-                        <div>
-                          <h5 className="mb-2 text-dark fw-medium fs-15">4 Order conform by Gaston Lapierre</h5>
-                          <a href="#!" className="badge bg-light text-dark fw-normal px-2 py-1 fs-13">Order 1</a>{' '}
-                          <a href="#!" className="badge bg-light text-dark fw-normal px-2 py-1 fs-13">Order 2</a>{' '}
-                          <a href="#!" className="badge bg-light text-dark fw-normal px-2 py-1 fs-13">Order 3</a>{' '}
-                          <a href="#!" className="badge bg-light text-dark fw-normal px-2 py-1 fs-13">Order 4</a>
+                    ))
+                  ) : (
+                    <div className="position-relative ps-4">
+                      <div className="mb-4">
+                        <span className="position-absolute start-0 avatar-sm translate-middle-x bg-light d-inline-flex align-items-center justify-content-center rounded-circle text-success fs-20">
+                          <i className="bx bx-check-circle"></i>
+                        </span>
+                        <div className="ms-2 d-flex flex-wrap gap-2 align-items-center justify-content-between">
+                          <div>
+                            <h5 className="mb-1 text-dark fw-medium fs-15">Order Placed</h5>
+                            <p className="mb-0">Confirmed by {order.customerName}</p>
+                          </div>
+                          <p className="mb-0">{formattedDate}</p>
                         </div>
-                        <p className="mb-0">April 23, 2024, 09:40 am</p>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* ── Order Meta Bar ── */}
+            {/* Order Meta Bar */}
             <div className="card bg-light-subtle mb-3">
               <div className="card-body">
                 <div className="row g-3 g-lg-0">
                   <div className="col-lg-3 border-end">
                     <div className="d-flex align-items-center gap-3 justify-content-between px-3">
                       <div>
-                        <p className="text-dark fw-medium fs-16 mb-1">Vender</p>
-                        <p className="mb-0">Catpiller</p>
+                        <p className="text-dark fw-medium fs-16 mb-1">Vendor</p>
+                        <p className="mb-0 text-muted">Waveron Atelier</p>
                       </div>
                       <div className="avatar bg-light d-flex align-items-center justify-content-center rounded">
                         <iconify-icon icon="solar:shop-2-bold-duotone" className="fs-35 text-primary"></iconify-icon>
@@ -254,7 +519,9 @@ export default function OrderDetailPage() {
                     <div className="d-flex align-items-center gap-3 justify-content-between px-3">
                       <div>
                         <p className="text-dark fw-medium fs-16 mb-1">Date</p>
-                        <p className="mb-0">April 23 , 2024</p>
+                        <p className="mb-0 text-muted">
+                          {createdDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </p>
                       </div>
                       <div className="avatar bg-light d-flex align-items-center justify-content-center rounded">
                         <iconify-icon icon="solar:calendar-date-bold-duotone" className="fs-35 text-primary"></iconify-icon>
@@ -265,7 +532,7 @@ export default function OrderDetailPage() {
                     <div className="d-flex align-items-center gap-3 justify-content-between px-3">
                       <div>
                         <p className="text-dark fw-medium fs-16 mb-1">Paid By</p>
-                        <p className="mb-0">Gaston Lapierre</p>
+                        <p className="mb-0 text-muted">{order.customerName}</p>
                       </div>
                       <div className="avatar bg-light d-flex align-items-center justify-content-center rounded">
                         <iconify-icon icon="solar:user-circle-bold-duotone" className="fs-35 text-primary"></iconify-icon>
@@ -276,7 +543,7 @@ export default function OrderDetailPage() {
                     <div className="d-flex align-items-center gap-3 justify-content-between px-3">
                       <div>
                         <p className="text-dark fw-medium fs-16 mb-1">Reference #IMEMO</p>
-                        <p className="mb-0">#0758267/90</p>
+                        <p className="mb-0 text-muted">#{order.orderNumber || order.id}</p>
                       </div>
                       <div className="avatar bg-light d-flex align-items-center justify-content-center rounded">
                         <iconify-icon icon="solar:clipboard-text-bold-duotone" className="fs-35 text-primary"></iconify-icon>
@@ -291,13 +558,13 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
-      {/* ── Right Column (3/12) ── */}
+      {/* Right Column (3/12) */}
       <div className="col-xl-3 col-lg-4">
 
         {/* Order Summary */}
         <div className="card mb-3">
           <div className="card-header">
-            <h4 className="card-title">Order Summary</h4>
+            <h4 className="card-title mb-0">Order Summary</h4>
           </div>
           <div className="card-body">
             <div className="table-responsive">
@@ -309,7 +576,9 @@ export default function OrderDetailPage() {
                         <iconify-icon icon="solar:clipboard-text-broken"></iconify-icon> Sub Total :
                       </p>
                     </td>
-                    <td className="text-end text-dark fw-medium px-0">$777.00</td>
+                    <td className="text-end text-dark fw-medium px-0">
+                      ${Number(order.subtotal || 0).toFixed(2)}
+                    </td>
                   </tr>
                   <tr>
                     <td className="px-0">
@@ -317,23 +586,29 @@ export default function OrderDetailPage() {
                         <iconify-icon icon="solar:ticket-broken" className="align-middle"></iconify-icon> Discount :
                       </p>
                     </td>
-                    <td className="text-end text-dark fw-medium px-0">-$60.00</td>
+                    <td className="text-end text-danger fw-medium px-0">
+                      -${Number(order.discount || 0).toFixed(2)}
+                    </td>
                   </tr>
                   <tr>
                     <td className="px-0">
                       <p className="d-flex mb-0 align-items-center gap-1">
-                        <iconify-icon icon="solar:kick-scooter-broken" className="align-middle"></iconify-icon> Delivery Charge :
+                        <iconify-icon icon="solar:kick-scooter-broken" className="align-middle"></iconify-icon> Shipping Fee :
                       </p>
                     </td>
-                    <td className="text-end text-dark fw-medium px-0">$00.00</td>
+                    <td className="text-end text-dark fw-medium px-0">
+                      {order.shippingFee && order.shippingFee > 0 ? `$${Number(order.shippingFee).toFixed(2)}` : 'Free'}
+                    </td>
                   </tr>
                   <tr>
                     <td className="px-0">
                       <p className="d-flex mb-0 align-items-center gap-1">
-                        <iconify-icon icon="solar:calculator-minimalistic-broken" className="align-middle"></iconify-icon> Estimated Tax (15.5%) :
+                        <iconify-icon icon="solar:calculator-minimalistic-broken" className="align-middle"></iconify-icon> Est. Tax :
                       </p>
                     </td>
-                    <td className="text-end text-dark fw-medium px-0">$20.00</td>
+                    <td className="text-end text-dark fw-medium px-0">
+                      ${Number(order.tax || 0).toFixed(2)}
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -344,7 +619,7 @@ export default function OrderDetailPage() {
               <p className="fw-medium text-dark mb-0">Total Amount</p>
             </div>
             <div>
-              <p className="fw-medium text-dark mb-0">$737.00</p>
+              <h5 className="fw-bold text-dark mb-0">${Number(order.total || 0).toFixed(2)}</h5>
             </div>
           </div>
         </div>
@@ -352,60 +627,75 @@ export default function OrderDetailPage() {
         {/* Payment Information */}
         <div className="card mb-3">
           <div className="card-header">
-            <h4 className="card-title">Payment Information</h4>
+            <h4 className="card-title mb-0">Payment Information</h4>
           </div>
           <div className="card-body">
             <div className="d-flex align-items-center gap-3 mb-3">
               <div className="rounded-3 bg-light avatar d-flex align-items-center justify-content-center">
-                <img src={`${BASE}/card/mastercard.svg`} alt="" className="avatar-sm" />
+                <img
+                  src={`${BASE}/card/mastercard.svg`}
+                  alt=""
+                  className="avatar-sm"
+                />
               </div>
               <div>
-                <p className="mb-1 text-dark fw-medium">Master Card</p>
-                <p className="mb-0 text-dark">xxxx xxxx xxxx 7812</p>
+                <p className="mb-1 text-dark fw-medium text-capitalize">{order.paymentMethod}</p>
+                <p className="mb-0 text-muted fs-12">Authorized Payment</p>
               </div>
               <div className="ms-auto">
-                <iconify-icon icon="solar:check-circle-broken" className="fs-22 text-success"></iconify-icon>
+                <iconify-icon
+                  icon={isPaid ? 'solar:check-circle-broken' : 'solar:clock-circle-broken'}
+                  className={`fs-22 ${isPaid ? 'text-success' : 'text-warning'}`}
+                ></iconify-icon>
               </div>
             </div>
-            <p className="text-dark mb-1 fw-medium">Transaction ID : <span className="text-muted fw-normal fs-13"> #IDN768139059</span></p>
-            <p className="text-dark mb-0 fw-medium">Card Holder Name : <span className="text-muted fw-normal fs-13"> Gaston Lapierre</span></p>
+            <p className="text-dark mb-1 fw-medium">
+              Order Ref : <span className="text-muted fw-normal fs-13">#{order.orderNumber || order.id}</span>
+            </p>
+            <p className="text-dark mb-0 fw-medium">
+              Customer Name : <span className="text-muted fw-normal fs-13">{order.customerName}</span>
+            </p>
           </div>
         </div>
 
         {/* Customer Details */}
         <div className="card mb-3">
           <div className="card-header">
-            <h4 className="card-title">Customer Details</h4>
+            <h4 className="card-title mb-0">Customer Details</h4>
           </div>
           <div className="card-body">
             <div className="d-flex align-items-center gap-2">
               <img src={`${BASE}/users/avatar-1.jpg`} alt="" className="avatar rounded-3 border border-light border-3" />
               <div>
-                <p className="mb-1">Gaston Lapierre</p>
-                <a href="#!" className="link-primary fw-medium">hello@dundermuffilin.com</a>
+                <p className="mb-1 fw-medium text-dark">{order.customerName}</p>
+                <a href={`mailto:${order.customerEmail}`} className="link-primary fs-13">
+                  {order.customerEmail}
+                </a>
               </div>
             </div>
             <div className="d-flex justify-content-between mt-3">
-              <h5>Contact Number</h5>
-              <div><a href="#!"><i className="bx bx-edit-alt fs-18"></i></a></div>
+              <h5 className="fs-14">Contact Number</h5>
             </div>
-            <p className="mb-1">(723) 732-760-5760</p>
+            <p className="mb-1 text-muted fs-13">{order.customerPhone || 'Not provided'}</p>
+
             <div className="d-flex justify-content-between mt-3">
-              <h5>Shipping Address</h5>
-              <div><a href="#!"><i className="bx bx-edit-alt fs-18"></i></a></div>
+              <h5 className="fs-14">Shipping Address</h5>
             </div>
-            <div>
-              <p className="mb-1">Wilson&apos;s Jewelers LTD</p>
-              <p className="mb-1">1344 Hershell Hollow Road ,</p>
-              <p className="mb-1">Tukwila, WA 98168 ,</p>
-              <p className="mb-1">United States</p>
-              <p>(723) 732-760-5760</p>
+            <div className="text-muted fs-13">
+              <p className="mb-1 text-dark fw-medium">{order.shippingAddress?.name || order.customerName}</p>
+              <p className="mb-1">{order.shippingAddress?.line1 || 'Primary Delivery Address'}</p>
+              {order.shippingAddress?.line2 && <p className="mb-1">{order.shippingAddress.line2}</p>}
+              <p className="mb-1">
+                {[order.shippingAddress?.city, order.shippingAddress?.state, order.shippingAddress?.zip].filter(Boolean).join(', ')}
+              </p>
+              <p className="mb-1">{order.shippingAddress?.country || 'United States'}</p>
+              <p>{order.shippingAddress?.phone || order.customerPhone}</p>
             </div>
+
             <div className="d-flex justify-content-between mt-3">
-              <h5>Billing Address</h5>
-              <div><a href="#!"><i className="bx bx-edit-alt fs-18"></i></a></div>
+              <h5 className="fs-14">Billing Address</h5>
             </div>
-            <p className="mb-1">Same as shipping address</p>
+            <p className="mb-1 text-muted fs-13">Same as shipping address</p>
           </div>
         </div>
 
@@ -417,12 +707,14 @@ export default function OrderDetailPage() {
                 <iframe
                   className="gmap_iframe rounded"
                   width="100%"
-                  style={{ height: '418px' }}
+                  style={{ height: '300px' }}
                   frameBorder={0}
                   scrolling="no"
                   marginHeight={0}
                   marginWidth={0}
-                  src="https://maps.google.com/maps?width=1980&height=400&hl=en&q=University+of+Oxford&t=&z=14&ie=UTF8&iwloc=B&output=embed"
+                  src={`https://maps.google.com/maps?width=1980&height=400&hl=en&q=${encodeURIComponent(
+                    [order.shippingAddress?.city, order.shippingAddress?.country].filter(Boolean).join(' ') || 'Nairobi'
+                  )}&t=&z=13&ie=UTF8&iwloc=B&output=embed`}
                 ></iframe>
               </div>
             </div>
@@ -431,5 +723,21 @@ export default function OrderDetailPage() {
 
       </div>
     </div>
+  );
+}
+
+export default function OrderDetailsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="d-flex justify-content-center align-items-center py-5">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      }
+    >
+      <OrderDetailsContent />
+    </Suspense>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { apiClient } from '../../../../lib/api-client';
+import { apiClient } from '@/lib/api-client';
 
 const DEFAULT_PRODUCTS = [
   { id: '1', name: 'Classic Gold Band Ring', sizes: 'Standard', price: 299, stock: 45, category: 'Rings', rating: 4.8, status: 'Published', img: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=100' },

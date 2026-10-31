@@ -3,8 +3,10 @@ export interface ICategory {
   name: string;
   slug: string;
   description?: string;
+  image?: string;
   image_url?: string;
   banner_url?: string;
+  product_count?: number;
   seo_title?: string;
   seo_meta_description?: string;
   sort_order: number;

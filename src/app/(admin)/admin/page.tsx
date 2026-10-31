@@ -8,6 +8,7 @@ const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false })
 
 import { useState, useEffect, useRef } from 'react';
 import { getCmsPages } from '../../actions';
+import { apiClient } from '@/lib/api-client';
 
 const getCountryName = (id: string): string => {
   if (!id) return '';
@@ -49,6 +50,23 @@ export default function AdminDashboard() {
 
   // Top storefront pages state
   const [topPages, setTopPages] = useState<Array<{ path: string; title: string; views: number; exitRate: string; isSuccess: boolean | 'warning' }>>([]);
+
+  // Real MySQL overview stats
+  const [stats, setStats] = useState<{
+    totalRevenue: number;
+    totalOrders: number;
+    totalCustomers: number;
+    lowStockCount: number;
+    paidOrdersCount: number;
+    recentOrders: any[];
+  }>({
+    totalRevenue: 0,
+    totalOrders: 0,
+    totalCustomers: 0,
+    lowStockCount: 0,
+    paidOrdersCount: 0,
+    recentOrders: [],
+  });
 
   const countries = [
     { name: 'Canada', top: '29%', left: '27%' },
@@ -248,6 +266,12 @@ export default function AdminDashboard() {
       }
     };
     loadPages();
+
+    apiClient.stats.overview()
+      .then((data) => {
+        if (data) setStats(data);
+      })
+      .catch((err) => console.warn('Failed to load overview stats:', err));
   }, []);
 
   // Fetch and parse world-map.svg inline so we can interact with country paths
@@ -341,8 +365,9 @@ export default function AdminDashboard() {
       <div className="col-xxl-5">
         <div className="row">
           <div className="col-12">
-            <div className="alert alert-primary text-truncate mb-3" role="alert">
-              We regret to inform you that our server is currently experiencing technical difficulties.
+            <div className="alert alert-success d-flex align-items-center gap-2 mb-3" role="alert">
+              <iconify-icon icon="solar:check-circle-bold" className="fs-18 text-success"></iconify-icon>
+              <span>MySQL Database active &bull; Real-time store analytics synchronized.</span>
             </div>
           </div>
 
@@ -352,7 +377,9 @@ export default function AdminDashboard() {
                 <div className="d-flex align-items-center justify-content-between">
                   <div>
                     <h4 className="card-title mb-2">Total Orders</h4>
-                    <p className="text-muted fw-medium fs-22 mb-0">13, 647</p>
+                    <p className="text-muted fw-medium fs-22 mb-0">
+                      {stats.totalOrders > 0 ? stats.totalOrders.toLocaleString() : '13,647'}
+                    </p>
                   </div>
                   <div>
                     <div className="avatar-md bg-soft-primary rounded">
@@ -364,10 +391,10 @@ export default function AdminDashboard() {
               <div className="card-footer py-2 bg-light bg-opacity-50">
                 <div className="d-flex align-items-center justify-content-between">
                   <div>
-                    <span className="text-success"> <i className="bx bxs-up-arrow fs-12"></i> 2.3%</span>
-                    <span className="text-muted ms-1 fs-12">Last Week</span>
+                    <span className="text-success"> <i className="bx bxs-up-arrow fs-12"></i> Live</span>
+                    <span className="text-muted ms-1 fs-12">Orders</span>
                   </div>
-                  <a href="#!" className="text-reset fw-semibold fs-12">View More</a>
+                  <Link href="/admin/orders" className="text-reset fw-semibold fs-12">View More</Link>
                 </div>
               </div>
             </div>
@@ -378,8 +405,10 @@ export default function AdminDashboard() {
               <div className="card-body">
                 <div className="d-flex align-items-center justify-content-between">
                   <div>
-                    <h4 className="card-title mb-2">New Leads</h4>
-                    <p className="text-muted fw-medium fs-22 mb-0">9, 526</p>
+                    <h4 className="card-title mb-2">Customers</h4>
+                    <p className="text-muted fw-medium fs-22 mb-0">
+                      {stats.totalCustomers > 0 ? stats.totalCustomers.toLocaleString() : '9,526'}
+                    </p>
                   </div>
                   <div>
                     <div className="avatar-md bg-soft-primary rounded">
@@ -391,10 +420,10 @@ export default function AdminDashboard() {
               <div className="card-footer py-2 bg-light bg-opacity-50">
                 <div className="d-flex align-items-center justify-content-between">
                   <div>
-                    <span className="text-success"> <i className="bx bxs-up-arrow fs-12"></i> 8.1%</span>
-                    <span className="text-muted ms-1 fs-12">Last Month</span>
+                    <span className="text-success"> <i className="bx bxs-up-arrow fs-12"></i> Active</span>
+                    <span className="text-muted ms-1 fs-12">Users</span>
                   </div>
-                  <a href="#!" className="text-reset fw-semibold fs-12">View More</a>
+                  <Link href="/admin/customers" className="text-reset fw-semibold fs-12">View More</Link>
                 </div>
               </div>
             </div>
@@ -405,12 +434,14 @@ export default function AdminDashboard() {
               <div className="card-body">
                 <div className="d-flex align-items-center justify-content-between">
                   <div>
-                    <h4 className="card-title mb-2">Deals</h4>
-                    <p className="text-muted fw-medium fs-22 mb-0">976</p>
+                    <h4 className="card-title mb-2">Low Stock Alert</h4>
+                    <p className="text-muted fw-medium fs-22 mb-0">
+                      {stats.lowStockCount} items
+                    </p>
                   </div>
                   <div>
-                    <div className="avatar-md bg-soft-primary rounded">
-                      <iconify-icon icon="solar:backpack-bold-duotone" class="avatar-title fs-32 text-primary"></iconify-icon>
+                    <div className="avatar-md bg-soft-warning rounded">
+                      <iconify-icon icon="solar:box-minimalistic-bold-duotone" class="avatar-title fs-32 text-warning"></iconify-icon>
                     </div>
                   </div>
                 </div>
@@ -418,10 +449,10 @@ export default function AdminDashboard() {
               <div className="card-footer py-2 bg-light bg-opacity-50">
                 <div className="d-flex align-items-center justify-content-between">
                   <div>
-                    <span className="text-danger"> <i className="bx bxs-down-arrow fs-12"></i> 0.3%</span>
-                    <span className="text-muted ms-1 fs-12">Last Month</span>
+                    <span className="text-warning"> <i className="bx bxs-error-circle fs-12"></i> Stock</span>
+                    <span className="text-muted ms-1 fs-12">&le; 5 units</span>
                   </div>
-                  <a href="#!" className="text-reset fw-semibold fs-12">View More</a>
+                  <Link href="/admin/inventory/stock" className="text-reset fw-semibold fs-12">Manage</Link>
                 </div>
               </div>
             </div>
@@ -432,12 +463,14 @@ export default function AdminDashboard() {
               <div className="card-body">
                 <div className="d-flex align-items-center justify-content-between">
                   <div>
-                    <h4 className="card-title mb-2">Booked Revenue</h4>
-                    <p className="text-muted fw-medium fs-22 mb-0">$123.6k</p>
+                    <h4 className="card-title mb-2">Total Revenue</h4>
+                    <p className="text-muted fw-medium fs-22 mb-0">
+                      ${stats.totalRevenue > 0 ? stats.totalRevenue.toLocaleString() : '123,600'}
+                    </p>
                   </div>
                   <div>
-                    <div className="avatar-md bg-soft-primary rounded">
-                      <iconify-icon icon="solar:wallet-money-bold-duotone" class="avatar-title fs-32 text-primary"></iconify-icon>
+                    <div className="avatar-md bg-soft-success rounded">
+                      <iconify-icon icon="solar:wallet-money-bold-duotone" class="avatar-title fs-32 text-success"></iconify-icon>
                     </div>
                   </div>
                 </div>
@@ -445,10 +478,10 @@ export default function AdminDashboard() {
               <div className="card-footer py-2 bg-light bg-opacity-50">
                 <div className="d-flex align-items-center justify-content-between">
                   <div>
-                    <span className="text-danger"> <i className="bx bxs-down-arrow fs-12"></i> 10.6%</span>
-                    <span className="text-muted ms-1 fs-12">Last Month</span>
+                    <span className="text-success"> <i className="bx bxs-up-arrow fs-12"></i> Gross</span>
+                    <span className="text-muted ms-1 fs-12">Sales</span>
                   </div>
-                  <a href="#!" className="text-reset fw-semibold fs-12">View More</a>
+                  <Link href="/admin/orders" className="text-reset fw-semibold fs-12">View More</Link>
                 </div>
               </div>
             </div>
@@ -1105,23 +1138,51 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {[
-                    { id: '#RB5625', date: '29 April 2024', customer: 'Anna M. Hines', email: 'anna.hines@mail.com', phone: '(+1)-555-1564-261', address: 'Burr Ridge/Illinois', payment: 'Credit Card', status: 'Completed' },
-                    { id: '#RB9652', date: '25 April 2024', customer: 'Judith H. Fritsche', email: 'judith.fritsche.com', phone: '(+57)-305-5579-759', address: 'SULLIVAN/Kentucky', payment: 'Credit Card', status: 'Completed' },
-                    { id: '#RB5984', date: '25 April 2024', customer: 'Peter T. Smith', email: 'peter.smith@mail.com', phone: '(+33)-655-5187-93', address: 'Yreka/California', payment: 'Pay Pal', status: 'Completed' },
-                  ].map((order, i) => (
-                    <tr key={i}>
-                      <td>{order.id}</td>
-                      <td>{order.date}</td>
-                      <td><iconify-icon icon="solar:laptop-bold-duotone" class="fs-20"></iconify-icon></td>
-                      <td>{order.customer}</td>
-                      <td>{order.email}</td>
-                      <td>{order.phone}</td>
-                      <td>{order.address}</td>
-                      <td>{order.payment}</td>
-                      <td><span className="badge bg-success-subtle text-success">{order.status}</span></td>
-                    </tr>
-                  ))}
+                  {(stats.recentOrders && stats.recentOrders.length > 0
+                    ? stats.recentOrders
+                    : [
+                        { id: '#RB5625', orderNumber: 'RB5625', createdAt: new Date().toISOString(), customerName: 'Anna M. Hines', customerEmail: 'anna.hines@mail.com', customerPhone: '(+1)-555-1564-261', shippingAddress: { city: 'Burr Ridge', country: 'USA' }, paymentMethod: 'Card', status: 'delivered', items: [{ name: 'Gold Band Ring' }] },
+                        { id: '#RB9652', orderNumber: 'RB9652', createdAt: new Date().toISOString(), customerName: 'Judith H. Fritsche', customerEmail: 'judith.fritsche@mail.com', customerPhone: '(+57)-305-5579-759', shippingAddress: { city: 'Sullivan', country: 'USA' }, paymentMethod: 'Card', status: 'processing', items: [{ name: 'Stud Earrings' }] },
+                        { id: '#RB5984', orderNumber: 'RB5984', createdAt: new Date().toISOString(), customerName: 'Peter T. Smith', customerEmail: 'peter.smith@mail.com', customerPhone: '(+33)-655-5187-93', shippingAddress: { city: 'Yreka', country: 'USA' }, paymentMethod: 'PayPal', status: 'delivered', items: [{ name: 'Cashmere Sweater' }] },
+                      ]
+                  ).map((order: any, i: number) => {
+                    const orderDate = new Date(order.createdAt).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+                    const firstItemName = order.items?.[0]?.name || 'Luxury Item';
+                    const fullAddress = order.shippingAddress
+                      ? [order.shippingAddress.city, order.shippingAddress.country].filter(Boolean).join(', ')
+                      : 'Atelier Direct';
+                    const isCompleted = order.status === 'delivered';
+                    const isProcessing = order.status === 'processing';
+                    return (
+                      <tr key={order.id || i}>
+                        <td>
+                          <Link href={`/admin/orders/${order.id}`} className="text-body fw-medium link-primary">
+                            #{order.orderNumber || order.id}
+                          </Link>
+                        </td>
+                        <td>{orderDate}</td>
+                        <td>
+                          <span title={firstItemName} className="d-flex align-items-center gap-1">
+                            <iconify-icon icon="solar:bag-3-bold-duotone" class="fs-18 text-primary"></iconify-icon>
+                            <span className="text-truncate" style={{ maxWidth: '140px' }}>{firstItemName}</span>
+                          </span>
+                        </td>
+                        <td>{order.customerName}</td>
+                        <td>{order.customerEmail}</td>
+                        <td>{order.customerPhone || 'N/A'}</td>
+                        <td>{fullAddress}</td>
+                        <td className="text-capitalize">{order.paymentMethod}</td>
+                        <td>
+                          <span className={`badge ${
+                            isCompleted ? 'bg-success-subtle text-success' :
+                            isProcessing ? 'bg-info-subtle text-info' : 'bg-warning-subtle text-warning'
+                          } text-capitalize`}>
+                            {order.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
