@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
 
 interface IAttribute {
@@ -35,13 +36,13 @@ export default function AttributesListPage() {
   }, []);
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to remove the attribute "${name}"?`)) return;
     setDeletingId(id);
     try {
       await apiClient.attributes.delete(id);
       setAttributes(prev => prev.filter(a => a.id !== id));
-    } catch (err) {
-      alert('Failed to delete attribute');
+      toast.success(`Attribute "${name}" removed`);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete attribute');
     } finally {
       setDeletingId(null);
     }

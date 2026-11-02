@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
 
 const PRODUCTS = [
@@ -51,9 +52,10 @@ export default function InvoiceAddPage() {
         paymentMethod: 'bank_transfer',
         orderNotes: 'Official invoice generated via Admin Portal',
       });
+      toast.success('Invoice created successfully!');
       router.push('/admin/invoices');
     } catch (err: any) {
-      alert('Failed to save invoice: ' + (err?.message || 'Error'));
+      toast.error('Failed to save invoice: ' + (err?.message || 'Error'));
     } finally {
       setSaving(false);
     }

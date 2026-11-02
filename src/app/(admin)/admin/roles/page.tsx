@@ -15,6 +15,10 @@ export default function RolesPermissionsPage() {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
 
+  // Inline role creation state (No Popups!)
+  const [showNewRoleInput, setShowNewRoleInput] = useState(false);
+  const [newRoleName, setNewRoleName] = useState('');
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -82,10 +86,10 @@ export default function RolesPermissionsPage() {
     }
   };
 
-  const handleCreateRole = () => {
-    const roleName = prompt('Enter the name for the new operational role:');
-    if (!roleName || !roleName.trim()) return;
-    const clean = roleName.trim();
+  const handleCreateRole = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRoleName.trim()) return;
+    const clean = newRoleName.trim();
     if (roles.includes(clean)) {
       toast.error('A role with this name already exists.');
       return;
@@ -101,6 +105,8 @@ export default function RolesPermissionsPage() {
     setRoles(newRoles);
     setMatrix(newMatrix);
     setActiveRole(clean);
+    setNewRoleName('');
+    setShowNewRoleInput(false);
     toast.success(`Role "${clean}" created! Adjust its permissions and click Save.`);
   };
 
@@ -155,7 +161,7 @@ export default function RolesPermissionsPage() {
               <button
                 type="button"
                 className="btn btn-outline-primary d-flex align-items-center gap-1 btn-sm"
-                onClick={handleCreateRole}
+                onClick={() => setShowNewRoleInput(!showNewRoleInput)}
               >
                 <iconify-icon icon="solar:add-circle-bold"></iconify-icon> Add New Role
               </button>
@@ -164,6 +170,35 @@ export default function RolesPermissionsPage() {
               </Link>
             </div>
           </div>
+
+          {/* Inline Role Creator (No Popups!) */}
+          {showNewRoleInput && (
+            <form onSubmit={handleCreateRole} className="mt-3 pt-3 border-top d-flex gap-2 align-items-center flex-wrap">
+              <input
+                type="text"
+                className="form-control form-control-sm"
+                placeholder="Enter new role title (e.g. Fulfillment Specialist)"
+                value={newRoleName}
+                onChange={(e) => setNewRoleName(e.target.value)}
+                style={{ maxWidth: '350px' }}
+                autoFocus
+                required
+              />
+              <button type="submit" className="btn btn-sm btn-primary">
+                Create Role
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-light"
+                onClick={() => {
+                  setShowNewRoleInput(false);
+                  setNewRoleName('');
+                }}
+              >
+                Cancel
+              </button>
+            </form>
+          )}
         </div>
       </div>
 
@@ -227,7 +262,7 @@ export default function RolesPermissionsPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredModules.map((mod, i) => (
+              {filteredModules.map((mod) => (
                 <tr key={mod}>
                   <td>
                     <div className="d-flex align-items-center gap-2">

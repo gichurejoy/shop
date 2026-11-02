@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
 
 const DEFAULT_PRODUCTS = [
@@ -64,23 +65,22 @@ export default function ProductsListPage() {
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this product?')) {
-      try {
-        await apiClient.products.delete(id);
-        fetchProducts();
-      } catch (err: any) {
-        alert(err.message || 'Failed to delete product');
-      }
+    try {
+      await apiClient.products.delete(id);
+      toast.success('Product deleted successfully');
+      fetchProducts();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete product');
     }
   };
 
   const handleBulkDelete = async () => {
-    if (!confirm(`Are you sure you want to delete ${selected.length} selected products?`)) return;
     for (const id of selected) {
       try {
         await apiClient.products.delete(String(id));
       } catch {}
     }
+    toast.success(`${selected.length} products deleted`);
     setSelected([]);
     fetchProducts();
   };

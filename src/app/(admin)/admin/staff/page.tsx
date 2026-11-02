@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
 
 interface IStaffMember {
@@ -37,12 +38,12 @@ export default function StaffPage() {
   }, []);
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to remove ${name} from atelier staff?`)) return;
     try {
       await apiClient.staff.delete(id);
       setStaff(staff.filter((s) => s.id !== id));
-    } catch (err) {
-      alert('Failed to delete staff member');
+      toast.success(`${name} removed from staff list`);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete staff member');
     }
   };
 

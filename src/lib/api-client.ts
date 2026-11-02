@@ -328,4 +328,31 @@ export const apiClient = {
         body: JSON.stringify({ conversationId, status }),
       }),
   },
+
+  gateways: {
+    get: () => fetchJson<{ gateways: any[] }>('/api/finance/gateways'),
+    save: (gateways: any[]) =>
+      fetchJson<{ success: boolean; gateways: any[] }>('/api/finance/gateways', {
+        method: 'POST',
+        body: JSON.stringify({ gateways }),
+      }),
+  },
+
+  taxes: {
+    get: () => fetchJson<{ calculation: string; roundAtSubtotal: boolean; taxes: any[] }>('/api/finance/taxes'),
+    save: (data: { calculation: string; roundAtSubtotal?: boolean; taxes: any[] }) =>
+      fetchJson<{ success: boolean }>('/api/finance/taxes', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+  },
+
+  payouts: {
+    get: () => fetchJson<{ payouts: any[] }>('/api/finance/payouts'),
+    save: (payouts: any[]) =>
+      fetchJson<{ success: boolean; payouts: any[] }>('/api/finance/payouts', {
+        method: 'POST',
+        body: JSON.stringify({ payouts }),
+      }),
+  },
 };

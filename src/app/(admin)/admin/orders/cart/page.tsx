@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
 import { IProduct } from '@/types/product';
 
@@ -109,7 +110,7 @@ export default function OrderCartPage() {
 
   const handleProceed = () => {
     if (items.length === 0) {
-      alert('Your cart is empty. Please add items before proceeding.');
+      toast.error('Your cart is empty. Please add items before proceeding.');
       return;
     }
     router.push('/admin/orders/checkout');

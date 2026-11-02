@@ -1,6 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { toast } from 'sonner';
+import { apiClient } from '@/lib/api-client';
+
+type GatewayField = {
+  key: string;
+  label: string;
+  type: string;
+  value: string;
+};
 
 type Gateway = {
   id: string;
@@ -9,188 +19,220 @@ type Gateway = {
   iconColor: string;
   description: string;
   enabled: boolean;
-  fields: { key: string; label: string; type: string; value: string }[];
+  fields: GatewayField[];
 };
 
-const INITIAL_GATEWAYS: Gateway[] = [
-  {
-    id: 'stripe',
-    name: 'Stripe',
-    icon: 'fa6-brands:stripe',
-    iconColor: '#635bff',
-    description: 'Accept credit cards, debit cards, and Apple/Google Pay directly on your store.',
-    enabled: true,
-    fields: [
-      { key: 'pk', label: 'Publishable Key', type: 'text', value: 'pk_test_51Mz...' },
-      { key: 'sk', label: 'Secret Key', type: 'password', value: 'sk_test_51Mz...' },
-      { key: 'webhook', label: 'Webhook Secret', type: 'password', value: 'whsec_...' },
-    ]
-  },
-  {
-    id: 'paypal',
-    name: 'PayPal Checkout',
-    icon: 'fa6-brands:paypal',
-    iconColor: '#003087',
-    description: 'Let customers pay with their PayPal account balance or saved cards.',
-    enabled: false,
-    fields: [
-      { key: 'clientId', label: 'Client ID', type: 'text', value: '' },
-      { key: 'secret', label: 'Client Secret', type: 'password', value: '' },
-      { key: 'mode', label: 'Environment', type: 'select', value: 'sandbox' },
-    ]
-  },
-  {
-    id: 'mpesa',
-    name: 'M-Pesa Express',
-    icon: 'solar:smartphone-bold-duotone',
-    iconColor: '#22c55e',
-    description: 'Enable STK push mobile money payments for customers in East Africa.',
-    enabled: true,
-    fields: [
-      { key: 'consumerKey', label: 'Consumer Key', type: 'text', value: 'b29xZ...' },
-      { key: 'consumerSecret', label: 'Consumer Secret', type: 'password', value: 'vK9L...' },
-      { key: 'shortcode', label: 'Business Shortcode', type: 'text', value: '174379' },
-      { key: 'passkey', label: 'Passkey', type: 'password', value: 'bfb27...' },
-    ]
-  },
-  {
-    id: 'cod',
-    name: 'Cash on Delivery (COD)',
-    icon: 'solar:box-bold-duotone',
-    iconColor: '#64748b',
-    description: 'Allow customers to pay in cash when the delivery arrives.',
-    enabled: true,
-    fields: [
-      { key: 'instructions', label: 'Instructions for Customer', type: 'text', value: 'Please have the exact amount ready.' },
-    ]
-  }
-];
-
 export default function GatewaysPage() {
-  const [gateways, setGateways] = useState(INITIAL_GATEWAYS);
+  const [gateways, setGateways] = useState<Gateway[]>([]);
   const [activeGateway, setActiveGateway] = useState<Gateway | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const toggleStatus = (id: string) => {
-    setGateways(prev => prev.map(g => g.id === id ? { ...g, enabled: !g.enabled } : g));
+  const loadGateways = async () => {
+    try {
+      setLoading(true);
+      const res = await apiClient.gateways.get();
+      setGateways(res.gateways || []);
+      if (res.gateways && res.gateways.length > 0) {
+        setActiveGateway(res.gateways[0]);
+      }
+    } catch (err: any) {
+      toast.error('Failed to load gateways: ' + (err.message || 'Error'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadGateways();
+  }, []);
+
+  const toggleStatus = async (id: string) => {
+    const updated = gateways.map((g) => (g.id === id ? { ...g, enabled: !g.enabled } : g));
+    setGateways(updated);
+    if (activeGateway?.id === id) {
+      setActiveGateway({ ...activeGateway, enabled: !activeGateway.enabled });
+    }
+    try {
+      await apiClient.gateways.save(updated);
+      toast.success(`Gateway status updated successfully!`);
+    } catch (err: any) {
+      toast.error('Failed to update status: ' + (err.message || 'Error'));
+    }
   };
 
   const handleFieldChange = (key: string, newValue: string) => {
     if (!activeGateway) return;
-    setActiveGateway({
-      ...activeGateway,
-      fields: activeGateway.fields.map(f => f.key === key ? { ...f, value: newValue } : f)
-    });
+    const updatedFields = activeGateway.fields.map((f) => (f.key === key ? { ...f, value: newValue } : f));
+    const updatedGateway = { ...activeGateway, fields: updatedFields };
+    setActiveGateway(updatedGateway);
+    setGateways(gateways.map((g) => (g.id === activeGateway.id ? updatedGateway : g)));
   };
 
-  const saveSettings = () => {
+  const saveSettings = async () => {
     if (!activeGateway) return;
-    setGateways(prev => prev.map(g => g.id === activeGateway.id ? activeGateway : g));
-    setActiveGateway(null);
+    setSaving(true);
+    try {
+      const updated = gateways.map((g) => (g.id === activeGateway.id ? activeGateway : g));
+      await apiClient.gateways.save(updated);
+      toast.success(`Configuration for "${activeGateway.name}" saved to database!`);
+    } catch (err: any) {
+      toast.error('Failed to save settings: ' + (err.message || 'Error'));
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="container-fluid py-5 text-center">
+        <div className="spinner-border text-primary" role="status"></div>
+        <p className="text-muted mt-2">Loading payment gateways from database...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="row">
-      <div className="col-12">
-        <div className="card mb-4">
-          <div className="card-header border-bottom">
-            <h4 className="card-title mb-0">Payment Methods</h4>
-          </div>
-          <div className="card-body">
-            <div className="alert alert-info fs-13 mb-4 border-0 bg-info-subtle text-info-emphasis">
-              <iconify-icon icon="solar:info-circle-bold-duotone" className="me-2 align-middle"></iconify-icon>
-              Configure the payment gateways available to your customers during checkout. You can enable multiple providers.
-            </div>
+    <div>
+      <div className="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+          <h4 className="card-title mb-1 fw-bold">Payment Methods &amp; Gateways</h4>
+          <p className="text-muted fs-13 mb-0">Configure payment providers and credentials stored in MySQL.</p>
+        </div>
+        <Link href="/admin/finance/transactions" className="btn btn-outline-secondary btn-sm">
+          View Transactions Register →
+        </Link>
+      </div>
 
-            <div className="row g-4">
-              {gateways.map(gateway => (
-                <div key={gateway.id} className="col-md-6 col-xl-4">
-                  <div className={`card h-100 border ${gateway.enabled ? 'border-primary' : 'border-light'}`}>
-                    <div className="card-body">
-                      <div className="d-flex justify-content-between align-items-start mb-3">
+      <div className="row g-4">
+        {/* Left: Gateways List */}
+        <div className="col-lg-6">
+          <div className="card shadow-sm border-0 h-100">
+            <div className="card-header border-bottom bg-transparent py-3">
+              <h5 className="card-title mb-0 fw-semibold">Available Providers</h5>
+            </div>
+            <div className="card-body p-3">
+              <div className="d-flex flex-column gap-3">
+                {gateways.map((gateway) => {
+                  const isSelected = activeGateway?.id === gateway.id;
+                  return (
+                    <div
+                      key={gateway.id}
+                      className={`p-3 rounded border transition-all cursor-pointer ${
+                        isSelected ? 'border-primary bg-primary bg-opacity-10' : 'bg-light-subtle'
+                      }`}
+                      onClick={() => setActiveGateway(gateway)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <div className="d-flex justify-content-between align-items-start mb-2">
                         <div className="d-flex align-items-center gap-3">
-                          <div className="avatar-md rounded bg-light d-flex align-items-center justify-content-center" style={{ width: '48px', height: '48px' }}>
-                            <iconify-icon icon={gateway.icon} style={{ fontSize: '28px', color: gateway.iconColor }}></iconify-icon>
+                          <div
+                            className="rounded bg-white shadow-xs d-flex align-items-center justify-content-center border"
+                            style={{ width: '44px', height: '44px' }}
+                          >
+                            <iconify-icon icon={gateway.icon} style={{ fontSize: '24px', color: gateway.iconColor }}></iconify-icon>
                           </div>
                           <div>
-                            <h5 className="mb-1">{gateway.name}</h5>
+                            <h6 className="mb-0 fw-bold text-dark">{gateway.name}</h6>
                             <span className={`badge ${gateway.enabled ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'} fs-11`}>
-                              {gateway.enabled ? 'Active' : 'Disabled'}
+                              {gateway.enabled ? 'Enabled' : 'Disabled'}
                             </span>
                           </div>
                         </div>
-                        <div className="form-check form-switch mb-0">
-                          <input 
-                            className="form-check-input" 
-                            type="checkbox" 
-                            checked={gateway.enabled} 
-                            onChange={() => toggleStatus(gateway.id)} 
+
+                        <div className="form-check form-switch mb-0" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            checked={gateway.enabled}
+                            onChange={() => toggleStatus(gateway.id)}
                             style={{ cursor: 'pointer', width: '32px', height: '18px' }}
                           />
                         </div>
                       </div>
-                      <p className="text-muted fs-13 mb-4" style={{ minHeight: '40px' }}>
-                        {gateway.description}
-                      </p>
-                      <button 
-                        className="btn btn-light w-100 fw-medium"
-                        onClick={() => setActiveGateway(gateway)}
-                      >
-                        <iconify-icon icon="solar:settings-bold-duotone" className="me-1 align-middle"></iconify-icon> Manage Settings
-                      </button>
+                      <p className="text-muted fs-12 mb-0">{gateway.description}</p>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
+              </div>
             </div>
           </div>
+        </div>
+
+        {/* Right: Inline Credentials Editor (No Modal Popup!) */}
+        <div className="col-lg-6">
+          {activeGateway ? (
+            <div className="card shadow-sm border-0 h-100">
+              <div className="card-header border-bottom bg-transparent d-flex justify-content-between align-items-center py-3">
+                <div className="d-flex align-items-center gap-2">
+                  <iconify-icon icon={activeGateway.icon} style={{ fontSize: '22px', color: activeGateway.iconColor }}></iconify-icon>
+                  <h5 className="card-title mb-0 fw-semibold">{activeGateway.name} Credentials</h5>
+                </div>
+                <span className={`badge ${activeGateway.enabled ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'} fs-12`}>
+                  {activeGateway.enabled ? 'Active on Checkout' : 'Disabled'}
+                </span>
+              </div>
+              <div className="card-body p-4">
+                <p className="text-muted fs-13 mb-4">{activeGateway.description}</p>
+
+                <div className="d-flex flex-column gap-3 mb-4">
+                  {activeGateway.fields.map((field) => (
+                    <div key={field.key}>
+                      <label className="form-label fw-medium text-dark fs-13 mb-1">{field.label}</label>
+                      {field.type === 'select' ? (
+                        <select
+                          className="form-select"
+                          value={field.value}
+                          onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                        >
+                          <option value="sandbox">Sandbox / Test Mode</option>
+                          <option value="live">Live Production</option>
+                        </select>
+                      ) : (
+                        <input
+                          type={field.type}
+                          className="form-control"
+                          value={field.value}
+                          placeholder={`Enter ${field.label.toLowerCase()}`}
+                          onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="p-3 bg-light rounded text-muted fs-12 border mb-4">
+                  <iconify-icon icon="solar:lock-bold" className="text-success me-1 align-middle"></iconify-icon>
+                  API secrets are encrypted and stored securely in MySQL settings.
+                </div>
+
+                <button
+                  type="button"
+                  className="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2"
+                  onClick={saveSettings}
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm" role="status"></span>
+                      Saving to MySQL...
+                    </>
+                  ) : (
+                    <>
+                      <iconify-icon icon="solar:diskette-bold" className="fs-18"></iconify-icon>
+                      Save {activeGateway.name} Settings
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="card shadow-sm border-0 h-100 d-flex align-items-center justify-content-center p-5 text-center text-muted">
+              Select a payment gateway from the left to configure its API keys.
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Settings Modal */}
-      {activeGateway && (
-        <div style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)', position: 'fixed', inset: 0, zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="card shadow-lg m-3" style={{ width: '100%', maxWidth: '500px' }}>
-            <div className="card-header border-bottom d-flex justify-content-between align-items-center bg-light-subtle">
-              <h5 className="card-title mb-0">{activeGateway.name} Settings</h5>
-              <button type="button" className="btn-close" onClick={() => setActiveGateway(null)}></button>
-            </div>
-            <div className="card-body">
-              <div className="d-flex flex-column gap-3 mb-4">
-                {activeGateway.fields.map(field => (
-                  <div key={field.key}>
-                    <label className="form-label fw-medium text-dark">{field.label}</label>
-                    {field.type === 'select' ? (
-                      <select 
-                        className="form-select" 
-                        value={field.value}
-                        onChange={e => handleFieldChange(field.key, e.target.value)}
-                      >
-                        <option value="sandbox">Sandbox (Testing)</option>
-                        <option value="live">Live (Production)</option>
-                      </select>
-                    ) : (
-                      <input 
-                        type={field.type} 
-                        className="form-control" 
-                        value={field.value}
-                        onChange={e => handleFieldChange(field.key, e.target.value)}
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="d-flex justify-content-between pt-3 border-top">
-                <button className="btn btn-outline-primary btn-sm">Test Connection</button>
-                <div className="d-flex gap-2">
-                  <button className="btn btn-light" onClick={() => setActiveGateway(null)}>Cancel</button>
-                  <button className="btn btn-primary" onClick={saveSettings}>Save API Keys</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

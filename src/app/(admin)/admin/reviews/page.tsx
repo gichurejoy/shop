@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
 
 interface IReview {
@@ -45,21 +46,22 @@ export default function ReviewsModerationPage() {
     try {
       await apiClient.reviews.updateStatus(id, status);
       setReviews(prev => prev.map(r => r.id === id ? { ...r, status } : r));
-    } catch (err) {
-      alert('Failed to update review status');
+      toast.success(`Review status marked as ${status}`);
+    } catch (err: any) {
+      toast.error('Failed to update review status');
     } finally {
       setActionInProgress(null);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to permanently remove this review?')) return;
     setActionInProgress(id);
     try {
       await apiClient.reviews.delete(id);
       setReviews(prev => prev.filter(r => r.id !== id));
-    } catch (err) {
-      alert('Failed to delete review');
+      toast.success('Review removed successfully');
+    } catch (err: any) {
+      toast.error('Failed to delete review');
     } finally {
       setActionInProgress(null);
     }

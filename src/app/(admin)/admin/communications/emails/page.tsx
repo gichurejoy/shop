@@ -10,6 +10,8 @@ export default function EmailsPage() {
   const [templates, setTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showTestInput, setShowTestInput] = useState(false);
+  const [testEmailInput, setTestEmailInput] = useState('concierge@waveron.com');
   
   // Editor State
   const [editingTemplate, setEditingTemplate] = useState<any>(null);
@@ -74,9 +76,12 @@ export default function EmailsPage() {
   };
 
   const handleSendTest = () => {
-    const testEmail = prompt('Enter recipient email address for test message:', 'concierge@waveron.com');
-    if (!testEmail || !testEmail.trim()) return;
-    toast.success(`Test email dispatched to ${testEmail.trim()}!`);
+    if (!testEmailInput.trim()) {
+      toast.error('Recipient email address is required');
+      return;
+    }
+    toast.success(`Test email dispatched to ${testEmailInput.trim()}!`);
+    setShowTestInput(false);
   };
 
   if (loading) {
@@ -98,10 +103,29 @@ export default function EmailsPage() {
             </button>
             <h5 className="card-title mb-0 fw-bold">Editing Template: {editingTemplate.name}</h5>
           </div>
-          <div className="d-flex gap-2">
-            <button type="button" className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" onClick={handleSendTest}>
-              <iconify-icon icon="solar:letter-opened-bold"></iconify-icon> Send Test Dispatch
-            </button>
+          <div className="d-flex gap-2 align-items-center flex-wrap">
+            {showTestInput ? (
+              <div className="d-flex align-items-center gap-1">
+                <input
+                  type="email"
+                  className="form-control form-control-sm"
+                  placeholder="Recipient email"
+                  value={testEmailInput}
+                  onChange={(e) => setTestEmailInput(e.target.value)}
+                  style={{ width: '220px' }}
+                />
+                <button type="button" className="btn btn-sm btn-success" onClick={handleSendTest}>
+                  Send
+                </button>
+                <button type="button" className="btn btn-sm btn-light" onClick={() => setShowTestInput(false)}>
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button type="button" className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" onClick={() => setShowTestInput(true)}>
+                <iconify-icon icon="solar:letter-opened-bold"></iconify-icon> Send Test Dispatch
+              </button>
+            )}
             <button
               type="button"
               className="btn btn-sm btn-primary d-flex align-items-center gap-2 px-3"
