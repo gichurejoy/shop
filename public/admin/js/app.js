@@ -790,7 +790,19 @@ class ThemeLayout {
      }
 
      initConfig() {
-          this.config = JSON.parse(JSON.stringify(window.config));
+          var saved = null;
+          try {
+               saved = localStorage.getItem('__LARKON_CONFIG__') || sessionStorage.getItem('__LARKON_CONFIG__');
+          } catch(e) {}
+          if (saved) {
+               try {
+                    this.config = JSON.parse(saved);
+               } catch(e) {
+                    this.config = JSON.parse(JSON.stringify(window.config || window.defaultConfig));
+               }
+          } else {
+               this.config = JSON.parse(JSON.stringify(window.config || window.defaultConfig));
+          }
           this.setSwitchFromConfig();
      }
 
@@ -811,6 +823,10 @@ class ThemeLayout {
      changeThemeMode(color) {
           this.config.theme = color;
           this.html.setAttribute('data-bs-theme', color);
+          this.config.topbar.color = color;
+          this.html.setAttribute('data-topbar-color', color);
+          this.config.menu.color = color;
+          this.html.setAttribute('data-menu-color', color);
           this.setSwitchFromConfig();
      }
 
@@ -955,8 +971,10 @@ class ThemeLayout {
      }
 
      setSwitchFromConfig() {
-
-          sessionStorage.setItem('__LARKON_CONFIG__', JSON.stringify(this.config));
+          try {
+               localStorage.setItem('__LARKON_CONFIG__', JSON.stringify(this.config));
+               sessionStorage.setItem('__LARKON_CONFIG__', JSON.stringify(this.config));
+          } catch(e) {}
 
           document.querySelectorAll('.settings-bar input[type=radio]').forEach(function (checkbox) {
                checkbox.checked = false;

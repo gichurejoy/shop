@@ -12,8 +12,33 @@ export default function AdminRootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning data-bs-theme="light" data-topbar-color="light" data-menu-color="dark" data-menu-size="sm-hover-active">
+    <html lang="en" suppressHydrationWarning data-bs-theme="light" data-topbar-color="light" data-menu-color="light" data-menu-size="sm-hover-active">
       <head>
+        {/* Immediate Theme Restoration from localStorage before render */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var cfg = localStorage.getItem('__LARKON_CONFIG__') || sessionStorage.getItem('__LARKON_CONFIG__');
+                  if (cfg) {
+                    var parsed = JSON.parse(cfg);
+                    if (parsed.theme) document.documentElement.setAttribute('data-bs-theme', parsed.theme);
+                    if (parsed.topbar && parsed.topbar.color) document.documentElement.setAttribute('data-topbar-color', parsed.topbar.color);
+                    else if (parsed.theme) document.documentElement.setAttribute('data-topbar-color', parsed.theme);
+                    if (parsed.menu && parsed.menu.color) document.documentElement.setAttribute('data-menu-color', parsed.menu.color);
+                    else if (parsed.theme) document.documentElement.setAttribute('data-menu-color', parsed.theme);
+                    if (parsed.menu && parsed.menu.size) document.documentElement.setAttribute('data-menu-size', parsed.menu.size);
+                  } else {
+                    document.documentElement.setAttribute('data-bs-theme', 'light');
+                    document.documentElement.setAttribute('data-topbar-color', 'light');
+                    document.documentElement.setAttribute('data-menu-color', 'light');
+                  }
+                } catch(e) {}
+              })();
+            `,
+          }}
+        />
         {/* Larkon Core CSS (Self-Hosted) */}
         <link href="/admin/css/vendor.min.css" rel="stylesheet" type="text/css" />
         <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" type="text/css" />

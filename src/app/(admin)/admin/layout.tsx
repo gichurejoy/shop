@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import AdminSidebar from '../../../components/AdminSidebar';
 import { Toaster } from 'sonner';
@@ -46,6 +47,67 @@ function getTitle(pathname: string) {
 
 export default function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>('light');
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('__LARKON_CONFIG__') || sessionStorage.getItem('__LARKON_CONFIG__');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.theme === 'dark' || parsed.theme === 'light') {
+          setCurrentTheme(parsed.theme);
+          document.documentElement.setAttribute('data-bs-theme', parsed.theme);
+          document.documentElement.setAttribute('data-topbar-color', parsed.topbar?.color || parsed.theme);
+          document.documentElement.setAttribute('data-menu-color', parsed.menu?.color || parsed.theme);
+        }
+      } else {
+        const active = document.documentElement.getAttribute('data-bs-theme') as 'light' | 'dark';
+        if (active === 'dark' || active === 'light') {
+          setCurrentTheme(active);
+        }
+      }
+    } catch (e) {}
+  }, []);
+
+  const applyTheme = (theme: 'light' | 'dark', menuColor?: 'light' | 'dark') => {
+    setCurrentTheme(theme);
+    const mColor = menuColor || theme;
+    document.documentElement.setAttribute('data-bs-theme', theme);
+    document.documentElement.setAttribute('data-topbar-color', theme);
+    document.documentElement.setAttribute('data-menu-color', mColor);
+
+    const config = {
+      theme,
+      topbar: { color: theme },
+      menu: {
+        color: mColor,
+        size: document.documentElement.getAttribute('data-menu-size') || 'sm-hover-active',
+      },
+    };
+
+    try {
+      localStorage.setItem('__LARKON_CONFIG__', JSON.stringify(config));
+      sessionStorage.setItem('__LARKON_CONFIG__', JSON.stringify(config));
+      if (typeof window !== 'undefined') {
+        (window as any).config = config;
+      }
+    } catch (e) {}
+
+    // Update offcanvas radio buttons if mounted
+    const themeRadio = document.getElementById(`layout-color-${theme}`) as HTMLInputElement | null;
+    if (themeRadio) themeRadio.checked = true;
+    const topbarRadio = document.getElementById(`topbar-color-${theme}`) as HTMLInputElement | null;
+    if (topbarRadio) topbarRadio.checked = true;
+    const menuRadio = document.getElementById(`menu-color-${mColor}`) as HTMLInputElement | null;
+    if (menuRadio) menuRadio.checked = true;
+  };
+
+  const handleToggleTheme = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const next = currentTheme === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+  };
 
   return (
     <div className="wrapper">
@@ -74,13 +136,13 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
             {/* Search */}
             <div style={{ position: 'relative', marginRight: '8px' }}>
               <input
-                type="search"
+                type="text"
                 placeholder="Search..."
                 style={{
-                  padding: '7px 14px 7px 36px',
-                  borderRadius: '8px',
+                  background: 'rgba(241, 245, 249, 0.85)',
                   border: '1px solid #e2e8f0',
-                  background: '#f8fafc',
+                  borderRadius: '8px',
+                  padding: '6px 12px 6px 34px',
                   fontSize: '13px',
                   color: '#1e293b',
                   outline: 'none',
@@ -99,22 +161,17 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
 
             {/* Theme Color (Light/Dark) */}
             <div className="topbar-item">
-              <button type="button" className="topbar-button" id="light-dark-mode" onClick={() => {
-                 const currentTheme = document.documentElement.getAttribute('data-bs-theme');
-                 const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                 document.documentElement.setAttribute('data-bs-theme', newTheme);
-                 document.documentElement.setAttribute('data-topbar-color', newTheme);
-                 document.documentElement.setAttribute('data-menu-color', newTheme);
-                 
-                 // Update offcanvas radio buttons if present
-                 const themeRadio = document.getElementById(`layout-color-${newTheme}`) as HTMLInputElement;
-                 if (themeRadio) themeRadio.checked = true;
-                 const topbarRadio = document.getElementById(`topbar-color-${newTheme}`) as HTMLInputElement;
-                 if (topbarRadio) topbarRadio.checked = true;
-                 const menuRadio = document.getElementById(`menu-color-${newTheme}`) as HTMLInputElement;
-                 if (menuRadio) menuRadio.checked = true;
-              }}>
-                <iconify-icon icon="solar:moon-bold-duotone" className="fs-24 align-middle"></iconify-icon>
+              <button
+                type="button"
+                className="topbar-button"
+                id="light-dark-mode"
+                onClick={handleToggleTheme}
+                title={`Switch to ${currentTheme === 'dark' ? 'Light' : 'Dark'} Mode`}
+              >
+                <iconify-icon
+                  icon={currentTheme === 'dark' ? 'solar:sun-2-bold-duotone' : 'solar:moon-bold-duotone'}
+                  className="fs-24 align-middle"
+                ></iconify-icon>
               </button>
             </div>
 
@@ -146,31 +203,27 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
             <div className="dropdown topbar-item">
               <a type="button" className="topbar-button" id="page-header-user-dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <span className="d-flex align-items-center">
-                  <img className="rounded-circle" width="32" src="https://techzaa.in/larkon/admin/assets/images/users/avatar-1.jpg" alt="avatar-3" />
+                  <img className="rounded-circle" width="32" src="https://techzaa.in/larkon/admin/assets/images/users/avatar-1.jpg" alt="avatar" />
                 </span>
               </a>
               <div className="dropdown-menu dropdown-menu-end">
                 <h6 className="dropdown-header">Welcome Gaston!</h6>
                 <a className="dropdown-item" href="/admin/profile">
-                  <i className="bx bx-user-circle text-muted fs-18 align-middle me-1"></i>
-                  <span className="align-middle">Profile</span>
+                  <i className="bx bx-user-circle text-muted fs-18 align-middle me-1"></i><span className="align-middle">Profile</span>
                 </a>
-                <a className="dropdown-item" href="/admin/settings">
-                  <i className="bx bx-wallet text-muted fs-18 align-middle me-1"></i>
-                  <span className="align-middle">Pricing</span>
+                <a className="dropdown-item" href="/admin/apps/calendar">
+                  <i className="bx bx-calendar text-muted fs-18 align-middle me-1"></i><span className="align-middle">Calendar</span>
                 </a>
                 <a className="dropdown-item" href="/admin/support/faqs">
-                  <i className="bx bx-help-circle text-muted fs-18 align-middle me-1"></i>
-                  <span className="align-middle">Help</span>
+                  <i className="bx bx-help-circle text-muted fs-18 align-middle me-1"></i><span className="align-middle">Help</span>
                 </a>
                 <div className="dropdown-divider my-1"></div>
-                <a className="dropdown-item text-danger" href="/">
-                  <i className="bx bx-log-out fs-18 align-middle me-1"></i>
-                  <span className="align-middle">Logout</span>
+                <a className="dropdown-item text-danger" href="/login">
+                  <i className="bx bx-log-out text-danger fs-18 align-middle me-1"></i><span className="align-middle">Logout</span>
                 </a>
               </div>
             </div>
-            </div>
+          </div>
           </div>
         </div>
       </header>
@@ -178,24 +231,15 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
       {/* Sidebar */}
       <AdminSidebar />
 
-      {/* Page body */}
+      {/* Content */}
       <div className="page-content">
         <div className="container-fluid">
           <style>{`
-            .card { margin-bottom: 0; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-            .card-body { padding: 18px !important; }
-            .card-header { padding: 14px 18px !important; min-height: auto !important; }
-            .card-footer { padding: 12px 18px !important; }
-            .avatar-md { width: 46px !important; height: 46px !important; }
-            .row { row-gap: 16px; }
-            .row.g-0, .row.g-1, .row.g-2, .row.g-3, .row.g-4 { row-gap: unset; }
-            .table th { font-size: 13px; font-weight: 600; white-space: nowrap; }
-            .table td { font-size: 13px; vertical-align: middle; }
-            .badge { font-size: 12px; }
-            .btn-soft-primary { background: #eff6ff; color: #3b82f6; border: none; }
-            .btn-soft-warning { background: #fffbeb; color: #d97706; border: none; }
-            .btn-soft-danger  { background: #fef2f2; color: #ef4444; border: none; }
-            .btn-soft-success { background: #f0fdf4; color: #16a34a; border: none; }
+            .hover-bg-light:hover { background: #f8fafc; }
+            .btn-soft-primary { background: #eff6ff; color: #2563eb; }
+            .btn-soft-warning { background: #fffbeb; color: #d97706; }
+            .btn-soft-danger  { background: #fef2f2; color: #dc2626; }
+            .btn-soft-success { background: #f0fdf4; color: #16a34a; }
             .btn-soft-primary:hover { background: #dbeafe; }
             .btn-soft-warning:hover { background: #fef3c7; }
             .btn-soft-danger:hover  { background: #fee2e2; }
@@ -213,47 +257,95 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
         <div className="offcanvas-body">
           <h6 className="mb-3 text-dark fw-semibold">Color Scheme</h6>
           <div className="form-check mb-2">
-            <input className="form-check-input" type="radio" name="data-bs-theme" id="layout-color-light" value="light" defaultChecked onChange={(e) => { 
-              document.documentElement.setAttribute('data-bs-theme', 'light'); 
-              document.documentElement.setAttribute('data-topbar-color', 'light');
-              document.documentElement.setAttribute('data-menu-color', 'light');
-              const topbarRadio = document.getElementById('topbar-color-light') as HTMLInputElement;
-              if (topbarRadio) topbarRadio.checked = true;
-              const menuRadio = document.getElementById('menu-color-light') as HTMLInputElement;
-              if (menuRadio) menuRadio.checked = true;
-            }} />
+            <input
+              className="form-check-input"
+              type="radio"
+              name="data-bs-theme"
+              id="layout-color-light"
+              value="light"
+              checked={currentTheme === 'light'}
+              onChange={() => applyTheme('light')}
+            />
             <label className="form-check-label" htmlFor="layout-color-light">Light</label>
           </div>
           <div className="form-check mb-4">
-            <input className="form-check-input" type="radio" name="data-bs-theme" id="layout-color-dark" value="dark" onChange={(e) => { 
-              document.documentElement.setAttribute('data-bs-theme', 'dark'); 
-              document.documentElement.setAttribute('data-topbar-color', 'dark');
-              document.documentElement.setAttribute('data-menu-color', 'dark');
-              const topbarRadio = document.getElementById('topbar-color-dark') as HTMLInputElement;
-              if (topbarRadio) topbarRadio.checked = true;
-              const menuRadio = document.getElementById('menu-color-dark') as HTMLInputElement;
-              if (menuRadio) menuRadio.checked = true;
-            }} />
+            <input
+              className="form-check-input"
+              type="radio"
+              name="data-bs-theme"
+              id="layout-color-dark"
+              value="dark"
+              checked={currentTheme === 'dark'}
+              onChange={() => applyTheme('dark')}
+            />
             <label className="form-check-label" htmlFor="layout-color-dark">Dark</label>
           </div>
 
           <h6 className="mb-3 text-dark fw-semibold">Topbar Color</h6>
           <div className="form-check mb-2">
-            <input className="form-check-input" type="radio" name="data-topbar-color" id="topbar-color-light" value="light" defaultChecked onChange={(e) => { document.documentElement.setAttribute('data-topbar-color', e.target.value); }} />
+            <input
+              className="form-check-input"
+              type="radio"
+              name="data-topbar-color"
+              id="topbar-color-light"
+              value="light"
+              defaultChecked
+              onChange={(e) => {
+                document.documentElement.setAttribute('data-topbar-color', e.target.value);
+              }}
+            />
             <label className="form-check-label" htmlFor="topbar-color-light">Light</label>
           </div>
           <div className="form-check mb-4">
-            <input className="form-check-input" type="radio" name="data-topbar-color" id="topbar-color-dark" value="dark" onChange={(e) => { document.documentElement.setAttribute('data-topbar-color', e.target.value); }} />
+            <input
+              className="form-check-input"
+              type="radio"
+              name="data-topbar-color"
+              id="topbar-color-dark"
+              value="dark"
+              onChange={(e) => {
+                document.documentElement.setAttribute('data-topbar-color', e.target.value);
+              }}
+            />
             <label className="form-check-label" htmlFor="topbar-color-dark">Dark</label>
           </div>
 
-          <h6 className="mb-3 text-dark fw-semibold">Menu Color</h6>
+          <h6 className="mb-3 text-dark fw-semibold">Sidebar (Menu) Color</h6>
           <div className="form-check mb-2">
-            <input className="form-check-input" type="radio" name="data-menu-color" id="menu-color-light" value="light" onChange={(e) => { document.documentElement.setAttribute('data-menu-color', e.target.value); }} />
-            <label className="form-check-label" htmlFor="menu-color-light">Light</label>
+            <input
+              className="form-check-input"
+              type="radio"
+              name="data-menu-color"
+              id="menu-color-light"
+              value="light"
+              defaultChecked
+              onChange={() => {
+                document.documentElement.setAttribute('data-menu-color', 'light');
+                try {
+                  const cfg = JSON.parse(localStorage.getItem('__LARKON_CONFIG__') || '{}');
+                  cfg.menu = { ...cfg.menu, color: 'light' };
+                  localStorage.setItem('__LARKON_CONFIG__', JSON.stringify(cfg));
+                } catch(e) {}
+              }}
+            />
+            <label className="form-check-label" htmlFor="menu-color-light">Light (Matches Storefront)</label>
           </div>
           <div className="form-check mb-4">
-            <input className="form-check-input" type="radio" name="data-menu-color" id="menu-color-dark" value="dark" defaultChecked onChange={(e) => { document.documentElement.setAttribute('data-menu-color', e.target.value); }} />
+            <input
+              className="form-check-input"
+              type="radio"
+              name="data-menu-color"
+              id="menu-color-dark"
+              value="dark"
+              onChange={() => {
+                document.documentElement.setAttribute('data-menu-color', 'dark');
+                try {
+                  const cfg = JSON.parse(localStorage.getItem('__LARKON_CONFIG__') || '{}');
+                  cfg.menu = { ...cfg.menu, color: 'dark' };
+                  localStorage.setItem('__LARKON_CONFIG__', JSON.stringify(cfg));
+                } catch(e) {}
+              }}
+            />
             <label className="form-check-label" htmlFor="menu-color-dark">Dark</label>
           </div>
 
@@ -281,20 +373,14 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
 
           <div className="d-grid mt-4">
             <button type="button" className="btn btn-danger" onClick={() => {
-              document.documentElement.setAttribute('data-bs-theme', 'light');
-              document.documentElement.setAttribute('data-topbar-color', 'light');
-              document.documentElement.setAttribute('data-menu-color', 'dark');
+              applyTheme('light', 'light');
               document.documentElement.setAttribute('data-menu-size', 'sm-hover-active');
-              // Also update the radio buttons visually
-              (document.getElementById('layout-color-light') as HTMLInputElement).checked = true;
-              (document.getElementById('topbar-color-light') as HTMLInputElement).checked = true;
-              (document.getElementById('menu-color-dark') as HTMLInputElement).checked = true;
-              (document.getElementById('sidebar-size-small-hover') as HTMLInputElement).checked = true;
-            }}>Reset</button>
+              const defaultRadio = document.getElementById('sidebar-size-small-hover-active') as HTMLInputElement | null;
+              if (defaultRadio) defaultRadio.checked = true;
+            }}>Reset to Light Theme</button>
           </div>
         </div>
       </div>
-
     </div>
   );
 }
