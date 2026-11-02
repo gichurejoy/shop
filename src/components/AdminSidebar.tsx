@@ -55,11 +55,12 @@ const GENERAL_NAV: NavItem[] = [
     icon: 'solar:box-bold-duotone',
     matchPrefix: '/admin/inventory',
     children: [
-      { label: 'Stock List',      href: '/admin/inventory/stock' },
-      { label: 'Warehouse',       href: '/admin/inventory/warehouse' },
-      { label: 'Received Orders', href: '/admin/inventory/received-orders' },
-      { label: 'Stock History',   href: '/admin/inventory/history' },
-      { label: 'Reports & Bulk',  href: '/admin/inventory/reports' },
+      { label: 'Stock List',          href: '/admin/inventory/stock' },
+      { label: 'Warehouse',           href: '/admin/inventory/warehouse' },
+      { label: 'Received Orders',     href: '/admin/inventory/received-orders' },
+      { label: 'Stock History',       href: '/admin/inventory/history' },
+      { label: 'Reports & Bulk',      href: '/admin/inventory/reports' },
+      { label: 'Inventory Settings',  href: '/admin/inventory/settings' },
     ],
   },
   {
