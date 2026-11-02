@@ -268,4 +268,64 @@ export const apiClient = {
         body: JSON.stringify(data),
       }),
   },
+
+  reports: {
+    financial: (range: string = 'this_month') =>
+      fetchJson<{ report: any }>(`/api/reports/financial?range=${encodeURIComponent(range)}`),
+    inventory: () => fetchJson<{ report: any }>('/api/reports/inventory'),
+  },
+
+  inventorySettings: {
+    get: () => fetchJson<{ settings: any }>('/api/inventory/settings'),
+    save: (data: any) =>
+      fetchJson<{ success: boolean; settings: any }>('/api/inventory/settings', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+  },
+
+  roles: {
+    get: () => fetchJson<{ roles: string[]; matrix: any; modules: string[]; actions: string[] }>('/api/roles'),
+    save: (data: { role?: string; permissions?: any; allMatrix?: any }) =>
+      fetchJson<{ success: boolean; matrix: any }>('/api/roles', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+  },
+
+  communications: {
+    get: () => fetchJson<{ flows: any[]; templates: any[] }>('/api/communications'),
+    save: (data: { flows?: any[]; template?: any }) =>
+      fetchJson<{ success: boolean; communications: any }>('/api/communications', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+  },
+
+  faqs: {
+    get: () => fetchJson<{ faqs: Record<string, any[]> }>('/api/support/faqs'),
+    save: (data: { category?: string; faq?: any; allFaqs?: any }) =>
+      fetchJson<{ success: boolean; faqs: any }>('/api/support/faqs', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    delete: (category: string, id: string) =>
+      fetchJson<{ success: boolean; faqs: any }>(`/api/support/faqs?category=${encodeURIComponent(category)}&id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      }),
+  },
+
+  supportChat: {
+    get: () => fetchJson<{ conversations: any[] }>('/api/support/chat'),
+    sendMessage: (conversationId: string, text: string) =>
+      fetchJson<{ success: boolean; conversations: any[] }>('/api/support/chat', {
+        method: 'POST',
+        body: JSON.stringify({ conversationId, message: { text, sender: 'agent' } }),
+      }),
+    updateStatus: (conversationId: string, status: 'open' | 'closed') =>
+      fetchJson<{ success: boolean; conversations: any[] }>('/api/support/chat', {
+        method: 'POST',
+        body: JSON.stringify({ conversationId, status }),
+      }),
+  },
 };

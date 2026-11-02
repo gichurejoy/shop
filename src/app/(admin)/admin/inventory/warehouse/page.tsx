@@ -247,7 +247,7 @@ export default function InventoryWarehouse() {
                               <Link
                                 href={`/admin/inventory/warehouse/${cleanId}`}
                                 className="btn btn-light btn-sm"
-                                title="View Facility Dossier"
+                                title="View Facility Details"
                               >
                                 <iconify-icon icon="solar:eye-broken" className="align-middle fs-16"></iconify-icon>
                               </Link>

@@ -88,7 +88,7 @@ export default function ProcessRefundPage() {
     return (
       <div className="container-fluid py-5 text-center">
         <div className="spinner-border text-primary" role="status"></div>
-        <p className="text-muted mt-2">Loading refund dossier...</p>
+        <p className="text-muted mt-2">Loading refund details...</p>
       </div>
     );
   }
@@ -256,3 +256,4 @@ export default function ProcessRefundPage() {
     </div>
   );
 }
+

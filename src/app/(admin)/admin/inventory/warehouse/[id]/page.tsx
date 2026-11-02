@@ -44,7 +44,7 @@ export default function WarehouseDetailPage() {
         }
         setProducts(prodRes.products || []);
       } catch (err: any) {
-        toast.error('Failed to load facility dossier: ' + (err.message || 'Error'));
+        toast.error('Failed to load facility details: ' + (err.message || 'Error'));
       } finally {
         setLoading(false);
       }
@@ -61,7 +61,7 @@ export default function WarehouseDetailPage() {
     return (
       <div className="container-fluid py-5 text-center">
         <div className="spinner-border text-primary" role="status"></div>
-        <p className="text-muted mt-2">Loading facility dossier from database...</p>
+        <p className="text-muted mt-2">Loading facility details from database...</p>
       </div>
     );
   }
@@ -184,11 +184,11 @@ export default function WarehouseDetailPage() {
       </div>
 
       <div className="row g-4">
-        {/* Left Column: Dossier Details & Depot Manager */}
+        {/* Left Column: Facility Details & Depot Manager */}
         <div className="col-xl-5">
           <div className="card shadow-sm border-0 mb-4">
             <div className="card-header bg-transparent border-bottom py-3">
-              <h5 className="card-title mb-0 fw-semibold">Facility Dossier &amp; Contact</h5>
+              <h5 className="card-title mb-0 fw-semibold">Facility Overview &amp; Contact</h5>
             </div>
             <div className="card-body p-4">
               <div className="list-group list-group-flush">

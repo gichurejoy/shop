@@ -192,7 +192,7 @@ export default function CustomerListPage() {
                       </td>
                       <td>
                         <div className="d-flex gap-2">
-                          <Link href={`/admin/customers/${c.id}`} className="btn btn-light btn-sm" title="View Dossier">
+                          <Link href={`/admin/customers/${c.id}`} className="btn btn-light btn-sm" title="View Details">
                             <iconify-icon icon="solar:eye-broken" className="align-middle fs-18"></iconify-icon>
                           </Link>
                         </div>

@@ -127,7 +127,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
           <div className="card-header d-flex align-items-center justify-content-between">
             <h5 className="card-title mb-0 d-flex align-items-center gap-2">
               <iconify-icon icon="solar:user-bold-duotone" style={{ color: '#ff6c2f', fontSize: '18px' }}></iconify-icon>
-              Client Dossier
+              Customer Profile
             </h5>
             <span className="badge bg-success-subtle text-success">Active</span>
           </div>

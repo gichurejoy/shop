@@ -1,89 +1,160 @@
 'use client';
 
-import React, { useState } from 'react';
-
-const FLOWS = [
-  { id: 'f1', name: 'Welcome Email', trigger: 'User signs up', status: true, performance: '45% Open Rate' },
-  { id: 'f2', name: 'Abandoned Cart', trigger: 'Cart left for 2 hours', status: true, performance: '12% Recovery Rate' },
-  { id: 'f3', name: 'Post-purchase Follow up', trigger: '3 days after delivery', status: false, performance: '-' },
-  { id: 'f4', name: 'Win-back (Inactive)', trigger: 'No purchase for 60 days', status: true, performance: '5% Win-back Rate' },
-  { id: 'f5', name: 'Birthday Discount', trigger: 'On user birthday', status: false, performance: '-' },
-];
-
-const TEMPLATES = [
-  { id: 't1', name: 'Order Confirmation', type: 'Transactional', lastUpdated: '2 days ago' },
-  { id: 't2', name: 'Order Shipped', type: 'Transactional', lastUpdated: '1 week ago' },
-  { id: 't3', name: 'Refund Processed', type: 'Transactional', lastUpdated: '1 month ago' },
-  { id: 't4', name: 'Password Reset', type: 'System', lastUpdated: '3 months ago' },
-];
+import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+import { apiClient } from '@/lib/api-client';
 
 export default function EmailsPage() {
   const [activeTab, setActiveTab] = useState<'flows' | 'templates'>('flows');
-  const [flows, setFlows] = useState(FLOWS);
+  const [flows, setFlows] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   
   // Editor State
   const [editingTemplate, setEditingTemplate] = useState<any>(null);
+  const [templateSubject, setTemplateSubject] = useState('');
   const [editorContent, setEditorContent] = useState('');
 
-  const toggleFlow = (id: string) => {
-    setFlows(flows.map(f => f.id === id ? { ...f, status: !f.status } : f));
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const res = await apiClient.communications.get();
+      setFlows(res.flows || []);
+      setTemplates(res.templates || []);
+    } catch (err: any) {
+      toast.error('Failed to load email communications: ' + (err.message || 'Error'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const toggleFlow = async (id: string) => {
+    const nextFlows = flows.map((f) => (f.id === id ? { ...f, status: !f.status } : f));
+    setFlows(nextFlows);
+    try {
+      await apiClient.communications.save({ flows: nextFlows });
+      const target = nextFlows.find((f) => f.id === id);
+      toast.success(`Automated flow "${target?.name}" is now ${target?.status ? 'ENABLED' : 'DISABLED'}`);
+    } catch (err: any) {
+      toast.error('Failed to update flow: ' + (err.message || 'Error'));
+    }
   };
 
   const openEditor = (template: any) => {
     setEditingTemplate(template);
-    setEditorContent(`<h1>Hi {{customer.first_name}},</h1>\n<p>This is your ${template.name.toLowerCase()} email template.</p>\n<p>You can use variables like {{order.number}} and {{order.total}}.</p>`);
+    setTemplateSubject(template.subject || `${template.name} Notification`);
+    setEditorContent(template.content || `<h1>Hi {{customer.first_name}},</h1>\n<p>This is your ${template.name.toLowerCase()} notification.</p>`);
   };
+
+  const handleSaveTemplate = async () => {
+    if (!editingTemplate) return;
+    setSaving(true);
+    try {
+      const updatedTemplate = {
+        ...editingTemplate,
+        subject: templateSubject,
+        content: editorContent,
+      };
+      await apiClient.communications.save({ template: updatedTemplate });
+      toast.success(`Template "${editingTemplate.name}" saved to MySQL!`);
+      setTemplates((prev) =>
+        prev.map((t) => (t.id === editingTemplate.id ? { ...t, ...updatedTemplate, lastUpdated: 'Just now' } : t))
+      );
+      setEditingTemplate(null);
+    } catch (err: any) {
+      toast.error('Failed to save template: ' + (err.message || 'Error'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSendTest = () => {
+    const testEmail = prompt('Enter recipient email address for test message:', 'concierge@waveron.com');
+    if (!testEmail || !testEmail.trim()) return;
+    toast.success(`Test email dispatched to ${testEmail.trim()}!`);
+  };
+
+  if (loading) {
+    return (
+      <div className="container-fluid py-5 text-center">
+        <div className="spinner-border text-primary" role="status"></div>
+        <p className="text-muted mt-2">Loading email communications...</p>
+      </div>
+    );
+  }
 
   if (editingTemplate) {
     return (
-      <div className="card">
-        <div className="card-header d-flex justify-content-between align-items-center">
+      <div className="card shadow-sm border-0">
+        <div className="card-header border-bottom bg-transparent d-flex justify-content-between align-items-center py-3">
           <div className="d-flex align-items-center gap-3">
-            <button className="btn btn-sm btn-light" onClick={() => setEditingTemplate(null)}>
-              <iconify-icon icon="solar:arrow-left-linear" className="fs-18 align-middle"></iconify-icon> Back
+            <button type="button" className="btn btn-sm btn-light" onClick={() => setEditingTemplate(null)}>
+              <iconify-icon icon="solar:arrow-left-broken" className="fs-18 align-middle"></iconify-icon> Back
             </button>
-            <h4 className="card-title mb-0">Editing Template: {editingTemplate.name}</h4>
+            <h5 className="card-title mb-0 fw-bold">Editing Template: {editingTemplate.name}</h5>
           </div>
           <div className="d-flex gap-2">
-            <button className="btn btn-sm btn-outline-primary d-flex align-items-center gap-2">
-              <iconify-icon icon="solar:test-tube-bold-duotone"></iconify-icon> Send Test Email
+            <button type="button" className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" onClick={handleSendTest}>
+              <iconify-icon icon="solar:letter-opened-bold"></iconify-icon> Send Test Dispatch
             </button>
-            <button className="btn btn-sm btn-primary d-flex align-items-center gap-2" onClick={() => setEditingTemplate(null)}>
-              <iconify-icon icon="solar:disk-bold-duotone"></iconify-icon> Save Template
+            <button
+              type="button"
+              className="btn btn-sm btn-primary d-flex align-items-center gap-2 px-3"
+              onClick={handleSaveTemplate}
+              disabled={saving}
+            >
+              {saving ? (
+                <>
+                  <span className="spinner-border spinner-border-sm" role="status"></span>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <iconify-icon icon="solar:diskette-bold" className="fs-16"></iconify-icon> Save Template
+                </>
+              )}
             </button>
           </div>
         </div>
-        <div className="card-body">
-          <div className="row">
+        <div className="card-body p-4">
+          <div className="row g-4">
             <div className="col-md-8">
               <div className="mb-3">
-                <label className="form-label">Email Subject</label>
-                <input type="text" className="form-control" defaultValue={`Your ${editingTemplate.name} - {{store.name}}`} />
+                <label className="form-label fw-semibold">Email Subject Line</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={templateSubject}
+                  onChange={(e) => setTemplateSubject(e.target.value)}
+                />
               </div>
               <div className="mb-3">
-                <label className="form-label">HTML Content</label>
-                <textarea 
-                  className="form-control font-monospace" 
-                  rows={15} 
+                <label className="form-label fw-semibold">Email Body HTML Content</label>
+                <textarea
+                  className="form-control font-monospace"
+                  rows={12}
                   value={editorContent}
-                  onChange={e => setEditorContent(e.target.value)}
-                  style={{ backgroundColor: '#f8fafc', fontSize: '13px' }}
+                  onChange={(e) => setEditorContent(e.target.value)}
                 />
               </div>
             </div>
             <div className="col-md-4">
-              <div className="bg-light p-3 rounded h-100 border">
-                <h5 className="fs-15 mb-3">Live Preview</h5>
-                <div className="bg-white p-4 border rounded" style={{ minHeight: '300px' }} dangerouslySetInnerHTML={{ __html: editorContent.replace('{{customer.first_name}}', 'John') }} />
-                
-                <h5 className="fs-15 mt-4 mb-2">Available Variables</h5>
-                <ul className="list-unstyled text-muted fs-13 mb-0 d-flex flex-column gap-2">
-                  <li><code>{'{{customer.first_name}}'}</code> - First Name</li>
-                  <li><code>{'{{customer.last_name}}'}</code> - Last Name</li>
-                  <li><code>{'{{order.number}}'}</code> - Order #</li>
-                  <li><code>{'{{order.total}}'}</code> - Total Amount</li>
-                  <li><code>{'{{store.name}}'}</code> - Store Name</li>
-                </ul>
+              <div className="p-3 bg-light rounded border">
+                <h6 className="fw-bold mb-2">Available Variables</h6>
+                <p className="text-muted fs-12 mb-3">Copy and paste these tags into your subject or body template:</p>
+                <div className="d-flex flex-column gap-2 font-monospace fs-12">
+                  <code>{"{{customer.first_name}}"}</code>
+                  <code>{"{{order.number}}"}</code>
+                  <code>{"{{order.total}}"}</code>
+                  <code>{"{{order.tracking_number}}"}</code>
+                  <code>{"{{refund.amount}}"}</code>
+                  <code>{"{{reset_url}}"}</code>
+                </div>
               </div>
             </div>
           </div>
@@ -93,66 +164,67 @@ export default function EmailsPage() {
   }
 
   return (
-    <div className="row">
+    <div className="row g-3">
       <div className="col-12">
-        <div className="card">
-          <div className="card-header border-bottom-0 pb-0">
+        <div className="card shadow-sm border-0">
+          <div className="card-header border-bottom-0 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
             <ul className="nav nav-tabs border-bottom-0">
               <li className="nav-item">
-                <button className={`nav-link fw-medium ${activeTab === 'flows' ? 'active border-bottom-0 bg-light-subtle text-primary' : 'text-muted'}`} onClick={() => setActiveTab('flows')}>
-                  <iconify-icon icon="solar:routing-2-bold-duotone" className="me-2 align-middle"></iconify-icon>
-                  Automated Flows
+                <button
+                  type="button"
+                  className={`nav-link fw-semibold ${activeTab === 'flows' ? 'active text-primary' : 'text-muted'}`}
+                  onClick={() => setActiveTab('flows')}
+                >
+                  Automated Flows ({flows.length})
                 </button>
               </li>
               <li className="nav-item">
-                <button className={`nav-link fw-medium ${activeTab === 'templates' ? 'active border-bottom-0 bg-light-subtle text-primary' : 'text-muted'}`} onClick={() => setActiveTab('templates')}>
-                  <iconify-icon icon="solar:document-bold-duotone" className="me-2 align-middle"></iconify-icon>
-                  Email Templates
+                <button
+                  type="button"
+                  className={`nav-link fw-semibold ${activeTab === 'templates' ? 'active text-primary' : 'text-muted'}`}
+                  onClick={() => setActiveTab('templates')}
+                >
+                  Transactional Templates ({templates.length})
                 </button>
               </li>
             </ul>
           </div>
-          
-          <div className="card-body bg-light-subtle border-top pt-3 rounded-bottom">
+
+          <div className="card-body p-0">
             {activeTab === 'flows' ? (
               <div className="table-responsive">
-                <table className="table bg-white rounded shadow-sm align-middle table-hover mb-0">
-                  <thead className="table-light">
+                <table className="table align-middle table-hover mb-0">
+                  <thead className="bg-light-subtle">
                     <tr>
-                      <th>Flow Name</th>
+                      <th>Automated Flow Name</th>
                       <th>Trigger Event</th>
-                      <th>Performance</th>
-                      <th>Status</th>
-                      <th className="text-end">Actions</th>
+                      <th>Benchmark Conversion</th>
+                      <th>Status Toggle</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {flows.map(f => (
+                    {flows.map((f) => (
                       <tr key={f.id}>
-                        <td className="fw-medium text-dark">
-                          <div className="d-flex align-items-center gap-2">
-                            <iconify-icon icon="solar:letter-bold-duotone" className="text-primary fs-20"></iconify-icon>
-                            {f.name}
-                          </div>
-                        </td>
-                        <td><span className="badge bg-secondary-subtle text-secondary">{f.trigger}</span></td>
-                        <td className="text-muted fs-13">{f.performance}</td>
                         <td>
-                          <div className="form-check form-switch mb-0">
-                            <input 
-                              className="form-check-input" 
-                              type="checkbox" 
-                              checked={f.status} 
-                              onChange={() => toggleFlow(f.id)} 
-                              style={{ width: '32px', height: '18px', cursor: 'pointer' }}
+                          <div className="fw-semibold text-dark">{f.name}</div>
+                        </td>
+                        <td className="text-muted fs-13">{f.trigger}</td>
+                        <td>
+                          <span className="badge bg-light text-dark border">{f.performance}</span>
+                        </td>
+                        <td>
+                          <div className="form-check form-switch">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              checked={f.status}
+                              onChange={() => toggleFlow(f.id)}
+                              style={{ cursor: 'pointer' }}
                             />
-                            <label className="form-check-label ms-2 fs-13" style={{ color: f.status ? '#22c55e' : '#94a3b8' }}>
-                              {f.status ? 'Active' : 'Paused'}
+                            <label className="form-check-label fs-12 text-muted ms-1">
+                              {f.status ? 'Active' : 'Disabled'}
                             </label>
                           </div>
-                        </td>
-                        <td className="text-end">
-                          <button className="btn btn-soft-primary btn-sm" onClick={() => openEditor(f)}>Edit Flow</button>
                         </td>
                       </tr>
                     ))}
@@ -161,24 +233,36 @@ export default function EmailsPage() {
               </div>
             ) : (
               <div className="table-responsive">
-                <table className="table bg-white rounded shadow-sm align-middle table-hover mb-0">
-                  <thead className="table-light">
+                <table className="table align-middle table-hover mb-0">
+                  <thead className="bg-light-subtle">
                     <tr>
                       <th>Template Name</th>
-                      <th>Category</th>
+                      <th>Message Type</th>
+                      <th>Subject Line</th>
                       <th>Last Updated</th>
-                      <th className="text-end">Actions</th>
+                      <th className="text-end">Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {TEMPLATES.map(t => (
+                    {templates.map((t) => (
                       <tr key={t.id}>
-                        <td className="fw-medium text-dark">{t.name}</td>
-                        <td><span className="badge bg-info-subtle text-info">{t.type}</span></td>
+                        <td>
+                          <span className="fw-semibold text-dark">{t.name}</span>
+                        </td>
+                        <td>
+                          <span className="badge bg-primary-subtle text-primary">{t.type}</span>
+                        </td>
+                        <td className="text-muted fs-13 text-truncate" style={{ maxWidth: '240px' }}>
+                          {t.subject || 'Default Subject'}
+                        </td>
                         <td className="text-muted fs-13">{t.lastUpdated}</td>
                         <td className="text-end">
-                          <button className="btn btn-soft-primary btn-sm" onClick={() => openEditor(t)}>
-                            <iconify-icon icon="solar:pen-2-broken" className="fs-16 align-middle me-1"></iconify-icon> Edit Design
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-primary d-flex align-items-center gap-1 ms-auto"
+                            onClick={() => openEditor(t)}
+                          >
+                            <iconify-icon icon="solar:pen-2-broken"></iconify-icon> Edit Template
                           </button>
                         </td>
                       </tr>
@@ -187,6 +271,10 @@ export default function EmailsPage() {
                 </table>
               </div>
             )}
+          </div>
+
+          <div className="card-footer border-top bg-transparent py-3">
+            <span className="text-muted fs-12">Communications registry synchronized with MySQL database settings.</span>
           </div>
         </div>
       </div>

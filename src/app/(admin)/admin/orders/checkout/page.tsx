@@ -138,7 +138,7 @@ export default function OrderCheckoutPage() {
             {/* Customer Details */}
             <div className="card shadow-sm border-0 mb-3">
               <div className="card-header border-bottom bg-transparent">
-                <h5 className="card-title mb-0">Customer Dossier</h5>
+                <h5 className="card-title mb-0">Customer Information</h5>
               </div>
               <div className="card-body">
                 <div className="row g-3">

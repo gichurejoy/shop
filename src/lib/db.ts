@@ -1545,4 +1545,177 @@ export const db = {
       return { success: true };
     },
   },
+
+  // REPORTS
+  reports: {
+    getFinancial: async (range: string = 'all') => {
+      try {
+        const orders = await prisma.order.findMany({
+          include: { items: true },
+          orderBy: { createdAt: 'desc' },
+        });
+        const transactions = await prisma.paymentTransaction.findMany({
+          orderBy: { createdAt: 'desc' },
+        });
+
+        const now = new Date();
+        let filteredOrders = orders;
+        if (range === 'today') {
+          const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          filteredOrders = orders.filter((o) => new Date(o.createdAt) >= start);
+        } else if (range === 'yesterday') {
+          const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+          const end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          filteredOrders = orders.filter((o) => {
+            const d = new Date(o.createdAt);
+            return d >= start && d < end;
+          });
+        } else if (range === 'this_week') {
+          const day = now.getDay();
+          const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+          const start = new Date(now.setDate(diff));
+          start.setHours(0, 0, 0, 0);
+          filteredOrders = orders.filter((o) => new Date(o.createdAt) >= start);
+        } else if (range === 'this_month') {
+          const start = new Date(now.getFullYear(), now.getMonth(), 1);
+          filteredOrders = orders.filter((o) => new Date(o.createdAt) >= start);
+        }
+
+        const grossSales = filteredOrders.reduce((sum, o) => sum + Number(o.subtotal || 0), 0);
+        const discounts = filteredOrders.reduce((sum, o) => sum + Number(o.discount || 0), 0);
+        const netRevenue = filteredOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+        const taxCollected = filteredOrders.reduce((sum, o) => sum + Number(o.tax || 0), 0);
+        const shippingCollected = filteredOrders.reduce((sum, o) => sum + Number(o.shippingFee || 0), 0);
+
+        const refundedAmount = transactions
+          .filter((t) => t.status?.toLowerCase() === 'refunded')
+          .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
+        const taxByRegionMap: Record<string, { taxableSales: number; taxCollected: number; count: number }> = {};
+        filteredOrders.forEach((o) => {
+          const addr = (typeof o.shippingAddress === 'object' && o.shippingAddress !== null) ? (o.shippingAddress as any) : {};
+          const region = [addr.city, addr.country || 'International'].filter(Boolean).join(', ') || 'Online Store';
+          if (!taxByRegionMap[region]) {
+            taxByRegionMap[region] = { taxableSales: 0, taxCollected: 0, count: 0 };
+          }
+          taxByRegionMap[region].taxableSales += Number(o.subtotal || 0);
+          taxByRegionMap[region].taxCollected += Number(o.tax || 0);
+          taxByRegionMap[region].count += 1;
+        });
+
+        const taxBreakdown = Object.entries(taxByRegionMap).map(([region, data]) => ({
+          region,
+          taxableSales: data.taxableSales,
+          taxCollected: data.taxCollected,
+          rate: data.taxableSales > 0 ? ((data.taxCollected / data.taxableSales) * 100).toFixed(2) + '%' : '0%',
+        }));
+
+        return {
+          grossSales,
+          discounts,
+          netRevenue,
+          taxCollected,
+          shippingCollected,
+          refundedAmount,
+          ordersCount: filteredOrders.length,
+          taxBreakdown,
+          orders: filteredOrders,
+        };
+      } catch (err) {
+        console.error('Failed to get financial report:', err);
+        return {
+          grossSales: 0,
+          discounts: 0,
+          netRevenue: 0,
+          taxCollected: 0,
+          shippingCollected: 0,
+          refundedAmount: 0,
+          ordersCount: 0,
+          taxBreakdown: [],
+          orders: [],
+        };
+      }
+    },
+
+    getInventory: async () => {
+      try {
+        const products = await prisma.product.findMany({
+          include: { category: true },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        let totalUnits = 0;
+        let totalRetailVal = 0;
+        let lowStockRiskVal = 0;
+        let outOfStockCount = 0;
+        let lowStockCount = 0;
+
+        const lowStockList: any[] = [];
+        const categoryMap: Record<string, { units: number; value: number; count: number }> = {};
+
+        products.forEach((p) => {
+          const qty = Number(p.stockQuantity ?? 0);
+          const price = Number(p.price ?? 0);
+          const val = qty * price;
+          totalUnits += qty;
+          totalRetailVal += val;
+
+          const cat = (p as any).category?.name || 'Atelier Collection';
+          if (!categoryMap[cat]) categoryMap[cat] = { units: 0, value: 0, count: 0 };
+          categoryMap[cat].units += qty;
+          categoryMap[cat].value += val;
+          categoryMap[cat].count += 1;
+
+          if (qty === 0) {
+            outOfStockCount++;
+            lowStockRiskVal += 10 * price;
+          } else if (qty <= 5) {
+            lowStockCount++;
+            lowStockRiskVal += val;
+            lowStockList.push({
+              id: p.id,
+              title: p.title,
+              stock: qty,
+              price,
+              riskValue: val,
+            });
+          }
+        });
+
+        const estimatedCostVal = totalRetailVal * 0.55;
+
+        return {
+          totalSkus: products.length,
+          totalUnits,
+          totalRetailVal,
+          estimatedCostVal,
+          lowStockRiskVal,
+          outOfStockCount,
+          lowStockCount,
+          lowStockList,
+          categoryBreakdown: Object.entries(categoryMap).map(([cat, data]) => ({
+            category: cat,
+            units: data.units,
+            value: data.value,
+            count: data.count,
+          })),
+          products,
+        };
+      } catch (err) {
+        console.error('Failed to get inventory report:', err);
+        return {
+          totalSkus: 0,
+          totalUnits: 0,
+          totalRetailVal: 0,
+          estimatedCostVal: 0,
+          lowStockRiskVal: 0,
+          outOfStockCount: 0,
+          lowStockCount: 0,
+          lowStockList: [],
+          categoryBreakdown: [],
+          products: [],
+        };
+      }
+    },
+  },
 };
