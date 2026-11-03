@@ -100,7 +100,8 @@ export function SectionsPanel() {
                       >▼</button>
                     </div>
                     <button
-                      onClick={() => { if(confirm('Remove this section?')) removeSection(s.id); }}
+                      onClick={() => removeSection(s.id)}
+                      title="Remove section"
                       style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#ef4444', padding: '4px' }}
                     >
                       <iconify-icon icon="solar:trash-bin-minimalistic-bold"></iconify-icon>

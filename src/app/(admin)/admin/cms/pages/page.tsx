@@ -83,14 +83,12 @@ export default function StaticPages() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this page?')) {
-      try {
-        await deleteCmsPage(id);
-        toast.success('Page deleted.');
-        fetchPages();
-      } catch {
-        toast.error('Failed to delete page.');
-      }
+    try {
+      await deleteCmsPage(id);
+      toast.success('Page deleted successfully.');
+      fetchPages();
+    } catch {
+      toast.error('Failed to delete page.');
     }
   };
 

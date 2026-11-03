@@ -120,13 +120,21 @@ async function writeFallbackFile(data: CmsData): Promise<void> {
 
 export async function getCmsData(): Promise<CmsData> {
   try {
-    const [sections, pages, posts, settings] = await Promise.all([
+    const [publishedSections, draftSections, pages, posts, settings] = await Promise.all([
       prisma.cmsSection.findMany({
         where: { pageSlug: 'home' },
         orderBy: { sortOrder: 'asc' },
       }),
-      prisma.cmsPage.findMany(),
-      prisma.cmsPost.findMany(),
+      prisma.cmsSection.findMany({
+        where: { pageSlug: 'home-draft' },
+        orderBy: { sortOrder: 'asc' },
+      }),
+      prisma.cmsPage.findMany({
+        orderBy: { updatedAt: 'desc' },
+      }),
+      prisma.cmsPost.findMany({
+        orderBy: { createdAt: 'desc' },
+      }),
       prisma.cmsSetting.findMany(),
     ]);
 
@@ -134,12 +142,17 @@ export async function getCmsData(): Promise<CmsData> {
       settings.map((s) => [s.key, s.value])
     );
 
-    const mappedSections: CmsSection[] = sections.map((s) => ({
+    const mapSection = (s: any): CmsSection => ({
       ...(typeof s.config === 'object' && s.config !== null ? (s.config as object) : {}),
       id: s.id,
       type: s.type as any,
       visible: s.isVisible,
-    })) as CmsSection[];
+    }) as CmsSection;
+
+    const mappedPublished: CmsSection[] = publishedSections.map(mapSection);
+    const mappedDraft: CmsSection[] = draftSections.length > 0 
+      ? draftSections.map(mapSection) 
+      : mappedPublished;
 
     const mappedPages: CmsPage[] = pages.map((p) => ({
       id: p.id,
@@ -172,8 +185,8 @@ export async function getCmsData(): Promise<CmsData> {
 
     return {
       homepage: {
-        draft: { sections: mappedSections },
-        published: { sections: mappedSections },
+        draft: { sections: mappedDraft },
+        published: { sections: mappedPublished },
       },
       pages: mappedPages,
       posts: mappedPosts,
@@ -192,18 +205,38 @@ export async function saveCmsData(data: CmsData): Promise<void> {
   await writeFallbackFile(data);
 
   try {
+    const publishedSections = data.homepage?.published?.sections || [];
     const draftSections = data.homepage?.draft?.sections || [];
 
-    // 1. Transaction to update homepage sections in MySQL
+    // 1. Transaction to update homepage published & draft sections in MySQL
     await prisma.$transaction(async (tx) => {
-      await tx.cmsSection.deleteMany({ where: { pageSlug: 'home' } });
+      if (publishedSections.length > 0) {
+        await tx.cmsSection.deleteMany({ where: { pageSlug: 'home' } });
+        for (let i = 0; i < publishedSections.length; i++) {
+          const s = publishedSections[i];
+          await tx.cmsSection.create({
+            data: {
+              id: s.id || `sec-${Date.now()}-${i}`,
+              pageSlug: 'home',
+              type: s.type,
+              title: (s as any).heading || (s as any).title || null,
+              subtitle: (s as any).subheading || (s as any).subtitle || null,
+              sortOrder: i,
+              isVisible: s.visible !== false,
+              config: s as any,
+            },
+          });
+        }
+      }
+
       if (draftSections.length > 0) {
+        await tx.cmsSection.deleteMany({ where: { pageSlug: 'home-draft' } });
         for (let i = 0; i < draftSections.length; i++) {
           const s = draftSections[i];
           await tx.cmsSection.create({
             data: {
-              id: s.id || `section-${Date.now()}-${i}`,
-              pageSlug: 'home',
+              id: s.id || `draft-sec-${Date.now()}-${i}`,
+              pageSlug: 'home-draft',
               type: s.type,
               title: (s as any).heading || (s as any).title || null,
               subtitle: (s as any).subheading || (s as any).subtitle || null,

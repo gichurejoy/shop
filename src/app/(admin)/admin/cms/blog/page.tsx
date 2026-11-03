@@ -102,14 +102,12 @@ export default function BlogManagement() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Delete this post?')) {
-      try {
-        await deleteCmsPost(id);
-        toast.success('Story deleted.');
-        fetchPosts();
-      } catch {
-        toast.error('Failed to delete story.');
-      }
+    try {
+      await deleteCmsPost(id);
+      toast.success('Story deleted successfully.');
+      fetchPosts();
+    } catch {
+      toast.error('Failed to delete story.');
     }
   };
 
