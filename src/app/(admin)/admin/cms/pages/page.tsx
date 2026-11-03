@@ -114,6 +114,25 @@ export default function StaticPages() {
           <button onClick={() => handleSave('Published')} disabled={saving} style={{ padding: '8px 24px', borderRadius: '6px', border: 'none', background: '#3b82f6', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>
             Publish
           </button>
+          {slug && (
+            <Link
+              href={`/admin/cms/builder?page=${slug}`}
+              style={{
+                padding: '8px 18px',
+                borderRadius: '6px',
+                background: '#ff6c2f',
+                color: '#fff',
+                fontWeight: 600,
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '13px',
+              }}
+            >
+              <span>🎨</span> Open in Visual Builder
+            </Link>
+          )}
         </div>
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
@@ -178,13 +197,96 @@ export default function StaticPages() {
   }
 
   // List View
+  const systemPages = [
+    { title: 'Homepage', slug: 'home', path: '/', desc: 'Main store landing, hero banner, product grids, and reviews.' },
+    { title: 'About Us', slug: 'about', path: '/about', desc: 'Atelier craftsmanship, ethical sourcing, story, and milestones.' },
+    { title: 'Care Guide', slug: 'care-guide', path: '/care-guide', desc: 'Jewelry & knitwear maintenance, cleaning steps, FAQs.' },
+    { title: 'Lookbook', slug: 'lookbook', path: '/lookbook', desc: 'High-fashion editorial galleries and season showcases.' },
+    { title: 'VIP Membership', slug: 'membership', path: '/membership', desc: 'Exclusive client tier benefits, private concierge stylist.' },
+  ];
+
   return (
-    <div className="row">
+    <div className="row g-4">
+      {/* ── System Core Pages Card ── */}
       <div className="col-12">
-        <div className="card">
-          <div className="card-header d-flex justify-content-between align-items-center">
-            <h4 className="card-title">Static Pages</h4>
-            <button className="btn btn-primary d-flex align-items-center gap-2" onClick={openCreate}>
+        <div className="card border-0 shadow-sm">
+          <div className="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+            <div>
+              <h4 className="card-title mb-1 text-dark fw-bold">Storefront Visual Builder Pages</h4>
+              <p className="text-muted fs-13 mb-0">Visually design and customize every page of your store with on-canvas editing and blocks.</p>
+            </div>
+            <Link href="/admin/cms/builder" className="btn btn-warning d-flex align-items-center gap-2 fw-semibold">
+              <iconify-icon icon="solar:pallete-2-bold" className="fs-18"></iconify-icon> Open Visual Builder
+            </Link>
+          </div>
+          <div className="card-body p-0">
+            <div className="table-responsive">
+              <table className="table align-middle mb-0 table-hover">
+                <thead className="bg-light-subtle">
+                  <tr>
+                    <th>Store Page</th>
+                    <th>Live URL</th>
+                    <th>Layout & Content</th>
+                    <th>Type</th>
+                    <th className="text-end">Visual Editor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {systemPages.map((sp) => (
+                    <tr key={sp.slug}>
+                      <td>
+                        <div className="fw-bold text-dark">{sp.title}</div>
+                        <div className="text-muted fs-12">{sp.desc}</div>
+                      </td>
+                      <td>
+                        <Link href={sp.path} target="_blank" className="badge bg-light text-primary border fs-12 text-decoration-none">
+                          {sp.path} ↗
+                        </Link>
+                      </td>
+                      <td>
+                        <span className="badge bg-primary-subtle text-primary px-2 py-1 fs-12">Visual Blocks Engine</span>
+                      </td>
+                      <td>
+                        <span className="badge bg-info-subtle text-info px-2 py-1 fs-12">System Page</span>
+                      </td>
+                      <td className="text-end">
+                        <div className="d-flex justify-content-end gap-2">
+                          <Link
+                            href={sp.path}
+                            target="_blank"
+                            className="btn btn-soft-info btn-sm"
+                            title="Preview Live Page"
+                          >
+                            <iconify-icon icon="solar:eye-broken" className="fs-18 align-middle"></iconify-icon>
+                          </Link>
+                          <Link
+                            href={`/admin/cms/builder?page=${sp.slug}`}
+                            className="btn btn-primary btn-sm d-inline-flex align-items-center gap-1.5 fw-semibold"
+                            title="Open in Visual Builder"
+                          >
+                            <iconify-icon icon="solar:pallete-2-bold" className="fs-16 align-middle"></iconify-icon>
+                            <span>Design Page</span>
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Custom Static Pages Card ── */}
+      <div className="col-12">
+        <div className="card border-0 shadow-sm">
+          <div className="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+            <div>
+              <h4 className="card-title mb-1 text-dark fw-bold">Custom Static Pages</h4>
+              <p className="text-muted fs-13 mb-0">Create and manage additional standalone pages (Terms, Privacy, FAQs, Bespoke landings).</p>
+            </div>
+            <button className="btn btn-outline-primary d-flex align-items-center gap-2" onClick={openCreate}>
               <iconify-icon icon="solar:add-circle-bold"></iconify-icon> Create New Page
             </button>
           </div>
@@ -192,7 +294,7 @@ export default function StaticPages() {
             {loading ? (
               <div className="text-center p-4">Loading pages...</div>
             ) : pages.length === 0 ? (
-              <div className="text-center p-4 text-muted">No pages found. Create one!</div>
+              <div className="text-center p-4 text-muted">No custom pages created yet. Click "Create New Page" to start!</div>
             ) : (
               <div className="table-responsive">
                 <table className="table align-middle mb-0 table-hover table-centered">
@@ -202,13 +304,13 @@ export default function StaticPages() {
                       <th>URL Slug</th>
                       <th>Status</th>
                       <th>Last Modified</th>
-                      <th>Action</th>
+                      <th className="text-end">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {pages.map((page) => (
                       <tr key={page.id}>
-                        <td><a href="#!" onClick={() => openEdit(page)} className="fw-medium text-dark">{page.title}</a></td>
+                        <td><a href="#!" onClick={() => openEdit(page)} className="fw-semibold text-dark">{page.title}</a></td>
                         <td>
                           <Link href={`/${page.slug}`} target="_blank" className="text-primary fs-13">/{page.slug}</Link>
                         </td>
@@ -218,10 +320,18 @@ export default function StaticPages() {
                           </span>
                         </td>
                         <td className="text-muted fs-13">{new Date(page.lastModified).toLocaleDateString()}</td>
-                        <td>
-                          <div className="d-flex gap-2">
+                        <td className="text-end">
+                          <div className="d-flex justify-content-end gap-2">
+                            <Link
+                              href={`/admin/cms/builder?page=${page.slug}`}
+                              className="btn btn-soft-warning btn-sm d-inline-flex align-items-center gap-1"
+                              title="Design with Visual Builder"
+                            >
+                              <iconify-icon icon="solar:pallete-2-bold" className="fs-16 align-middle"></iconify-icon>
+                              <span>Visual Builder</span>
+                            </Link>
                             <a href={`/${page.slug}`} target="_blank" className="btn btn-soft-info btn-sm" title="Preview"><iconify-icon icon="solar:eye-broken" className="fs-18 align-middle"></iconify-icon></a>
-                            <button className="btn btn-soft-primary btn-sm" onClick={() => openEdit(page)} title="Edit"><iconify-icon icon="solar:pen-2-broken" className="fs-18 align-middle"></iconify-icon></button>
+                            <button className="btn btn-soft-primary btn-sm" onClick={() => openEdit(page)} title="Edit Text/SEO"><iconify-icon icon="solar:pen-2-broken" className="fs-18 align-middle"></iconify-icon></button>
                             <button className="btn btn-soft-danger btn-sm" onClick={() => handleDelete(page.id)} title="Delete"><iconify-icon icon="solar:trash-bin-minimalistic-2-broken" className="fs-18 align-middle"></iconify-icon></button>
                           </div>
                         </td>

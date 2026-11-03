@@ -213,187 +213,92 @@ export function InlineText({
   );
 }
 
-// ─── InlineImage with Click-to-Replace & Uploader ───────────────────────────
+// ─── InlineImage with Click-to-Inspect in Sidebar ───────────────────────────
 export function InlineImage({
   src,
   alt = 'Image',
+  sectionId,
+  field = 'backgroundImage',
   onUpdate,
+  onSelect,
   className,
   style,
   aspectRatio = 'square',
 }: {
   src: string;
   alt?: string;
+  sectionId?: string;
+  field?: string;
   onUpdate?: (patch: { src: string; alt?: string }) => void;
+  onSelect?: (el: any) => void;
   className?: string;
   style?: React.CSSProperties;
   aspectRatio?: 'square' | 'video' | 'portrait' | 'auto';
 }) {
-  const [isOpen, setIsOpen] = useState(false);
   const [imgSrc, setImgSrc] = useState(src || '');
   const [imgAlt, setImgAlt] = useState(alt || '');
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setImgSrc(src || '');
   }, [src]);
 
-  if (!onUpdate) {
+  if (!onUpdate && !onSelect) {
     return <img src={src} alt={alt} className={className} style={style} />;
   }
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    const formData = new FormData();
-    formData.append('file', file);
-    try {
-      const res = await fetch('/api/upload', { method: 'POST', body: formData });
-      const data = await res.json();
-      if (data.url) {
-        setImgSrc(data.url);
-        onUpdate({ src: data.url, alt: imgAlt });
-      }
-    } catch (err) {
-      console.error('Failed to upload image:', err);
-    } finally {
-      setUploading(false);
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const payload = {
+      type: 'image',
+      sectionId: sectionId || '',
+      field,
+      url: imgSrc,
+      alt: imgAlt,
+      label: alt || 'Image',
+    };
+    if (onSelect) {
+      onSelect(payload);
+    }
+    if (typeof window !== 'undefined') {
+      window.parent?.postMessage({ type: 'ELEMENT_SELECTED', element: payload }, '*');
     }
   };
 
-  const handleApply = (urlToApply = imgSrc) => {
-    onUpdate({ src: urlToApply, alt: imgAlt });
-    setIsOpen(false);
-  };
-
   return (
-    <div className="relative group inline-block w-full h-full" style={style}>
+    <div
+      onClick={handleClick}
+      className="relative group inline-block w-full h-full cursor-pointer transition-all duration-150"
+      style={style}
+      title="Click to edit image in inspector"
+    >
       <img
         src={imgSrc || 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=800&q=80'}
         alt={imgAlt}
-        className={`${className || ''} transition-all duration-200 group-hover:brightness-95`}
+        className={`${className || ''} transition-all duration-200 group-hover:brightness-90 group-hover:ring-2 group-hover:ring-[#ff6c2f] group-hover:ring-offset-2 rounded-lg`}
       />
 
-      {/* Edit Badge Overlay */}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsOpen(!isOpen);
-        }}
-        className="absolute top-2 right-2 z-30 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900/90 hover:bg-slate-900 text-white text-xs px-2.5 py-1.5 rounded-lg shadow-lg flex items-center gap-1.5 backdrop-blur-sm border border-slate-700 cursor-pointer"
-        title="Click to replace image"
-      >
+      {/* Edit Badge Overlay on Hover */}
+      <div className="absolute top-2 right-2 z-30 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900/90 text-white text-[11px] font-semibold px-2.5 py-1 rounded-md shadow-lg flex items-center gap-1.5 backdrop-blur-sm border border-slate-700 pointer-events-none">
         <span>📷</span>
-        <span className="font-medium text-[11px]">Change Image</span>
-      </button>
-
-      {/* Image Picker Popover */}
-      {isOpen && (
-        <div
-          onClick={(e) => e.stopPropagation()}
-          className="absolute z-50 top-12 right-2 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 p-4 text-slate-800 text-left font-sans text-xs animate-in fade-in zoom-in-95 duration-150"
-        >
-          <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
-            <span className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
-              <span>🖼</span> Replace Image
-            </span>
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="text-slate-400 hover:text-slate-600 text-sm font-bold p-1"
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* Upload Button */}
-          <div className="mb-3">
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-              accept="image/*"
-              style={{ display: 'none' }}
-            />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="w-full py-2 px-3 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold flex items-center justify-center gap-2 border border-blue-200 transition-colors cursor-pointer"
-            >
-              <span>{uploading ? '⏳ Uploading...' : '📁 Upload From Computer'}</span>
-            </button>
-          </div>
-
-          {/* Image URL Input */}
-          <div className="mb-3">
-            <label className="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Or Paste Image URL</label>
-            <input
-              type="url"
-              value={imgSrc}
-              onChange={(e) => setImgSrc(e.target.value)}
-              placeholder="https://..."
-              className="w-full px-2.5 py-1.5 border border-slate-200 rounded-md text-xs outline-none focus:border-blue-500"
-            />
-          </div>
-
-          {/* Luxury Curated Presets */}
-          <div className="mb-3">
-            <label className="block text-[11px] font-semibold text-slate-500 uppercase mb-1.5">Luxury Presets</label>
-            <div className="grid grid-cols-3 gap-1.5">
-              {LUXURY_PRESET_IMAGES.map((preset) => (
-                <button
-                  key={preset.name}
-                  type="button"
-                  onClick={() => {
-                    setImgSrc(preset.url);
-                    handleApply(preset.url);
-                  }}
-                  className="group/item relative rounded overflow-hidden aspect-square border border-slate-200 hover:border-blue-500 transition-all p-0"
-                  title={preset.name}
-                >
-                  <img src={preset.url} alt={preset.name} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/item:opacity-100 flex items-center justify-center text-[9px] text-white font-medium p-1 text-center">
-                    {preset.name}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Footer Controls */}
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="px-3 py-1.5 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={() => handleApply()}
-              className="px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-            >
-              Apply
-            </button>
-          </div>
-        </div>
-      )}
+        <span>Edit in Inspector</span>
+      </div>
     </div>
   );
 }
 
-// ─── InlineButton with CTA Link & Style Popover ─────────────────────────────
+// ─── InlineButton with Click-to-Inspect in Sidebar ──────────────────────────
 export function InlineButton({
   label,
   link = '#',
   styleVariant = 'filled',
   color = '#ff6c2f',
+  sectionId,
+  labelField = 'ctaLabel',
+  linkField = 'ctaLink',
+  colorField = 'ctaColor',
+  styleField = 'ctaStyle',
   onUpdate,
+  onSelect,
   className,
   style,
 }: {
@@ -401,11 +306,16 @@ export function InlineButton({
   link?: string;
   styleVariant?: 'filled' | 'outline';
   color?: string;
+  sectionId?: string;
+  labelField?: string;
+  linkField?: string;
+  colorField?: string;
+  styleField?: string;
   onUpdate?: (patch: { label?: string; link?: string; style?: 'filled' | 'outline'; color?: string }) => void;
+  onSelect?: (el: any) => void;
   className?: string;
   style?: React.CSSProperties;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
   const [btnLabel, setBtnLabel] = useState(label || 'Button');
   const [btnLink, setBtnLink] = useState(link || '#');
   const [btnStyle, setBtnStyle] = useState<'filled' | 'outline'>(styleVariant || 'filled');
@@ -418,7 +328,7 @@ export function InlineButton({
     setBtnColor(color || '#ff6c2f');
   }, [label, link, styleVariant, color]);
 
-  if (!onUpdate) {
+  if (!onUpdate && !onSelect) {
     return (
       <a
         href={link}
@@ -435,158 +345,45 @@ export function InlineButton({
     );
   }
 
-  const handleApply = () => {
-    onUpdate({
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const payload = {
+      type: 'button',
+      sectionId: sectionId || '',
+      labelField,
+      linkField,
+      colorField,
+      styleField,
       label: btnLabel,
       link: btnLink,
-      style: btnStyle,
       color: btnColor,
-    });
-    setIsOpen(false);
+      styleVariant: btnStyle,
+    };
+    if (onSelect) {
+      onSelect(payload);
+    }
+    if (typeof window !== 'undefined') {
+      window.parent?.postMessage({ type: 'ELEMENT_SELECTED', element: payload }, '*');
+    }
   };
 
   return (
-    <div className="relative inline-block">
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsOpen(!isOpen);
-        }}
-        className={`${className || ''} relative group/btn cursor-pointer transition-all border-2`}
-        style={{
-          ...style,
-          backgroundColor: btnStyle === 'filled' ? btnColor : 'transparent',
-          borderColor: btnColor,
-          color: btnStyle === 'filled' ? '#fff' : btnColor,
-        }}
-        title="Click to configure CTA button"
-      >
-        <span>{btnLabel}</span>
-        <span className="ml-1 opacity-60 text-[10px]">⚙</span>
-      </button>
-
-      {/* Button Configuration Popover */}
-      {isOpen && (
-        <div
-          onClick={(e) => e.stopPropagation()}
-          className="absolute z-50 top-full mt-2 left-0 w-72 bg-white rounded-xl shadow-2xl border border-slate-200 p-4 text-slate-800 text-left font-sans text-xs animate-in fade-in zoom-in-95 duration-150"
-        >
-          <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
-            <span className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
-              <span>🔘</span> Button Settings
-            </span>
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="text-slate-400 hover:text-slate-600 font-bold p-1"
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* Button Text */}
-          <div className="mb-2.5">
-            <label className="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Label Text</label>
-            <input
-              type="text"
-              value={btnLabel}
-              onChange={(e) => setBtnLabel(e.target.value)}
-              className="w-full px-2.5 py-1.5 border border-slate-200 rounded-md text-xs outline-none focus:border-blue-500 font-medium"
-            />
-          </div>
-
-          {/* Destination URL */}
-          <div className="mb-2.5">
-            <label className="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Destination Link</label>
-            <input
-              type="text"
-              value={btnLink}
-              onChange={(e) => setBtnLink(e.target.value)}
-              placeholder="/products"
-              className="w-full px-2.5 py-1.5 border border-slate-200 rounded-md text-xs outline-none focus:border-blue-500"
-            />
-            {/* Quick Link Chips */}
-            <div className="flex flex-wrap gap-1 mt-1.5">
-              {[
-                { l: 'Shop All', u: '/products' },
-                { l: 'Jewelry', u: '/products?category=jewelry' },
-                { l: 'Knitwear', u: '/products?category=knitwear' },
-                { l: 'Lookbook', u: '/lookbook' },
-                { l: 'Membership', u: '/membership' },
-              ].map(chip => (
-                <button
-                  key={chip.u}
-                  type="button"
-                  onClick={() => setBtnLink(chip.u)}
-                  className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px]"
-                >
-                  {chip.l}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Style & Color */}
-          <div className="mb-3">
-            <label className="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Style & Color</label>
-            <div className="flex items-center gap-2 mb-2">
-              <button
-                type="button"
-                onClick={() => setBtnStyle('filled')}
-                className={`flex-1 py-1 rounded border text-xs font-semibold ${btnStyle === 'filled' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200'}`}
-              >
-                Filled
-              </button>
-              <button
-                type="button"
-                onClick={() => setBtnStyle('outline')}
-                className={`flex-1 py-1 rounded border text-xs font-semibold ${btnStyle === 'outline' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200'}`}
-              >
-                Outline
-              </button>
-            </div>
-            {/* Color swatches */}
-            <div className="flex items-center gap-2">
-              {[
-                { name: 'Orange', c: '#ff6c2f' },
-                { name: 'Dark', c: '#1e293b' },
-                { name: 'Brown', c: '#5c3a24' },
-                { name: 'Gold', c: '#8B5A3C' },
-                { name: 'Emerald', c: '#059669' },
-              ].map(item => (
-                <button
-                  key={item.c}
-                  type="button"
-                  onClick={() => setBtnColor(item.c)}
-                  className="w-5 h-5 rounded-full border border-black/20 cursor-pointer"
-                  style={{ backgroundColor: item.c, outline: btnColor === item.c ? '2px solid #3b82f6' : 'none' }}
-                  title={item.name}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Footer Controls */}
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="px-3 py-1.5 rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleApply}
-              className="px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-            >
-              Apply
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+    <button
+      type="button"
+      onClick={handleClick}
+      className={`${className || ''} relative group/btn cursor-pointer transition-all border-2 hover:ring-2 hover:ring-[#ff6c2f] hover:ring-offset-2`}
+      style={{
+        ...style,
+        backgroundColor: btnStyle === 'filled' ? btnColor : 'transparent',
+        borderColor: btnColor,
+        color: btnStyle === 'filled' ? '#fff' : btnColor,
+      }}
+      title="Click to configure button in inspector"
+    >
+      <span>{btnLabel}</span>
+      <span className="ml-1 opacity-70 text-[10px]">⚙</span>
+    </button>
   );
 }
 

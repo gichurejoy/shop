@@ -35,6 +35,31 @@ export function HeroRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) 
       {s.overlayOpacity > 0 && (
         <div className="absolute inset-0" style={{ backgroundColor: s.overlayColor, opacity: s.overlayOpacity / 100 }} />
       )}
+      {onUpdate && (
+        <div className="absolute top-3 right-3 z-30">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.parent?.postMessage({
+                type: 'ELEMENT_SELECTED',
+                element: {
+                  type: 'image',
+                  sectionId: s.id,
+                  field: 'backgroundImage',
+                  url: s.backgroundImage || '',
+                  label: 'Hero Background Image',
+                }
+              }, '*');
+            }}
+            className="bg-black/70 hover:bg-black/90 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 backdrop-blur border border-white/20 transition-all cursor-pointer shadow-lg"
+            title="Edit background image in inspector"
+          >
+            <span>📷</span>
+            <span className="font-medium">Change Background</span>
+          </button>
+        </div>
+      )}
       <div className={`relative z-10 w-full max-w-7xl mx-auto px-6 ${s.layout === 'centered' ? 'text-center' : ''}`}>
         <InlineText
           tagName="h1"
@@ -54,38 +79,34 @@ export function HeroRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) 
         )}
         <div style={{ textAlign: s.textAlign }}>
           {s.cta1Label && (
-            <a
-              href={s.cta1Link || '#'}
-              className="inline-block px-8 py-3 rounded-lg font-semibold mr-3 border-2 transition-all"
-              style={{
-                backgroundColor: s.cta1Style === 'filled' ? s.cta1Color : 'transparent',
-                borderColor: s.cta1Color,
-                color: s.cta1Style === 'filled' ? '#fff' : s.cta1Color,
-              }}
-              onClick={e => { if (onUpdate) e.preventDefault(); }}
-            >
-              <InlineText
-                value={s.cta1Label}
-                onUpdate={onUpdate ? (val) => onUpdate({ cta1Label: val }) : undefined}
-              />
-            </a>
+            <InlineButton
+              label={s.cta1Label}
+              link={s.cta1Link || '#'}
+              styleVariant={s.cta1Style || 'filled'}
+              color={s.cta1Color || '#ff6c2f'}
+              sectionId={s.id}
+              labelField="cta1Label"
+              linkField="cta1Link"
+              styleField="cta1Style"
+              colorField="cta1Color"
+              className="inline-block px-8 py-3 rounded-lg font-semibold mr-3 transition-all"
+              onUpdate={onUpdate ? (patch) => onUpdate({ cta1Label: patch.label, cta1Link: patch.link, cta1Style: patch.style, cta1Color: patch.color }) : undefined}
+            />
           )}
           {s.cta2Label && (
-            <a
-              href={s.cta2Link || '#'}
+            <InlineButton
+              label={s.cta2Label}
+              link={s.cta2Link || '#'}
+              styleVariant={s.cta2Style || 'filled'}
+              color={s.cta2Color || '#ffffff'}
+              sectionId={s.id}
+              labelField="cta2Label"
+              linkField="cta2Link"
+              styleField="cta2Style"
+              colorField="cta2Color"
               className="inline-block px-8 py-3 rounded-lg font-semibold border-2 transition-all"
-              style={{
-                backgroundColor: s.cta2Style === 'filled' ? s.cta2Color : 'transparent',
-                borderColor: s.cta2Color,
-                color: s.cta2Style === 'filled' ? '#fff' : s.cta2Color,
-              }}
-              onClick={e => { if (onUpdate) e.preventDefault(); }}
-            >
-              <InlineText
-                value={s.cta2Label}
-                onUpdate={onUpdate ? (val) => onUpdate({ cta2Label: val }) : undefined}
-              />
-            </a>
+              onUpdate={onUpdate ? (patch) => onUpdate({ cta2Label: patch.label, cta2Link: patch.link, cta2Style: patch.style, cta2Color: patch.color }) : undefined}
+            />
           )}
         </div>
       </div>
@@ -473,14 +494,30 @@ function BespokeHeroRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) 
 
   return (
     <div className="w-full bg-[#5C3A24] text-white py-12 relative overflow-hidden group/hero" style={customStyle}>
+      <div className="absolute top-3 right-3 z-30">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            window.parent?.postMessage({
+              type: 'ELEMENT_SELECTED',
+              element: {
+                type: 'image',
+                sectionId: s.id,
+                field: 'backgroundImage',
+                url: s.backgroundImage || '',
+                label: 'Hero Background Image',
+              }
+            }, '*');
+          }}
+          className="bg-black/70 hover:bg-black/90 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 backdrop-blur border border-white/20 transition-all cursor-pointer shadow-lg"
+          title="Edit background image in inspector"
+        >
+          <span>📷</span>
+          <span className="font-medium">Change Background</span>
+        </button>
+      </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="flex justify-end mb-2">
-          <InlineImage
-            src={s.backgroundImage || ''}
-            onUpdate={(patch) => onUpdate({ backgroundImage: patch.src })}
-            className="hidden"
-          />
-        </div>
         <div className="text-center mb-6">
           <InlineText
             tagName="h2"
@@ -627,6 +664,9 @@ function BespokePromoBannerRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch
               link={s.ctaLink || '/products'}
               color="#8B5A3C"
               styleVariant="filled"
+              sectionId={s.id}
+              labelField="ctaLabel"
+              linkField="ctaLink"
               className="px-8 py-2.5 rounded-lg font-bold shadow-md"
               onUpdate={(patch) => onUpdate({ ctaLabel: patch.label, ctaLink: patch.link })}
             />
@@ -672,6 +712,8 @@ function BespokeStylistBannerRenderer({ s, onUpdate }: { s: any; onUpdate?: (pat
               link="/membership"
               color="#8B5A3C"
               styleVariant="filled"
+              sectionId={s.id}
+              labelField="ctaLabel"
               className="px-6 py-2.5 rounded-lg font-bold shadow-sm"
               onUpdate={(patch) => onUpdate({ ctaLabel: patch.label })}
             />

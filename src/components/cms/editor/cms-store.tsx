@@ -3,11 +3,37 @@
 import React, { createContext, useContext, useReducer, useCallback } from 'react';
 import { CmsSection, SectionType, createDefaultSection } from '@/lib/cms-types';
 
+// ─── Active Element Types ───────────────────────────────────────────────────
+export type ActiveElement =
+  | { type: 'section'; sectionId: string }
+  | {
+      type: 'image';
+      sectionId: string;
+      field: string;
+      url: string;
+      alt?: string;
+      label?: string;
+    }
+  | {
+      type: 'button';
+      sectionId: string;
+      labelField: string;
+      linkField: string;
+      colorField?: string;
+      styleField?: string;
+      label: string;
+      link: string;
+      color?: string;
+      styleVariant?: string;
+    }
+  | null;
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 type State = {
   sections: CmsSection[];
   initialSections: CmsSection[];
   activeId: string | null;
+  activeElement: ActiveElement;
   activeTab: 'blocks' | 'customize';
   isDirty: boolean;
   past: CmsSection[][];
@@ -23,6 +49,7 @@ type Action =
   | { type: 'MOVE_SECTION'; id: string; direction: 'up' | 'down' }
   | { type: 'DUPLICATE_SECTION'; id: string }
   | { type: 'SET_ACTIVE'; id: string | null }
+  | { type: 'SET_ACTIVE_ELEMENT'; element: ActiveElement }
   | { type: 'SET_ACTIVE_TAB'; tab: 'blocks' | 'customize' }
   | { type: 'UNDO' }
   | { type: 'REDO' }
@@ -41,7 +68,7 @@ function pushHistory(state: State): { past: CmsSection[][]; future: CmsSection[]
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'SET_SECTIONS':
-      return { ...state, sections: action.sections, isDirty: false };
+      return { ...state, sections: action.sections, isDirty: false, past: [], future: [] };
 
     case 'ADD_SECTION': {
       const id = `section-${Date.now()}`;
@@ -52,6 +79,7 @@ function reducer(state: State, action: Action): State {
         ...hist,
         sections: [...state.sections, newSection],
         activeId: id,
+        activeElement: { type: 'section', sectionId: id },
         activeTab: 'customize',
         isDirty: true,
       };
@@ -69,6 +97,7 @@ function reducer(state: State, action: Action): State {
         ...hist,
         sections: arr,
         activeId: id,
+        activeElement: { type: 'section', sectionId: id },
         activeTab: 'customize',
         isDirty: true,
       };
@@ -76,21 +105,43 @@ function reducer(state: State, action: Action): State {
 
     case 'REMOVE_SECTION': {
       const hist = pushHistory(state);
+      const isRemovingActive = state.activeId === action.id;
       return {
         ...state,
         ...hist,
         sections: state.sections.filter(s => s.id !== action.id),
-        activeId: state.activeId === action.id ? null : state.activeId,
+        activeId: isRemovingActive ? null : state.activeId,
+        activeElement: isRemovingActive ? null : state.activeElement,
         isDirty: true,
       };
     }
 
     case 'UPDATE_SECTION': {
       const hist = pushHistory(state);
+      let updatedActiveElement = state.activeElement;
+      if (state.activeElement && state.activeElement.sectionId === action.id) {
+        if (state.activeElement.type === 'image' && action.patch[state.activeElement.field as keyof CmsSection] !== undefined) {
+          updatedActiveElement = {
+            ...state.activeElement,
+            url: action.patch[state.activeElement.field as keyof CmsSection] as string,
+          };
+        } else if (state.activeElement.type === 'button') {
+          const patch = action.patch as any;
+          updatedActiveElement = {
+            ...state.activeElement,
+            label: patch[state.activeElement.labelField] !== undefined ? patch[state.activeElement.labelField] : state.activeElement.label,
+            link: patch[state.activeElement.linkField] !== undefined ? patch[state.activeElement.linkField] : state.activeElement.link,
+            color: state.activeElement.colorField && patch[state.activeElement.colorField] !== undefined ? patch[state.activeElement.colorField] : state.activeElement.color,
+            styleVariant: state.activeElement.styleField && patch[state.activeElement.styleField] !== undefined ? patch[state.activeElement.styleField] : state.activeElement.styleVariant,
+          };
+        }
+      }
+
       return {
         ...state,
         ...hist,
         sections: state.sections.map(s => s.id === action.id ? { ...s, ...action.patch } as CmsSection : s),
+        activeElement: updatedActiveElement,
         isDirty: true,
       };
     }
@@ -115,15 +166,34 @@ function reducer(state: State, action: Action): State {
       const arr = [...state.sections];
       arr.splice(idx + 1, 0, dup);
       const hist = pushHistory(state);
-      return { ...state, ...hist, sections: arr, activeId: newId, activeTab: 'customize', isDirty: true };
+      return {
+        ...state,
+        ...hist,
+        sections: arr,
+        activeId: newId,
+        activeElement: { type: 'section', sectionId: newId },
+        activeTab: 'customize',
+        isDirty: true,
+      };
     }
 
     case 'SET_ACTIVE':
       return {
         ...state,
         activeId: action.id,
+        activeElement: action.id ? { type: 'section', sectionId: action.id } : null,
         activeTab: action.id ? 'customize' : state.activeTab,
       };
+
+    case 'SET_ACTIVE_ELEMENT': {
+      const el = action.element;
+      return {
+        ...state,
+        activeElement: el,
+        activeId: el ? el.sectionId : state.activeId,
+        activeTab: el ? 'customize' : state.activeTab,
+      };
+    }
 
     case 'SET_ACTIVE_TAB':
       return { ...state, activeTab: action.tab };
@@ -161,6 +231,7 @@ function reducer(state: State, action: Action): State {
         past: [],
         future: [],
         activeId: null,
+        activeElement: null,
         isDirty: false,
       };
 
@@ -185,6 +256,7 @@ type CmsCtx = State & {
   moveSection: (id: string, dir: 'up' | 'down') => void;
   duplicateSection: (id: string) => void;
   setActive: (id: string | null) => void;
+  setActiveElement: (el: ActiveElement) => void;
   setActiveTab: (tab: 'blocks' | 'customize') => void;
   undo: () => void;
   redo: () => void;
@@ -199,6 +271,7 @@ export function CmsProvider({ children, initial }: { children: React.ReactNode; 
     sections: initial,
     initialSections: initial,
     activeId: null,
+    activeElement: null,
     activeTab: 'blocks',
     isDirty: false,
     past: [],
@@ -213,6 +286,7 @@ export function CmsProvider({ children, initial }: { children: React.ReactNode; 
   const moveSection = useCallback((id: string, dir: 'up' | 'down') => dispatch({ type: 'MOVE_SECTION', id, direction: dir }), []);
   const duplicateSection = useCallback((id: string) => dispatch({ type: 'DUPLICATE_SECTION', id }), []);
   const setActive = useCallback((id: string | null) => dispatch({ type: 'SET_ACTIVE', id }), []);
+  const setActiveElement = useCallback((el: ActiveElement) => dispatch({ type: 'SET_ACTIVE_ELEMENT', element: el }), []);
   const setActiveTab = useCallback((tab: 'blocks' | 'customize') => dispatch({ type: 'SET_ACTIVE_TAB', tab }), []);
   const undo = useCallback(() => dispatch({ type: 'UNDO' }), []);
   const redo = useCallback(() => dispatch({ type: 'REDO' }), []);
@@ -237,6 +311,7 @@ export function CmsProvider({ children, initial }: { children: React.ReactNode; 
         moveSection,
         duplicateSection,
         setActive,
+        setActiveElement,
         setActiveTab,
         undo,
         redo,

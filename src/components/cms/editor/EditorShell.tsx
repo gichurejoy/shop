@@ -14,10 +14,16 @@ const VIEWPORT_WIDTHS: Record<Viewport, string> = {
 
 export function EditorShell({
   pageTitle,
+  currentPageSlug = 'home',
+  availablePages = [],
+  onSwitchPage,
   onSaveDraft,
   onPublish,
 }: {
   pageTitle: string;
+  currentPageSlug?: string;
+  availablePages?: Array<{ slug: string; title: string; isSystem?: boolean }>;
+  onSwitchPage?: (slug: string) => Promise<void>;
   onSaveDraft: (sections: any[]) => Promise<void>;
   onPublish: () => Promise<void>;
 }) {
@@ -26,6 +32,7 @@ export function EditorShell({
     isDirty,
     activeId,
     setActive,
+    setActiveElement,
     setActiveTab,
     markSaved,
     updateSection,
@@ -76,6 +83,9 @@ export function EditorShell({
         setActive(e.data.id);
         setActiveTab('customize');
       }
+      if (e.data?.type === 'ELEMENT_SELECTED') {
+        setActiveElement(e.data.element);
+      }
       if (e.data?.type === 'SECTION_UPDATED') {
         updateSection(e.data.id, e.data.patch);
       }
@@ -95,7 +105,7 @@ export function EditorShell({
     };
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, [sections, setActive, setActiveTab, updateSection, setSections, removeSection, duplicateSection]);
+  }, [sections, setActive, setActiveElement, setActiveTab, updateSection, setSections, removeSection, duplicateSection]);
 
   // Keyboard shortcuts (Ctrl+S, Ctrl+Z, Ctrl+Y)
   useEffect(() => {
@@ -149,22 +159,60 @@ export function EditorShell({
       >
         <a
           href="/admin"
-          style={{ color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none', fontSize: '14px' }}
+          style={{ color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none', fontSize: '13px' }}
           onClick={(e) => {
             e.preventDefault();
             window.location.href = '/admin';
           }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 18-6-6 6-6"/></svg>
-          Back to Admin
+          Admin
         </a>
 
         <div style={{ width: '1px', height: '24px', background: '#334155' }} />
 
-        <span style={{ color: '#f1f5f9', fontWeight: 600, fontSize: '14px' }}>{pageTitle}</span>
+        {/* Page Switcher Dropdown */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 600 }}>Editing:</span>
+          <select
+            value={currentPageSlug}
+            onChange={async (e) => {
+              const newSlug = e.target.value;
+              if (onSwitchPage) {
+                await onSwitchPage(newSlug);
+              }
+            }}
+            style={{
+              background: '#0f172a',
+              color: '#f8fafc',
+              border: '1px solid #475569',
+              borderRadius: '6px',
+              padding: '5px 12px',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              outline: 'none',
+            }}
+          >
+            <optgroup label="Core Store Pages">
+              <option value="home">🏠 Homepage (/)</option>
+              <option value="about">📖 About Us (/about)</option>
+              <option value="care-guide">💎 Care Guide (/care-guide)</option>
+              <option value="lookbook">📸 Lookbook (/lookbook)</option>
+              <option value="membership">👑 VIP Membership (/membership)</option>
+            </optgroup>
+            {availablePages.filter(p => !p.isSystem).length > 0 && (
+              <optgroup label="Custom Static Pages">
+                {availablePages.filter(p => !p.isSystem).map(p => (
+                  <option key={p.slug} value={p.slug}>📄 {p.title} (/{p.slug})</option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+        </div>
 
         {/* Undo / Redo Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', marginLeft: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', marginLeft: '4px' }}>
           <button
             type="button"
             onClick={undo}
@@ -237,11 +285,12 @@ export function EditorShell({
         </div>
 
         <button
-          onClick={() => window.open('/', '_blank')}
+          onClick={() => window.open(currentPageSlug === 'home' ? '/' : `/${currentPageSlug}`, '_blank')}
           style={{
             padding: '7px 16px', borderRadius: '8px', border: '1px solid #475569', background: 'transparent',
             color: '#cbd5e1', fontWeight: 500, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px'
           }}
+          title="Open live storefront page in a new tab"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           Preview Site
