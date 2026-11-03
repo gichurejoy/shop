@@ -10,94 +10,8 @@ import { SeoContent } from '../SeoContent';
 import { ProductGrid } from '../ProductGrid';
 import { CategoryGrid } from '../CategoryGrid';
 import { BrandStrip } from '../BrandStrip';
-
-// ─── InlineText Component for Direct Editing ─────────────────────────────────
-export function InlineText({
-  value,
-  onUpdate,
-  className,
-  style,
-  tagName = 'span',
-}: {
-  value: string;
-  onUpdate?: (val: string) => void;
-  className?: string;
-  style?: React.CSSProperties;
-  tagName?: 'h1' | 'h2' | 'h3' | 'p' | 'span' | 'div' | 'a';
-}) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentVal, setCurrentVal] = useState(value);
-  const elementRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    setCurrentVal(value);
-  }, [value]);
-
-  // If there is no onUpdate, it's read-only
-  if (!onUpdate) {
-    const Tag = tagName;
-    return <Tag className={className} style={style}>{value}</Tag>;
-  }
-
-  const handleBlur = () => {
-    setIsEditing(false);
-    if (currentVal !== value) {
-      onUpdate(currentVal);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      elementRef.current?.blur();
-    }
-    if (e.key === 'Escape') {
-      setCurrentVal(value);
-      setIsEditing(false);
-    }
-  };
-
-  const Tag = tagName;
-
-  return (
-    <Tag
-      ref={elementRef as any}
-      contentEditable={isEditing}
-      suppressContentEditableWarning
-      onDoubleClick={(e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        setIsEditing(true);
-        setTimeout(() => {
-          if (elementRef.current) {
-            elementRef.current.focus();
-            const range = document.createRange();
-            range.selectNodeContents(elementRef.current);
-            const sel = window.getSelection();
-            sel?.removeAllRanges();
-            sel?.addRange(range);
-          }
-        }, 50);
-      }}
-      onBlur={handleBlur}
-      onKeyDown={handleKeyDown}
-      onInput={(e) => setCurrentVal(e.currentTarget.textContent || '')}
-      className={`${className || ''} transition-all duration-150 ${
-        isEditing 
-          ? 'outline-none ring-2 ring-orange-500 rounded px-1 bg-white/20 text-orange-950 dark:text-orange-100' 
-          : 'hover:ring-1 hover:ring-orange-400 hover:ring-dashed rounded cursor-pointer'
-      }`}
-      style={{
-        ...style,
-        outline: 'none',
-        cursor: isEditing ? 'text' : 'pointer',
-      }}
-      title={isEditing ? 'Press Enter to save, Esc to cancel' : 'Double-click to edit text'}
-    >
-      {currentVal}
-    </Tag>
-  );
-}
+import { InlineText, InlineImage, InlineButton } from './editor/InlineWidgets';
+import { Sparkles, User, Shield, Ruler, Search, MessageCircle } from 'lucide-react';
 
 // ─── Renderers ───────────────────────────────────────────────────────────────
 
@@ -535,6 +449,397 @@ export function RichContentRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch
   );
 }
 
+// ─── Bespoke Storefront Inline Renderers ────────────────────────────────────
+
+function BespokeHeroRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) => void }) {
+  if (!onUpdate) {
+    return (
+      <Hero 
+        heading={s.heading} 
+        searchPlaceholder={s.subheading}
+        backgroundColor={s.backgroundColor}
+        backgroundImage={s.backgroundImage}
+      />
+    );
+  }
+  const customStyle: React.CSSProperties = {};
+  if (s.backgroundImage) {
+    customStyle.backgroundImage = `url(${s.backgroundImage})`;
+    customStyle.backgroundSize = 'cover';
+    customStyle.backgroundPosition = 'center';
+  } else if (s.backgroundColor) {
+    customStyle.backgroundColor = s.backgroundColor;
+  }
+
+  return (
+    <div className="w-full bg-[#5C3A24] text-white py-12 relative overflow-hidden group/hero" style={customStyle}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="flex justify-end mb-2">
+          <InlineImage
+            src={s.backgroundImage || ''}
+            onUpdate={(patch) => onUpdate({ backgroundImage: patch.src })}
+            className="hidden"
+          />
+        </div>
+        <div className="text-center mb-6">
+          <InlineText
+            tagName="h2"
+            value={s.heading || 'Shop Jewelry & Knitwear'}
+            onUpdate={(val) => onUpdate({ heading: val })}
+            className="text-3xl md:text-4xl font-bold mb-2 text-white block"
+            style={{ fontFamily: 'Playfair Display, serif' }}
+          />
+        </div>
+        <div className="max-w-3xl mx-auto">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8B5A3C] pointer-events-none" />
+            <div className="w-full pl-12 pr-4 py-3 rounded-full bg-white text-gray-800 text-sm border-2 border-transparent shadow-md flex items-center">
+              <InlineText
+                value={s.subheading || 'Search rings, necklaces, sweaters...'}
+                onUpdate={(val) => onUpdate({ subheading: val })}
+                className="text-gray-500 w-full"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BespokePromoCardsRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) => void }) {
+  if (!onUpdate) {
+    return (
+      <PromoCards 
+        card1Title={s.card1Title}
+        card1Subtitle={s.card1Subtitle}
+        card1Link={s.card1Link}
+        card1Badge={s.card1Badge}
+        card1Bg={s.card1Bg}
+        card2Title={s.card2Title}
+        card2Subtitle={s.card2Subtitle}
+        card2Link={s.card2Link}
+        card2Badge={s.card2Badge}
+        card2Bg={s.card2Bg}
+        card3Title={s.card3Title}
+        card3Subtitle={s.card3Subtitle}
+        card3Link={s.card3Link}
+        card3Badge={s.card3Badge}
+        card3Bg={s.card3Bg}
+        card4Title={s.card4Title}
+        card4Subtitle={s.card4Subtitle}
+        card4Link={s.card4Link}
+        card4Badge={s.card4Badge}
+        card4Bg={s.card4Bg}
+      />
+    );
+  }
+
+  const cards = [
+    { key: 1, icon: Sparkles, titleKey: 'card1Title', subKey: 'card1Subtitle', badgeKey: 'card1Badge', defaultTitle: 'Get 20%* off on Jewelry', defaultSub: 'SHOP NOW', defaultBadge: 'New', defaultBg: 'bg-[#E8F0E5]' },
+    { key: 2, icon: User, titleKey: 'card2Title', subKey: 'card2Subtitle', badgeKey: 'card2Badge', defaultTitle: 'Personal Stylist', defaultSub: 'BOOK NOW', defaultBadge: '', defaultBg: 'bg-[#EDE7F3]' },
+    { key: 3, icon: Shield, titleKey: 'card3Title', subKey: 'card3Subtitle', badgeKey: 'card3Badge', defaultTitle: 'Care Plan', defaultSub: 'EXPLORE PLANS', defaultBadge: 'New', defaultBg: 'bg-[#FCEFE3]' },
+    { key: 4, icon: Ruler, titleKey: 'card4Title', subKey: 'card4Subtitle', badgeKey: 'card4Badge', defaultTitle: 'Free Sizing', defaultSub: 'AT HOME', defaultBadge: '', defaultBg: 'bg-[#E8F4F8]' },
+  ];
+
+  return (
+    <div className="w-full py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {cards.map(c => {
+            const Icon = c.icon;
+            const title = s[c.titleKey] || c.defaultTitle;
+            const sub = s[c.subKey] || c.defaultSub;
+            const badge = s[c.badgeKey] !== undefined ? s[c.badgeKey] : c.defaultBadge;
+            const bg = s[`card${c.key}Bg`] || c.defaultBg;
+
+            return (
+              <div key={c.key} className={`${bg} rounded-xl p-4 flex items-center justify-between border border-black/5 hover:shadow-md transition-all`}>
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#8B5A3C] shadow-sm shrink-0">
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <InlineText
+                      tagName="h3"
+                      value={title}
+                      onUpdate={(val) => onUpdate({ [c.titleKey]: val })}
+                      className="font-bold text-sm text-gray-900 block"
+                    />
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <InlineText
+                        value={sub}
+                        onUpdate={(val) => onUpdate({ [c.subKey]: val })}
+                        className="text-xs font-semibold text-[#8B5A3C]"
+                      />
+                      {badge && (
+                        <span className="text-[10px] px-1.5 py-0.5 bg-[#8B5A3C] text-white rounded font-medium">
+                          <InlineText
+                            value={badge}
+                            onUpdate={(val) => onUpdate({ [c.badgeKey]: val })}
+                          />
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BespokePromoBannerRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) => void }) {
+  if (!onUpdate) {
+    return (
+      <PromoBanner 
+        title={s.title}
+        description={s.description}
+        ctaLabel={s.ctaLabel}
+        ctaLink={s.ctaLink}
+      />
+    );
+  }
+
+  return (
+    <div className="w-full py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-[#3D2817] rounded-2xl p-8 text-white text-center relative overflow-hidden">
+          <div className="relative z-10">
+            <InlineText
+              tagName="h2"
+              value={s.title || 'Save Up to 25% on Premium Collections'}
+              onUpdate={(val) => onUpdate({ title: val })}
+              className="text-2xl md:text-3xl font-bold mb-3 text-[#D4A574] block"
+              style={{ fontFamily: 'Playfair Display, serif' }}
+            />
+            <div className="text-sm md:text-base mb-5 opacity-90 max-w-2xl mx-auto">
+              <InlineText
+                value={s.description || 'Exclusive offers on handcrafted jewelry and luxury knitwear'}
+                onUpdate={(val) => onUpdate({ description: val })}
+              />
+            </div>
+            <InlineButton
+              label={s.ctaLabel || 'Shop Now'}
+              link={s.ctaLink || '/products'}
+              color="#8B5A3C"
+              styleVariant="filled"
+              className="px-8 py-2.5 rounded-lg font-bold shadow-md"
+              onUpdate={(patch) => onUpdate({ ctaLabel: patch.label, ctaLink: patch.link })}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BespokeStylistBannerRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) => void }) {
+  if (!onUpdate) {
+    return (
+      <StylistBanner 
+        title={s.title} 
+        description={s.description} 
+        ctaLabel={s.ctaLabel} 
+      />
+    );
+  }
+
+  return (
+    <div className="w-full py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-[#FAF6F0] border border-[#8B5A3C]/20 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex-1">
+            <InlineText
+              tagName="h2"
+              value={s.title || 'Ask Anything About Your Style'}
+              onUpdate={(val) => onUpdate({ title: val })}
+              className="text-2xl font-bold mb-3 text-[#3D2817] block"
+              style={{ fontFamily: 'Playfair Display, serif' }}
+            />
+            <div className="text-gray-700 text-sm mb-5 max-w-xl">
+              <InlineText
+                value={s.description || 'Our expert stylists are here to help you find the perfect piece for any occasion. Get personalized recommendations for jewelry and knitwear that match your unique style.'}
+                onUpdate={(val) => onUpdate({ description: val })}
+                multiline
+              />
+            </div>
+            <InlineButton
+              label={s.ctaLabel || 'Chat with a Stylist'}
+              link="/membership"
+              color="#8B5A3C"
+              styleVariant="filled"
+              className="px-6 py-2.5 rounded-lg font-bold shadow-sm"
+              onUpdate={(patch) => onUpdate({ ctaLabel: patch.label })}
+            />
+          </div>
+          <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
+            <MessageCircle className="w-12 h-12 text-[#8B5A3C]" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BespokeSeoContentRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) => void }) {
+  if (!onUpdate) {
+    return (
+      <SeoContent 
+        title1={s.title1} 
+        body1={s.body1}
+        title2={s.title2}
+        body2={s.body2}
+        title3={s.title3}
+        body3={s.body3}
+      />
+    );
+  }
+
+  return (
+    <div className="w-full py-8 bg-white border-t border-gray-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="prose prose-sm max-w-none text-gray-600">
+          <InlineText
+            tagName="h2"
+            value={s.title1 || 'Premium Jewelry & Luxury Knitwear'}
+            onUpdate={(val) => onUpdate({ title1: val })}
+            className="text-xl font-bold mb-3 text-[#3D2817] block"
+            style={{ fontFamily: 'Playfair Display, serif' }}
+          />
+          <div className="mb-5">
+            <InlineText
+              value={s.body1 || 'Discover our curated collection of handcrafted jewelry and premium knitwear. From timeless gold pieces to cozy cashmere sweaters, each item is selected for quality, craftsmanship, and enduring style.'}
+              onUpdate={(val) => onUpdate({ body1: val })}
+              multiline
+            />
+          </div>
+          <InlineText
+            tagName="h2"
+            value={s.title2 || 'Jewelry Care Guide'}
+            onUpdate={(val) => onUpdate({ title2: val })}
+            className="text-xl font-bold mb-3 mt-6 text-[#3D2817] block"
+            style={{ fontFamily: 'Playfair Display, serif' }}
+          />
+          <div className="mb-5 text-sm">
+            <InlineText
+              value={s.body2 || 'Proper care ensures your jewelry maintains its brilliance for years. Store pieces separately in soft pouches to prevent scratching. Clean gold and diamond jewelry with warm water and mild soap, using a soft brush for intricate details.'}
+              onUpdate={(val) => onUpdate({ body2: val })}
+              multiline
+            />
+          </div>
+          <InlineText
+            tagName="h2"
+            value={s.title3 || 'Custom Sizing & Bespoke Orders'}
+            onUpdate={(val) => onUpdate({ title3: val })}
+            className="text-xl font-bold mb-3 mt-6 text-[#3D2817] block"
+            style={{ fontFamily: 'Playfair Display, serif' }}
+          />
+          <div className="mb-5 text-sm">
+            <InlineText
+              value={s.body3 || 'We offer personalized consultations and bespoke tailoring for rings, bracelets, and cashmere garments to ensure a flawless fit.'}
+              onUpdate={(val) => onUpdate({ body3: val })}
+              multiline
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BespokeCategoryGridRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) => void }) {
+  if (!onUpdate) {
+    return (
+      <CategoryGrid 
+        title={s.title} 
+        cat1Label={s.cat1Label}
+        cat2Label={s.cat2Label}
+        cat3Label={s.cat3Label}
+        cat4Label={s.cat4Label}
+        cat5Label={s.cat5Label}
+        cat6Label={s.cat6Label}
+        cat7Label={s.cat7Label}
+        cat8Label={s.cat8Label}
+        cat9Label={s.cat9Label}
+        cat10Label={s.cat10Label}
+      />
+    );
+  }
+
+  const defaultCats = [
+    { key: 'cat1Label', name: s.cat1Label || 'Earrings', img: 'https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=400&q=80' },
+    { key: 'cat2Label', name: s.cat2Label || 'Necklaces', img: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=400&q=80' },
+    { key: 'cat3Label', name: s.cat3Label || 'Rings', img: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=400&q=80' },
+    { key: 'cat4Label', name: s.cat4Label || 'Bracelets', img: 'https://images.unsplash.com/photo-1611591475152-47796d194541?auto=format&fit=crop&w=400&q=80' },
+    { key: 'cat5Label', name: s.cat5Label || 'Sweaters', img: 'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&w=400&q=80' },
+    { key: 'cat6Label', name: s.cat6Label || 'Cardigans', img: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&w=400&q=80' },
+  ];
+
+  return (
+    <div className="w-full py-10 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-8">
+          <InlineText
+            tagName="h2"
+            value={s.title || 'Explore by Category'}
+            onUpdate={(val) => onUpdate({ title: val })}
+            className="text-2xl md:text-3xl font-bold text-[#3D2817] block"
+            style={{ fontFamily: 'Playfair Display, serif' }}
+          />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          {defaultCats.map(cat => (
+            <div key={cat.key} className="group relative rounded-xl overflow-hidden border border-gray-100 hover:shadow-lg transition-all text-center p-3 bg-[#FAF6F0]">
+              <div className="aspect-square rounded-lg overflow-hidden mb-2 bg-gray-100">
+                <img src={cat.img} alt={cat.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+              </div>
+              <InlineText
+                value={cat.name}
+                onUpdate={(val) => onUpdate({ [cat.key]: val })}
+                className="font-bold text-xs text-[#3D2817] block"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BespokeProductGridRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) => void }) {
+  return (
+    <div className="w-full py-10" style={{ backgroundColor: s.backgroundColor || '#fff' }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-8">
+          <InlineText
+            tagName="h2"
+            value={s.title || 'Featured Collections'}
+            onUpdate={onUpdate ? (val) => onUpdate({ title: val }) : undefined}
+            className="text-2xl md:text-3xl font-bold text-[#3D2817] block"
+            style={{ fontFamily: 'Playfair Display, serif' }}
+          />
+        </div>
+        <ProductGrid 
+          title="" 
+          limit={s.maxProducts || 8}
+          columns={s.columns}
+          showPrice={s.showPrice}
+          showRating={s.showRating}
+          showAddToCart={s.showAddToCart}
+          showDiscountBadge={s.showDiscountBadge}
+          backgroundColor={s.backgroundColor}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ─── Main RenderSection Switch ───────────────────────────────────────────────
+
 export function RenderSection({
   s,
   activeId,
@@ -555,7 +860,7 @@ export function RenderSection({
   if (onClick) {
     wrapperProps.onClick = () => onClick(s.id);
     wrapperProps.style = {
-      outline: isActive ? '3px solid #3b82f6' : '3px solid transparent',
+      outline: isActive ? '3px solid #ff6c2f' : '3px solid transparent',
       outlineOffset: '-3px',
       transition: 'outline 0.15s',
       cursor: 'default',
@@ -571,7 +876,7 @@ export function RenderSection({
   const wrapper = (children: React.ReactNode) => (
     <div key={s.id} {...wrapperProps} className={variantClass}>
       {isActive && onClick && (
-        <div className="absolute top-2 left-2 z-50 bg-blue-500 text-white text-xs px-2 py-1 rounded font-medium pointer-events-none">
+        <div className="absolute top-2 left-2 z-50 bg-[#ff6c2f] text-white text-xs px-2.5 py-1 rounded font-semibold shadow pointer-events-none">
           {s.type.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase())}
         </div>
       )}
@@ -583,98 +888,21 @@ export function RenderSection({
 
   switch (s.type) {
     case 'hero': 
-      return wrapper(
-        <Hero 
-          heading={(s as any).heading} 
-          searchPlaceholder={(s as any).subheading}
-          backgroundColor={(s as any).backgroundColor}
-          backgroundImage={(s as any).backgroundImage}
-        />
-      );
+      return wrapper(<BespokeHeroRenderer s={s} onUpdate={updateHandler} />);
     case 'promo-cards': 
-      return wrapper(
-        <PromoCards 
-          card1Title={(s as any).card1Title}
-          card1Subtitle={(s as any).card1Subtitle}
-          card1Link={(s as any).card1Link}
-          card1Badge={(s as any).card1Badge}
-          card1Bg={(s as any).card1Bg}
-          card2Title={(s as any).card2Title}
-          card2Subtitle={(s as any).card2Subtitle}
-          card2Link={(s as any).card2Link}
-          card2Badge={(s as any).card2Badge}
-          card2Bg={(s as any).card2Bg}
-          card3Title={(s as any).card3Title}
-          card3Subtitle={(s as any).card3Subtitle}
-          card3Link={(s as any).card3Link}
-          card3Badge={(s as any).card3Badge}
-          card3Bg={(s as any).card3Bg}
-          card4Title={(s as any).card4Title}
-          card4Subtitle={(s as any).card4Subtitle}
-          card4Link={(s as any).card4Link}
-          card4Badge={(s as any).card4Badge}
-          card4Bg={(s as any).card4Bg}
-        />
-      );
+      return wrapper(<BespokePromoCardsRenderer s={s} onUpdate={updateHandler} />);
     case 'category-grid': 
-      return wrapper(
-        <CategoryGrid 
-          title={(s as any).title} 
-          cat1Label={(s as any).cat1Label}
-          cat2Label={(s as any).cat2Label}
-          cat3Label={(s as any).cat3Label}
-          cat4Label={(s as any).cat4Label}
-          cat5Label={(s as any).cat5Label}
-          cat6Label={(s as any).cat6Label}
-          cat7Label={(s as any).cat7Label}
-          cat8Label={(s as any).cat8Label}
-          cat9Label={(s as any).cat9Label}
-          cat10Label={(s as any).cat10Label}
-        />
-      );
+      return wrapper(<BespokeCategoryGridRenderer s={s} onUpdate={updateHandler} />);
     case 'featured-products': 
-      return wrapper(
-        <ProductGrid 
-          title={(s as any).title || "Featured"} 
-          limit={(s as any).maxProducts || 8}
-          columns={(s as any).columns}
-          showPrice={(s as any).showPrice}
-          showRating={(s as any).showRating}
-          showAddToCart={(s as any).showAddToCart}
-          showDiscountBadge={(s as any).showDiscountBadge}
-          backgroundColor={(s as any).backgroundColor}
-        />
-      );
+      return wrapper(<BespokeProductGridRenderer s={s} onUpdate={updateHandler} />);
     case 'promo-banner': 
-      return wrapper(
-        <PromoBanner 
-          title={(s as any).title}
-          description={(s as any).description}
-          ctaLabel={(s as any).ctaLabel}
-          ctaLink={(s as any).ctaLink}
-        />
-      );
+      return wrapper(<BespokePromoBannerRenderer s={s} onUpdate={updateHandler} />);
     case 'brand-strip': 
       return wrapper(<BrandStrip title={(s as any).title} brands={(s as any).brands} />);
     case 'stylist-banner': 
-      return wrapper(
-        <StylistBanner 
-          title={(s as any).title} 
-          description={(s as any).description} 
-          ctaLabel={(s as any).ctaLabel} 
-        />
-      );
+      return wrapper(<BespokeStylistBannerRenderer s={s} onUpdate={updateHandler} />);
     case 'seo-content': 
-      return wrapper(
-        <SeoContent 
-          title1={(s as any).title1} 
-          body1={(s as any).body1}
-          title2={(s as any).title2}
-          body2={(s as any).body2}
-          title3={(s as any).title3}
-          body3={(s as any).body3}
-        />
-      );
+      return wrapper(<BespokeSeoContentRenderer s={s} onUpdate={updateHandler} />);
     
     case 'flash-sale': 
       return wrapper(<FlashSaleRenderer s={s} onUpdate={updateHandler} />);

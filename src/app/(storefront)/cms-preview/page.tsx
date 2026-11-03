@@ -103,11 +103,13 @@ export default function CmsPreviewPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this section?')) {
-      const updated = sections.filter(s => s.id !== id);
-      setSections(updated);
-      window.parent.postMessage({ type: 'SECTION_DELETED', id }, '*');
-    }
+    const updated = sections.filter(s => s.id !== id);
+    setSections(updated);
+    window.parent.postMessage({ type: 'SECTION_DELETED', id }, '*');
+  };
+
+  const handleDuplicate = (id: string) => {
+    window.parent.postMessage({ type: 'SECTION_DUPLICATED', id }, '*');
   };
 
   if (sections.length === 0) {
@@ -117,117 +119,164 @@ export default function CmsPreviewPage() {
           <rect x="3" y="3" width="18" height="18" rx="2" />
           <path d="M3 9h18M9 21V9" />
         </svg>
-        <p className="text-lg font-medium">Add sections on the left to start building</p>
+        <p className="text-lg font-medium text-slate-700">No sections added yet</p>
+        <button
+          type="button"
+          onClick={() => window.parent.postMessage({ type: 'INSERT_BLOCK_CLICKED', index: 0 }, '*')}
+          className="mt-4 px-4 py-2 bg-[#ff6c2f] hover:bg-[#e0561b] text-white font-semibold text-sm rounded-lg shadow"
+        >
+          + Add Your First Block
+        </button>
       </div>
     );
   }
 
   return (
     <div className="w-full relative">
+      {/* Top Inserter */}
+      <div className="relative group/insert py-1 z-30">
+        <div className="h-0.5 bg-transparent group-hover/insert:bg-[#ff6c2f] transition-all flex items-center justify-center">
+          <button
+            type="button"
+            onClick={() => window.parent.postMessage({ type: 'INSERT_BLOCK_CLICKED', index: 0 }, '*')}
+            className="opacity-0 group-hover/insert:opacity-100 transition-opacity bg-[#ff6c2f] hover:bg-[#e0561b] text-white text-[11px] font-semibold px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5 cursor-pointer -translate-y-1/2"
+          >
+            <span>+</span> Add Block Here
+          </button>
+        </div>
+      </div>
+
       {sections.map((s, idx) => {
         const isActive = s.id === activeId;
         const isDragTarget = dragOverIndex === idx;
 
         return (
-          <div
-            key={s.id}
-            onDragOver={e => handleDragOver(e, idx)}
-            onDrop={e => handleDrop(e, idx)}
-            className="relative group transition-all duration-200"
-            style={{
-              outline: isActive 
-                ? '3px solid #3b82f6' 
-                : '2px dashed transparent',
-              outlineOffset: '-2px',
-            }}
-          >
-            {/* Visual Drag Over Insert Line Indicator */}
-            {isDragTarget && dropPosition && (
-              <div 
-                className="absolute left-0 right-0 h-1.5 bg-blue-500 z-50 pointer-events-none rounded transition-all duration-100"
-                style={{
-                  top: dropPosition === 'above' ? '-3px' : 'auto',
-                  bottom: dropPosition === 'below' ? '-3px' : 'auto',
-                  boxShadow: '0 0 8px rgba(59, 130, 246, 0.8)'
-                }}
-              />
-            )}
-
-            {/* Canvas Section Interactive Toolbar */}
-            <div 
-              className="absolute top-3 left-3 z-40 flex items-center gap-1.5 bg-slate-900/90 hover:bg-slate-900 text-white rounded-lg p-1.5 shadow-xl backdrop-blur-md border border-slate-700/80 opacity-0 group-hover:opacity-100 transition-opacity duration-200 select-none text-xs"
-              onClick={e => {
-                e.stopPropagation();
-                handleSectionClick(s.id);
+          <React.Fragment key={s.id}>
+            <div
+              onDragOver={e => handleDragOver(e, idx)}
+              onDrop={e => handleDrop(e, idx)}
+              className="relative group transition-all duration-200"
+              style={{
+                outline: isActive 
+                  ? '3px solid #ff6c2f' 
+                  : '2px dashed transparent',
+                outlineOffset: '-2px',
               }}
             >
-              {/* Drag Handle */}
-              <div
-                draggable
-                onDragStart={e => handleDragStart(e, idx)}
-                onDragEnd={handleDragEnd}
-                className="cursor-grab active:cursor-grabbing px-2 py-0.5 hover:bg-slate-800 rounded text-slate-300 hover:text-white flex items-center gap-1.5 font-semibold text-[10px] tracking-wider uppercase"
-                title="Drag to reorder section"
+              {/* Visual Drag Over Insert Line Indicator */}
+              {isDragTarget && dropPosition && (
+                <div 
+                  className="absolute left-0 right-0 h-1.5 bg-[#ff6c2f] z-50 pointer-events-none rounded transition-all duration-100"
+                  style={{
+                    top: dropPosition === 'above' ? '-3px' : 'auto',
+                    bottom: dropPosition === 'below' ? '-3px' : 'auto',
+                    boxShadow: '0 0 8px rgba(255, 108, 47, 0.8)'
+                  }}
+                />
+              )}
+
+              {/* Canvas Section Interactive Toolbar */}
+              <div 
+                className="absolute top-3 left-3 z-40 flex items-center gap-1.5 bg-slate-900/90 hover:bg-slate-900 text-white rounded-lg p-1.5 shadow-xl backdrop-blur-md border border-slate-700/80 opacity-0 group-hover:opacity-100 transition-opacity duration-200 select-none text-xs"
+                onClick={e => {
+                  e.stopPropagation();
+                  handleSectionClick(s.id);
+                }}
               >
-                <span className="flex text-slate-400">☰</span>
-                <span>{s.type.replace('-', ' ')}</span>
+                {/* Drag Handle */}
+                <div
+                  draggable
+                  onDragStart={e => handleDragStart(e, idx)}
+                  onDragEnd={handleDragEnd}
+                  className="cursor-grab active:cursor-grabbing px-2 py-0.5 hover:bg-slate-800 rounded text-slate-300 hover:text-white flex items-center gap-1.5 font-semibold text-[10px] tracking-wider uppercase"
+                  title="Drag to reorder section"
+                >
+                  <span className="flex text-slate-400">☰</span>
+                  <span>{s.type.replace('-', ' ')}</span>
+                </div>
+                
+                <div className="w-[1px] h-3.5 bg-slate-700" />
+                
+                {/* Up Button */}
+                <button
+                  type="button"
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleMoveUp(idx);
+                  }}
+                  disabled={idx === 0}
+                  className="p-1 hover:bg-slate-800 rounded disabled:opacity-30 disabled:hover:bg-transparent text-slate-300 hover:text-white flex items-center"
+                  title="Move Up"
+                >
+                  ▲
+                </button>
+
+                {/* Down Button */}
+                <button
+                  type="button"
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleMoveDown(idx);
+                  }}
+                  disabled={idx === sections.length - 1}
+                  className="p-1 hover:bg-slate-800 rounded disabled:opacity-30 disabled:hover:bg-transparent text-slate-300 hover:text-white flex items-center"
+                  title="Move Down"
+                >
+                  ▼
+                </button>
+
+                <div className="w-[1px] h-3.5 bg-slate-700" />
+
+                {/* Duplicate Button */}
+                <button
+                  type="button"
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleDuplicate(s.id);
+                  }}
+                  className="p-1 hover:bg-slate-800 rounded text-slate-300 hover:text-white flex items-center"
+                  title="Duplicate Section"
+                >
+                  ⧉
+                </button>
+
+                {/* Delete Button */}
+                <button
+                  type="button"
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleDelete(s.id);
+                  }}
+                  className="p-1 hover:bg-red-600/30 hover:text-red-400 rounded text-slate-300 flex items-center"
+                  title="Delete Section"
+                >
+                  🗑
+                </button>
               </div>
-              
-              <div className="w-[1px] h-3.5 bg-slate-700" />
-              
-              {/* Up Button */}
-              <button
-                type="button"
-                onClick={e => {
-                  e.stopPropagation();
-                  handleMoveUp(idx);
-                }}
-                disabled={idx === 0}
-                className="p-1 hover:bg-slate-800 rounded disabled:opacity-30 disabled:hover:bg-transparent text-slate-300 hover:text-white flex items-center"
-                title="Move Up"
-              >
-                ▲
-              </button>
 
-              {/* Down Button */}
-              <button
-                type="button"
-                onClick={e => {
-                  e.stopPropagation();
-                  handleMoveDown(idx);
-                }}
-                disabled={idx === sections.length - 1}
-                className="p-1 hover:bg-slate-800 rounded disabled:opacity-30 disabled:hover:bg-transparent text-slate-300 hover:text-white flex items-center"
-                title="Move Down"
-              >
-                ▼
-              </button>
-
-              <div className="w-[1px] h-3.5 bg-slate-700" />
-
-              {/* Delete Button */}
-              <button
-                type="button"
-                onClick={e => {
-                  e.stopPropagation();
-                  handleDelete(s.id);
-                }}
-                className="p-1 hover:bg-red-600/30 hover:text-red-400 rounded text-slate-300 flex items-center"
-                title="Delete Section"
-              >
-                🗑
-              </button>
+              <div className="relative">
+                <RenderSection 
+                  s={s} 
+                  activeId={activeId} 
+                  onClick={handleSectionClick} 
+                  onUpdateSection={handleSectionUpdate} 
+                />
+              </div>
             </div>
 
-            <div className="relative">
-              <RenderSection 
-                s={s} 
-                activeId={activeId} 
-                onClick={handleSectionClick} 
-                onUpdateSection={handleSectionUpdate} 
-              />
+            {/* Inserter Line Below Section */}
+            <div className="relative group/insert py-1 z-30">
+              <div className="h-0.5 bg-transparent group-hover/insert:bg-[#ff6c2f] transition-all flex items-center justify-center">
+                <button
+                  type="button"
+                  onClick={() => window.parent.postMessage({ type: 'INSERT_BLOCK_CLICKED', index: idx + 1 }, '*')}
+                  className="opacity-0 group-hover/insert:opacity-100 transition-opacity bg-[#ff6c2f] hover:bg-[#e0561b] text-white text-[11px] font-semibold px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5 cursor-pointer -translate-y-1/2"
+                >
+                  <span>+</span> Add Block Here
+                </button>
+              </div>
             </div>
-          </div>
+          </React.Fragment>
         );
       })}
     </div>

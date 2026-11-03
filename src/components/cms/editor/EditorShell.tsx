@@ -21,12 +21,30 @@ export function EditorShell({
   onSaveDraft: (sections: any[]) => Promise<void>;
   onPublish: () => Promise<void>;
 }) {
-  const { sections, isDirty, activeId, setActive, markSaved, updateSection, setSections, removeSection } = useCms();
+  const {
+    sections,
+    isDirty,
+    activeId,
+    setActive,
+    setActiveTab,
+    markSaved,
+    updateSection,
+    setSections,
+    removeSection,
+    duplicateSection,
+    canUndo,
+    canRedo,
+    undo,
+    redo,
+    discardChanges,
+  } = useCms();
+
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [viewport, setViewport] = useState<Viewport>('desktop');
   const [iframeReady, setIframeReady] = useState(false);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [insertAtIndex, setInsertAtIndex] = useState<number | null>(null);
   const sendTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Send postMessage to iframe (debounced 300ms)
@@ -52,11 +70,11 @@ export function EditorShell({
     const handler = (e: MessageEvent) => {
       if (e.data?.type === 'PREVIEW_READY') {
         setIframeReady(true);
-        // Send initial state
         iframeRef.current?.contentWindow?.postMessage({ type: 'INIT', sections }, '*');
       }
       if (e.data?.type === 'SECTION_CLICKED') {
         setActive(e.data.id);
+        setActiveTab('customize');
       }
       if (e.data?.type === 'SECTION_UPDATED') {
         updateSection(e.data.id, e.data.patch);
@@ -67,22 +85,37 @@ export function EditorShell({
       if (e.data?.type === 'SECTION_DELETED') {
         removeSection(e.data.id);
       }
+      if (e.data?.type === 'SECTION_DUPLICATED') {
+        duplicateSection(e.data.id);
+      }
+      if (e.data?.type === 'INSERT_BLOCK_CLICKED') {
+        setInsertAtIndex(e.data.index);
+        setActiveTab('blocks');
+      }
     };
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, [sections, setActive, updateSection, setSections, removeSection]);
+  }, [sections, setActive, setActiveTab, updateSection, setSections, removeSection, duplicateSection]);
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts (Ctrl+S, Ctrl+Z, Ctrl+Y)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
         handleSaveDraft();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        if (canUndo) undo();
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        if (canRedo) redo();
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [sections]);
+  }, [sections, canUndo, canRedo, undo, redo]);
 
   const handleSaveDraft = async () => {
     setSaving(true);
@@ -130,8 +163,54 @@ export function EditorShell({
 
         <span style={{ color: '#f1f5f9', fontWeight: 600, fontSize: '14px' }}>{pageTitle}</span>
 
+        {/* Undo / Redo Buttons */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', marginLeft: '8px' }}>
+          <button
+            type="button"
+            onClick={undo}
+            disabled={!canUndo}
+            style={{
+              padding: '5px 8px',
+              borderRadius: '6px',
+              border: 'none',
+              background: '#0f172a',
+              color: canUndo ? '#f1f5f9' : '#64748b',
+              cursor: canUndo ? 'pointer' : 'not-allowed',
+              opacity: canUndo ? 1 : 0.4,
+              fontSize: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+            title="Undo (Ctrl+Z)"
+          >
+            <span>↩</span>
+          </button>
+          <button
+            type="button"
+            onClick={redo}
+            disabled={!canRedo}
+            style={{
+              padding: '5px 8px',
+              borderRadius: '6px',
+              border: 'none',
+              background: '#0f172a',
+              color: canRedo ? '#f1f5f9' : '#64748b',
+              cursor: canRedo ? 'pointer' : 'not-allowed',
+              opacity: canRedo ? 1 : 0.4,
+              fontSize: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+            title="Redo (Ctrl+Y)"
+          >
+            <span>↪</span>
+          </button>
+        </div>
+
         {isDirty && (
-          <span style={{ color: '#f59e0b', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <span style={{ color: '#f59e0b', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '4px' }}>
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#f59e0b', display: 'inline-block' }} />
             Unsaved changes
           </span>
@@ -147,7 +226,7 @@ export function EditorShell({
               onClick={() => setViewport(v)}
               style={{
                 padding: '5px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 500,
-                background: viewport === v ? '#3b82f6' : 'transparent',
+                background: viewport === v ? '#ff6c2f' : 'transparent',
                 color: viewport === v ? '#fff' : '#64748b',
                 transition: 'all 0.15s',
               }}
@@ -168,6 +247,20 @@ export function EditorShell({
           Preview Site
         </button>
 
+        {isDirty && (
+          <button
+            type="button"
+            onClick={discardChanges}
+            style={{
+              padding: '7px 14px', borderRadius: '8px', border: '1px solid #64748b', background: 'transparent',
+              color: '#94a3b8', fontWeight: 500, fontSize: '13px', cursor: 'pointer',
+            }}
+            title="Discard unsaved changes and reload last draft"
+          >
+            Discard
+          </button>
+        )}
+
         <button
           onClick={handleSaveDraft}
           disabled={saving}
@@ -177,18 +270,18 @@ export function EditorShell({
             display: 'flex', alignItems: 'center', gap: '6px'
           }}
         >
-          {saving ? 'Saving…' : <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save</>}
+          {saving ? 'Saving…' : <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Draft</>}
         </button>
 
         <button
           onClick={handlePublish}
           disabled={publishing}
           style={{
-            padding: '7px 20px', borderRadius: '8px', border: 'none', background: publishing ? '#6366f1' : '#3b82f6',
+            padding: '7px 20px', borderRadius: '8px', border: 'none', background: publishing ? '#6366f1' : '#ff6c2f',
             color: '#fff', fontWeight: 600, fontSize: '13px', cursor: publishing ? 'not-allowed' : 'pointer',
           }}
         >
-          {publishing ? 'Publishing…' : '🚀 Publish'}
+          {publishing ? 'Publishing…' : '🚀 Publish Live'}
         </button>
       </div>
 
@@ -197,15 +290,15 @@ export function EditorShell({
         {/* Left Panel */}
         <div
           style={{
-            width: '360px', flexShrink: 0, background: '#fff',
+            width: '380px', flexShrink: 0, background: '#fff',
             borderRight: '1px solid #e2e8f0', display: 'flex',
             flexDirection: 'column', overflow: 'hidden',
           }}
         >
-          <SectionsPanel />
+          <SectionsPanel insertAtIndex={insertAtIndex} />
         </div>
 
-        {/* Right: Preview */}
+        {/* Right: Preview Canvas */}
         <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'flex-start', background: '#e2e8f0', overflow: 'auto', padding: '16px' }}>
           <div
             style={{
@@ -223,8 +316,8 @@ export function EditorShell({
           >
             {!iframeReady && (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ width: '32px', height: '32px', border: '3px solid #e2e8f0', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                Loading preview…
+                <div style={{ width: '32px', height: '32px', border: '3px solid #e2e8f0', borderTopColor: '#ff6c2f', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                Loading visual editor…
               </div>
             )}
             <iframe
