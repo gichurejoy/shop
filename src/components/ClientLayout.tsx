@@ -7,13 +7,21 @@ import { MainNav } from './MainNav';
 import { CategoryStrip } from './CategoryStrip';
 import { Footer } from './Footer';
 import { CartDrawer } from './CartDrawer';
-import type { CmsMenuNode } from '@/lib/cms';
+import type { CmsMenuNode, CmsFooterSettings } from '@/lib/cms';
 import { StorefrontProvider } from '../context/StorefrontContext';
 import { CartProvider, useCart } from '../context/CartContext';
 import { AddressDrawer } from './AddressDrawer';
 import { Toaster } from 'sonner';
 
-function ClientLayoutInner({ children, navigation = [] }: { children: React.ReactNode, navigation?: CmsMenuNode[] }) {
+function ClientLayoutInner({
+  children,
+  navigation = [],
+  footerSettings,
+}: {
+  children: React.ReactNode;
+  navigation?: CmsMenuNode[];
+  footerSettings?: CmsFooterSettings;
+}) {
   const { isCartDrawerOpen, setIsCartDrawerOpen } = useCart();
   const pathname = usePathname();
 
@@ -36,7 +44,7 @@ function ClientLayoutInner({ children, navigation = [] }: { children: React.Reac
         {children}
       </main>
 
-      <Footer />
+      <Footer settings={footerSettings} />
       <CartDrawer isOpen={isCartDrawerOpen} onClose={() => setIsCartDrawerOpen(false)} />
       <AddressDrawer />
 
@@ -55,11 +63,19 @@ function ClientLayoutInner({ children, navigation = [] }: { children: React.Reac
   );
 }
 
-export function ClientLayout({ children, navigation = [] }: { children: React.ReactNode, navigation?: CmsMenuNode[] }) {
+export function ClientLayout({
+  children,
+  navigation = [],
+  footerSettings,
+}: {
+  children: React.ReactNode;
+  navigation?: CmsMenuNode[];
+  footerSettings?: CmsFooterSettings;
+}) {
   return (
     <StorefrontProvider>
       <CartProvider>
-        <ClientLayoutInner navigation={navigation}>{children}</ClientLayoutInner>
+        <ClientLayoutInner navigation={navigation} footerSettings={footerSettings}>{children}</ClientLayoutInner>
       </CartProvider>
     </StorefrontProvider>
   );

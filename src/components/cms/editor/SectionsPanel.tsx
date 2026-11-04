@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useCms, ActiveElement } from './cms-store';
 import { SectionType } from '@/lib/cms-types';
 import { SectionForms } from './SectionForms';
-import { LUXURY_PRESET_IMAGES } from './InlineWidgets';
+import { LUXURY_PRESET_IMAGES, INDUSTRY_PRESET_IMAGES } from './InlineWidgets';
 
 export const AVAILABLE_BLOCKS: {
   id: SectionType;
@@ -16,12 +16,12 @@ export const AVAILABLE_BLOCKS: {
   { id: 'hero', name: 'Hero Banner', category: 'banners', icon: 'solar:gallery-wide-bold', desc: 'Main storefront hero with headline, search, and background.', color: '#3b82f6' },
   { id: 'promo-banner', name: 'Promo Banner', category: 'banners', icon: 'solar:tag-horizontal-bold', desc: 'Wide callout banner for sales and seasonal campaigns.', color: '#f59e0b' },
   { id: 'flash-sale', name: 'Flash Sale', category: 'banners', icon: 'solar:bolt-circle-bold', desc: 'Urgency-driven countdown banner with timer clock.', color: '#ef4444' },
-  { id: 'stylist-banner', name: 'Stylist Showcase', category: 'banners', icon: 'solar:user-rounded-bold', desc: 'Personal stylist consultation call-to-action.', color: '#6366f1' },
+  { id: 'stylist-banner', name: 'Specialist Inquiries', category: 'banners', icon: 'solar:user-rounded-bold', desc: 'Direct consultation, trade advice & support callout.', color: '#6366f1' },
 
   // Commerce & Products
   { id: 'featured-products', name: 'Product Grid', category: 'commerce', icon: 'solar:cart-large-bold', desc: 'Showcase trending, best-seller, or new arrival products.', color: '#10b981' },
-  { id: 'category-grid', name: 'Category Tiles', category: 'commerce', icon: 'solar:map-bold', desc: 'Visual navigation tiles for store jewelry & apparel categories.', color: '#ec4899' },
-  { id: 'brand-strip', name: 'Brand & Partner Strip', category: 'commerce', icon: 'solar:shield-star-bold', desc: 'Logos of verified craftspeople, brands, or certifications.', color: '#8b5cf6' },
+  { id: 'category-grid', name: 'Category Navigation', category: 'commerce', icon: 'solar:map-bold', desc: 'Visual navigation tiles for core store departments.', color: '#ec4899' },
+  { id: 'brand-strip', name: 'Brand & Partner Strip', category: 'commerce', icon: 'solar:shield-star-bold', desc: 'Logos of verified manufacturers, brands, or trade certifications.', color: '#8b5cf6' },
 
   // Content & Storytelling
   { id: 'promo-cards', name: 'Guarantee Cards', category: 'content', icon: 'solar:widget-5-bold', desc: '4-column value proposition cards (warranty, sizing, shipping).', color: '#0ea5e9' },
@@ -77,6 +77,8 @@ function ImageInspector({
       setUploading(false);
     }
   };
+
+  const [industryTab, setIndustryTab] = useState<string>('hardware');
 
   const handleApplyPreset = (presetUrl: string) => {
     setUrl(presetUrl);
@@ -165,13 +167,45 @@ function ImageInspector({
         />
       </div>
 
-      {/* Luxury Curated Presets */}
+      {/* Multi-Industry Curated Presets */}
       <div style={{ marginBottom: '16px' }}>
-        <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
-          Luxury Curated Presets
-        </label>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <label style={{ fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
+            Industry Preset Photos
+          </label>
+        </div>
+
+        {/* Industry Pill Tabs */}
+        <div style={{ display: 'flex', gap: '4px', overflowX: 'auto', paddingBottom: '6px', marginBottom: '8px' }}>
+          {Object.entries(INDUSTRY_PRESET_IMAGES).map(([key, ind]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setIndustryTab(key)}
+              style={{
+                padding: '4px 8px',
+                borderRadius: '6px',
+                fontSize: '11px',
+                fontWeight: 600,
+                border: 'none',
+                background: industryTab === key ? '#0f172a' : '#f1f5f9',
+                color: industryTab === key ? '#fff' : '#475569',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              <span>{ind.icon}</span>
+              <span>{ind.label.split('&')[0].trim()}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Presets Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
-          {LUXURY_PRESET_IMAGES.map((p) => (
+          {(INDUSTRY_PRESET_IMAGES[industryTab]?.images || []).map((p) => (
             <button
               key={p.name}
               type="button"
@@ -193,7 +227,7 @@ function ImageInspector({
                 style={{
                   position: 'absolute',
                   inset: 0,
-                  background: 'rgba(0,0,0,0.4)',
+                  background: 'rgba(0,0,0,0.5)',
                   color: '#fff',
                   fontSize: '9px',
                   fontWeight: 600,

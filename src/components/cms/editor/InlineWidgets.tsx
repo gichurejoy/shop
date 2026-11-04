@@ -2,33 +2,83 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 
-// ─── Preset Images for Luxury Store ──────────────────────────────────────────
-export const LUXURY_PRESET_IMAGES = [
-  {
-    name: 'Fine Gold Ring',
-    url: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1200&q=80',
+// ─── Multi-Industry Curated Preset Images ────────────────────────────────────
+export const INDUSTRY_PRESET_IMAGES: Record<string, { label: string; icon: string; images: { name: string; url: string }[] }> = {
+  hardware: {
+    label: 'Hardware & Tools',
+    icon: '🔨',
+    images: [
+      { name: 'Power Drill & Tools', url: 'https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Tool Workshop', url: 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Construction Gear', url: 'https://images.unsplash.com/photo-1541888946425-d0fbb1861564?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Hardware Fasteners', url: 'https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Hand Tools Bench', url: 'https://images.unsplash.com/photo-1530124566582-a618bc2615dc?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Industrial Supplies', url: 'https://images.unsplash.com/photo-1572981779307-38b8cabb2407?auto=format&fit=crop&w=1200&q=80' },
+    ],
   },
-  {
-    name: 'Diamond Solitaire',
-    url: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&w=1200&q=80',
+  electronics: {
+    label: 'Electronics & Tech',
+    icon: '💻',
+    images: [
+      { name: 'Modern Laptop Desk', url: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Hi-Fi Audio Headphones', url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Flagship Smartphone', url: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Smartwatch & Tech', url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Gaming Rig & Setup', url: 'https://images.unsplash.com/photo-1598550476439-6847785fcea6?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Studio Speakers', url: 'https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&w=1200&q=80' },
+    ],
   },
-  {
-    name: 'Cashmere Knitwear',
-    url: 'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&w=1200&q=80',
+  fashion: {
+    label: 'Fashion & Apparel',
+    icon: '👗',
+    images: [
+      { name: 'Designer Lookbook', url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Warm Knitwear', url: 'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Minimalist Wardrobe', url: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Urban Streetwear', url: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Premium Leather', url: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Sport Footwear', url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=80' },
+    ],
   },
-  {
-    name: 'Atelier Workshop',
-    url: 'https://images.unsplash.com/photo-1531995811006-35cb42e1a022?auto=format&fit=crop&w=1200&q=80',
+  grocery: {
+    label: 'Supermarket & Food',
+    icon: '🛒',
+    images: [
+      { name: 'Farm Fresh Produce', url: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Organic Fruits & Veg', url: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Artisan Bakery', url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Specialty Coffee', url: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Gourmet Pantry', url: 'https://images.unsplash.com/photo-1506484381205-f7945653044d?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Cold Pressed Juices', url: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=1200&q=80' },
+    ],
   },
-  {
-    name: 'Editorial Lookbook',
-    url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1200&q=80',
+  general: {
+    label: 'Retail & Store',
+    icon: '🏬',
+    images: [
+      { name: 'Home Living & Decor', url: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Kitchen Essentials', url: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Travel & Luggage', url: 'https://images.unsplash.com/photo-1565026057447-bc90a3dceb87?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Cosmetics & Skincare', url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Office & Stationery', url: 'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Modern Storefront', url: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1200&q=80' },
+    ],
   },
-  {
-    name: 'Minimalist Silk',
-    url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1200&q=80',
+  jewelry: {
+    label: 'Jewelry & Gems',
+    icon: '💎',
+    images: [
+      { name: 'Fine Gold Ring', url: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Diamond Solitaire', url: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Gemstone Pendant', url: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Luxury Timepiece', url: 'https://images.unsplash.com/photo-1524805444758-089113d48a6d?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Pearl Necklace', url: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=1200&q=80' },
+      { name: 'Atelier Workshop', url: 'https://images.unsplash.com/photo-1531995811006-35cb42e1a022?auto=format&fit=crop&w=1200&q=80' },
+    ],
   },
-];
+};
+
+export const LUXURY_PRESET_IMAGES = INDUSTRY_PRESET_IMAGES.jewelry.images;
 
 // ─── InlineText with Floating Formatting Toolbar ────────────────────────────
 export function InlineText({

@@ -61,6 +61,99 @@ export type CmsAnnouncementBar = {
   link?: string;
 };
 
+export type CmsFooterLink = {
+  id: string;
+  label: string;
+  url: string;
+};
+
+export type CmsFooterColumn = {
+  id: string;
+  title: string;
+  links: CmsFooterLink[];
+};
+
+export type CmsFooterSettings = {
+  brandName: string;
+  tagline: string;
+  logoUrl?: string;
+  contactEmail: string;
+  contactPhone: string;
+  address: string;
+  businessHours: string;
+  socialLinks: {
+    facebook?: string;
+    instagram?: string;
+    twitter?: string;
+    youtube?: string;
+    linkedin?: string;
+    tiktok?: string;
+  };
+  columns: CmsFooterColumn[];
+  copyrightText: string;
+  showPaymentBadges: boolean;
+  paymentMethods: string[];
+  backgroundColor: string;
+  textColor: string;
+  accentColor: string;
+};
+
+export const DEFAULT_FOOTER_SETTINGS: CmsFooterSettings = {
+  brandName: 'Waveron Store',
+  tagline: 'Your trusted partner for high-quality goods, reliable tools, and exceptional customer service.',
+  logoUrl: '',
+  contactEmail: 'support@waveron.com',
+  contactPhone: '+1 (800) 555-0199',
+  address: '100 Commercial Blvd, Suite 400',
+  businessHours: 'Mon - Sat: 8:00 AM - 7:00 PM',
+  socialLinks: {
+    facebook: 'https://facebook.com',
+    instagram: 'https://instagram.com',
+    twitter: 'https://twitter.com',
+    youtube: 'https://youtube.com',
+    linkedin: '',
+    tiktok: '',
+  },
+  columns: [
+    {
+      id: 'col-1',
+      title: 'Shop Departments',
+      links: [
+        { id: 'l1', label: 'All Products', url: '/products' },
+        { id: 'l2', label: 'Featured Collections', url: '/products' },
+        { id: 'l3', label: 'New Arrivals', url: '/products' },
+        { id: 'l4', label: 'Weekly Specials', url: '/products' },
+      ],
+    },
+    {
+      id: 'col-2',
+      title: 'Customer Support',
+      links: [
+        { id: 'l5', label: 'Order Tracking', url: '/tracking' },
+        { id: 'l6', label: 'Shipping & Delivery Policy', url: '/care-guide' },
+        { id: 'l7', label: 'Returns & Replacements', url: '/care-guide' },
+        { id: 'l8', label: 'Help & FAQs', url: '/care-guide' },
+      ],
+    },
+    {
+      id: 'col-3',
+      title: 'Company',
+      links: [
+        { id: 'l9', label: 'About Our Story', url: '/about' },
+        { id: 'l10', label: 'Lookbook & Showcases', url: '/lookbook' },
+        { id: 'l11', label: 'VIP Membership', url: '/membership' },
+        { id: 'l12', label: 'Store Locations', url: '/about' },
+      ],
+    },
+  ],
+  copyrightText: '© 2026 Waveron Commerce. All rights reserved.',
+  showPaymentBadges: true,
+  paymentMethods: ['visa', 'mastercard', 'mpesa', 'paypal', 'applepay', 'cash'],
+  backgroundColor: '#1E293B',
+  textColor: '#94A3B8',
+  accentColor: '#FF6C2F',
+};
+
 export type CmsData = {
   homepage: {
     draft: { sections: CmsSection[] };
@@ -71,6 +164,7 @@ export type CmsData = {
   navigation: CmsMenuNode[];
   seo: CmsSeoSettings;
   announcementBar: CmsAnnouncementBar;
+  footer: CmsFooterSettings;
 };
 
 const DEFAULT_DATA: CmsData = {
@@ -92,7 +186,8 @@ const DEFAULT_DATA: CmsData = {
     message: 'Welcome to our store!',
     backgroundColor: '#000000',
     textColor: '#ffffff'
-  }
+  },
+  footer: DEFAULT_FOOTER_SETTINGS,
 };
 
 async function readFallbackFile(): Promise<CmsData> {
@@ -193,6 +288,7 @@ export async function getCmsData(): Promise<CmsData> {
       navigation: settingsMap.get('navigation') || DEFAULT_DATA.navigation,
       seo: settingsMap.get('seo') || DEFAULT_DATA.seo,
       announcementBar: settingsMap.get('announcement-bar') || DEFAULT_DATA.announcementBar,
+      footer: settingsMap.get('footer') || DEFAULT_FOOTER_SETTINGS,
     };
   } catch (err) {
     console.warn('Prisma getCmsData query failed, falling back to cms-data.json:', err);
@@ -331,6 +427,14 @@ export async function saveCmsData(data: CmsData): Promise<void> {
         where: { key: 'announcement-bar' },
         update: { value: data.announcementBar },
         create: { key: 'announcement-bar', value: data.announcementBar },
+      });
+    }
+
+    if (data.footer) {
+      await prisma.cmsSetting.upsert({
+        where: { key: 'footer' },
+        update: { value: data.footer },
+        create: { key: 'footer', value: data.footer },
       });
     }
   } catch (err) {

@@ -21,25 +21,15 @@ export function SeoContent({
     <div className="w-full py-8 bg-white border-t border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="prose prose-sm max-w-none text-gray-600">
-          <h2
-            className="text-xl font-bold mb-3 text-[#3D2817]"
-            style={{
-              fontFamily: 'Playfair Display, serif'
-            }}>
-            
-            {title1 || "Premium Jewelry & Luxury Knitwear"}
+          <h2 className="text-xl font-bold mb-3 text-slate-900">
+            {title1 || "Quality You Can Rely On"}
           </h2>
           <p className="mb-5">
-            {body1 || "Discover our curated collection of handcrafted jewelry and premium knitwear. From timeless gold pieces to cozy cashmere sweaters, each item is selected for quality, craftsmanship, and enduring style."}
+            {body1 || "We provide a comprehensive selection of premium goods, equipment, and essentials sourced directly from trusted manufacturers. Every product undergoes strict quality assessment to meet high standards of performance and reliability."}
           </p>
 
-          <h2
-            className="text-xl font-bold mb-3 mt-6 text-[#3D2817]"
-            style={{
-              fontFamily: 'Playfair Display, serif'
-            }}>
-            
-            {title2 || "Jewelry Care Guide"}
+          <h2 className="text-xl font-bold mb-3 mt-6 text-slate-900">
+            {title2 || "Fast Shipping & Nationwide Delivery"}
           </h2>
           <div className="mb-5 text-sm">
             {body2 ? (
@@ -47,28 +37,17 @@ export function SeoContent({
             ) : (
               <>
                 <p className="mb-3">
-                  Proper care ensures your jewelry maintains its brilliance for years.
-                  Store pieces separately in soft pouches to prevent scratching. Clean
-                  gold and diamond jewelry with warm water and mild soap, using a soft
-                  brush for intricate details. Remove jewelry before swimming,
-                  exercising, or applying cosmetics.
+                  Enjoy reliable handling and trackable delivery right to your door or jobsite. Standard orders are packed and dispatched promptly, with express fulfillment available for time-critical needs.
                 </p>
                 <p>
-                  For pearls and delicate gemstones, use only a damp cloth and avoid
-                  harsh chemicals. Professional cleaning once a year helps maintain
-                  the integrity of settings and ensures stones remain secure.
+                  Bulk and commercial shipments are coordinated with dedicated logistics carriers to ensure secure, on-schedule transport.
                 </p>
               </>
             )}
           </div>
 
-          <h2
-            className="text-xl font-bold mb-3 mt-6 text-[#3D2817]"
-            style={{
-              fontFamily: 'Playfair Display, serif'
-            }}>
-            
-            {title3 || "Sweater Care & Maintenance"}
+          <h2 className="text-xl font-bold mb-3 mt-6 text-slate-900">
+            {title3 || "Warranty, Support & Bulk Inquiries"}
           </h2>
           <div className="mb-5 text-sm">
             {body3 ? (
@@ -76,16 +55,10 @@ export function SeoContent({
             ) : (
               <>
                 <p className="mb-3">
-                  Quality knitwear deserves gentle care. Hand wash cashmere and merino
-                  wool in cool water with specialized detergent. Gently press out
-                  excess water without wringing, then lay flat to dry on a clean
-                  towel. Never hang wet sweaters as this can distort the shape.
+                  All items come with manufacturer warranty protection and dedicated customer support. Inquire with our sales team for commercial pricing, custom specifications, or recurring supply arrangements.
                 </p>
                 <p>
-                  Store folded sweaters in breathable cotton bags during warmer
-                  months. Use cedar blocks or lavender sachets to naturally deter
-                  moths. For minor pilling, use a sweater comb or fabric shaver to
-                  restore a smooth finish.
+                  Our responsive customer care desk is available Monday through Saturday to answer technical questions and assist with orders.
                 </p>
               </>
             )}

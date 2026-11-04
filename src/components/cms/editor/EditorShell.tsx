@@ -3,6 +3,8 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { useCms } from './cms-store';
 import { SectionsPanel } from './SectionsPanel';
+import { getIndustryTemplates, applyIndustryTemplate } from '@/app/actions';
+import { toast } from 'sonner';
 
 type Viewport = 'desktop' | 'tablet' | 'mobile';
 
@@ -52,7 +54,30 @@ export function EditorShell({
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [insertAtIndex, setInsertAtIndex] = useState<number | null>(null);
+  const [templatesModalOpen, setTemplatesModalOpen] = useState(false);
+  const [applyingTemplate, setApplyingTemplate] = useState<string | null>(null);
+  const [templatesList, setTemplatesList] = useState<any[]>([]);
   const sendTimer = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    getIndustryTemplates().then(setTemplatesList).catch(() => {});
+  }, []);
+
+  const handleApplyTemplate = async (templateId: string) => {
+    setApplyingTemplate(templateId);
+    try {
+      const newSections = await applyIndustryTemplate(currentPageSlug, templateId);
+      setSections(newSections);
+      iframeRef.current?.contentWindow?.postMessage({ type: 'INIT', sections: newSections }, '*');
+      const found = templatesList.find(t => t.id === templateId);
+      toast.success(`Applied ${found?.name || templateId} Starter Kit!`);
+      setTemplatesModalOpen(false);
+    } catch (err: any) {
+      toast.error('Failed to apply template: ' + (err?.message || 'Unknown error'));
+    } finally {
+      setApplyingTemplate(null);
+    }
+  };
 
   // Send postMessage to iframe (debounced 300ms)
   const sendToPreview = useCallback((sections: any[], type = 'UPDATE') => {
@@ -257,6 +282,31 @@ export function EditorShell({
           </button>
         </div>
 
+        {/* Industry Starter Kits Preset Modal Trigger */}
+        <button
+          type="button"
+          onClick={() => setTemplatesModalOpen(true)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '6px',
+            padding: '5px 12px',
+            fontSize: '12px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            marginLeft: '6px',
+            boxShadow: '0 2px 6px rgba(124, 58, 237, 0.35)',
+          }}
+          title="Apply pre-built industry presets (Hardware, Tech, Fashion, Grocery, Retail, Jewelry)"
+        >
+          <span>📦</span>
+          <span>Industry Starter Kits</span>
+        </button>
+
         {isDirty && (
           <span style={{ color: '#f59e0b', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '4px' }}>
             <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#f59e0b', display: 'inline-block' }} />
@@ -378,6 +428,153 @@ export function EditorShell({
           </div>
         </div>
       </div>
+
+      {/* ── Industry Starter Kits Modal ── */}
+      {templatesModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+          }}
+          onClick={() => {
+            if (!applyingTemplate) setTemplatesModalOpen(false);
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '920px',
+              backgroundColor: '#1e293b',
+              border: '1px solid #334155',
+              borderRadius: '16px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+              padding: '28px',
+              color: '#f8fafc',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px', borderBottom: '1px solid #334155', paddingBottom: '16px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '24px' }}>📦</span>
+                  <h2 style={{ fontSize: '20px', fontWeight: 700, margin: 0, color: '#f8fafc' }}>
+                    Industry Starter Kits & Presets
+                  </h2>
+                </div>
+                <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8', maxWidth: '640px' }}>
+                  Select an industry starter kit to instantly reconfigure this page with high-converting banners, value pillars, custom department categories, and content tailored to your merchant niche.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTemplatesModalOpen(false)}
+                disabled={Boolean(applyingTemplate)}
+                style={{
+                  background: '#0f172a',
+                  border: '1px solid #475569',
+                  color: '#94a3b8',
+                  borderRadius: '8px',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '16px',
+                  cursor: 'pointer',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Template Cards Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(270px, 1fr))', gap: '16px' }}>
+              {templatesList.map((tpl) => {
+                const isApplying = applyingTemplate === tpl.id;
+                return (
+                  <div
+                    key={tpl.id}
+                    style={{
+                      background: '#0f172a',
+                      border: '1px solid #334155',
+                      borderRadius: '12px',
+                      padding: '20px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      transition: 'border-color 0.2s, transform 0.2s',
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                        <span style={{ fontSize: '28px' }}>
+                          {tpl.id === 'hardware' ? '🔨' : tpl.id === 'electronics' ? '💻' : tpl.id === 'fashion' ? '👗' : tpl.id === 'grocery' ? '🛒' : tpl.id === 'general' ? '🏬' : '💎'}
+                        </span>
+                        <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', background: `${tpl.accentColor}25`, color: tpl.accentColor, border: `1px solid ${tpl.accentColor}50` }}>
+                          {tpl.badge}
+                        </span>
+                      </div>
+                      <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 6px 0', color: '#f8fafc' }}>
+                        {tpl.name}
+                      </h3>
+                      <div style={{ fontSize: '11px', fontWeight: 600, color: tpl.accentColor, marginBottom: '8px' }}>
+                        {tpl.industry}
+                      </div>
+                      <p style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.5, margin: '0 0 16px 0' }}>
+                        {tpl.tagline}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleApplyTemplate(tpl.id)}
+                      disabled={Boolean(applyingTemplate)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background: isApplying ? '#6366f1' : tpl.accentColor,
+                        color: '#fff',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        cursor: applyingTemplate ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        boxShadow: `0 2px 8px ${tpl.accentColor}40`,
+                        opacity: applyingTemplate && !isApplying ? 0.5 : 1,
+                      }}
+                    >
+                      {isApplying ? (
+                        <>
+                          <span style={{ width: '14px', height: '14px', border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} />
+                          Applying Kit…
+                        </>
+                      ) : (
+                        <>
+                          <span>⚡</span> Apply Starter Kit
+                        </>
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }

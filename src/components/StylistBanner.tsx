@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, Headphones } from 'lucide-react';
 
 interface StylistBannerProps {
   title?: string;
@@ -12,42 +12,27 @@ export function StylistBanner({ title, description, ctaLabel }: StylistBannerPro
   return (
     <div className="w-full py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-[#FAF6F0] border border-[#8B5A3C]/20 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
           <div className="flex-1">
-            <h2
-              className="text-2xl font-bold mb-3 text-[#3D2817]"
-              style={{
-                fontFamily: 'Playfair Display, serif'
-              }}>
-              
-              {title || "Ask Anything About Your Style"}
+            <h2 className="text-2xl font-bold mb-3 text-slate-900">
+              {title || "Expert Advice & Bulk Inquiries"}
             </h2>
-            <p className="text-gray-700 text-sm mb-5 max-w-xl">
-              {description || "Our expert stylists are here to help you find the perfect piece for any occasion. Get personalized recommendations for jewelry and knitwear that match your unique style."}
+            <p className="text-slate-600 text-sm mb-5 max-w-xl">
+              {description || "Need guidance on product specifications, commercial orders, or tailored recommendations? Our product specialists are ready to assist you."}
             </p>
-            <Link href="/membership" className="inline-block">
-              <button className="bg-[#8B5A3C] text-white px-6 py-2.5 rounded-lg font-bold hover:bg-[#6F4630] transition-colors flex items-center gap-2 w-fit shadow-sm">
-                <MessageCircle className="w-4 h-4" />
-                {ctaLabel || "Chat with a Stylist"}
+            <Link href="/about" className="inline-block">
+              <button className="bg-slate-900 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-slate-800 transition-colors flex items-center gap-2 w-fit shadow-sm">
+                <MessageCircle className="w-4 h-4 text-orange-400" />
+                {ctaLabel || "Contact Specialist"}
               </button>
             </Link>
           </div>
 
-          <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
-            <svg width="80" height="80" viewBox="0 0 120 120" fill="none">
-              <circle cx="60" cy="35" r="20" stroke="#3D2817" strokeWidth="3" />
-              <path
-                d="M60 55 L60 85 M40 65 L60 65 L80 65"
-                stroke="#3D2817"
-                strokeWidth="3"
-                strokeLinecap="round" />
-              
-              <circle cx="50" cy="75" r="5" fill="#8B5A3C" />
-              <circle cx="70" cy="75" r="5" fill="#8B5A3C" />
-            </svg>
+          <div className="w-24 h-24 sm:w-28 sm:h-28 bg-white rounded-2xl flex items-center justify-center shadow-md border border-slate-200/60 shrink-0 text-orange-600">
+            <Headphones className="w-12 h-12" />
           </div>
         </div>
       </div>
-    </div>);
-
+    </div>
+  );
 }

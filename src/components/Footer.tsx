@@ -1,180 +1,194 @@
 import React from 'react';
-import { Facebook, Instagram, Twitter, Youtube } from 'lucide-react';
 import Link from 'next/link';
-export function Footer() {
-  const categories = [
-  'Rings',
-  'Necklaces',
-  'Earrings',
-  'Bracelets',
-  'Watches',
-  'Cardigans',
-  'Pullovers',
-  'Turtlenecks',
-  'Cashmere',
-  'Sale'];
+import { CmsFooterSettings, DEFAULT_FOOTER_SETTINGS } from '@/lib/cms';
 
-  const help = [
-  'Contact Us',
-  'Track Order',
-  'Returns & Exchanges',
-  'Shipping Info',
-  'Size Guide',
-  'Care Instructions',
-  'Gift Cards',
-  'FAQs'];
-
-  const company = [
-  'About Us',
-  'Careers',
-  'Press',
-  'Sustainability',
-  'Store Locator',
-  'Privacy Policy',
-  'Terms of Service'];
-
-  const HELP_LINKS: Record<string, string> = {
-    'Contact Us': 'mailto:support@lumiereknit.com',
-    'Track Order': '/tracking',
-    'Returns & Exchanges': '/care-guide',
-    'Shipping Info': '/care-guide',
-    'Size Guide': '/style-guide',
-    'Care Instructions': '/care-guide',
-    'Gift Cards': '/gift-cards',
-    'FAQs': '/care-guide',
-  };
-
-  const COMPANY_LINKS: Record<string, string> = {
-    'About Us': '/lookbook',
-    'Careers': 'mailto:careers@lumiereknit.com',
-    'Press': '/lookbook',
-    'Sustainability': '/care-guide',
-    'Store Locator': '/dashboard',
-    'Privacy Policy': '/style-guide',
-    'Terms of Service': '/style-guide',
-  };
+export function Footer({ settings = DEFAULT_FOOTER_SETTINGS }: { settings?: CmsFooterSettings }) {
+  const cfg = { ...DEFAULT_FOOTER_SETTINGS, ...settings };
+  const { socialLinks = {}, columns = [] } = cfg;
 
   return (
-    <footer className="w-full bg-[#3D2817] text-gray-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-          <div>
-            <h3
-              className="text-white font-bold text-xl mb-4"
-              style={{
-                fontFamily: 'Playfair Display, serif'
-              }}>
-              
-              Lumière & Knit
-            </h3>
-            <p className="text-sm mb-4 text-gray-400">
-              Premium jewelry and luxury knitwear for the discerning customer.
+    <footer
+      className="w-full transition-colors relative"
+      style={{
+        backgroundColor: cfg.backgroundColor || '#1E293B',
+        color: cfg.textColor || '#94A3B8',
+      }}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-10">
+          {/* Brand & About Column */}
+          <div className="lg:col-span-2 pr-0 lg:pr-6">
+            {cfg.logoUrl ? (
+              <img src={cfg.logoUrl} alt={cfg.brandName} className="h-9 mb-4 object-contain" />
+            ) : (
+              <h3 className="text-white font-bold text-2xl mb-3 tracking-tight">
+                {cfg.brandName || 'Store Commerce'}
+              </h3>
+            )}
+            <p className="text-sm mb-5 leading-relaxed" style={{ color: cfg.textColor }}>
+              {cfg.tagline || 'Your trusted partner for high quality products and exceptional customer service.'}
             </p>
-            <div className="flex gap-3">
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noreferrer"
-                className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center hover:bg-[#8B5A3C] hover:text-white transition-colors">
-                
-                <Facebook className="w-4 h-4" />
-              </a>
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noreferrer"
-                className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center hover:bg-[#8B5A3C] hover:text-white transition-colors">
-                
-                <Instagram className="w-4 h-4" />
-              </a>
-              <a
-                href="https://twitter.com"
-                target="_blank"
-                rel="noreferrer"
-                className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center hover:bg-[#8B5A3C] hover:text-white transition-colors">
-                
-                <Twitter className="w-4 h-4" />
-              </a>
-              <a
-                href="https://youtube.com"
-                target="_blank"
-                rel="noreferrer"
-                className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center hover:bg-[#8B5A3C] hover:text-white transition-colors">
-                
-                <Youtube className="w-4 h-4" />
-              </a>
+
+            {/* Direct Contact Info */}
+            <div className="space-y-1.5 text-xs mb-5 opacity-90">
+              {cfg.address && (
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-400">📍</span>
+                  <span>{cfg.address}</span>
+                </div>
+              )}
+              {cfg.contactPhone && (
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-400">📞</span>
+                  <a href={`tel:${cfg.contactPhone}`} className="hover:underline text-white">
+                    {cfg.contactPhone}
+                  </a>
+                </div>
+              )}
+              {cfg.contactEmail && (
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-400">✉️</span>
+                  <a href={`mailto:${cfg.contactEmail}`} className="hover:underline text-white">
+                    {cfg.contactEmail}
+                  </a>
+                </div>
+              )}
+              {cfg.businessHours && (
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-400">🕒</span>
+                  <span>{cfg.businessHours}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Social Media Links */}
+            <div className="flex gap-2">
+              {socialLinks.facebook && (
+                <a
+                  href={socialLinks.facebook}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 text-white transition-colors text-xs font-bold"
+                  title="Facebook"
+                >
+                  f
+                </a>
+              )}
+              {socialLinks.instagram && (
+                <a
+                  href={socialLinks.instagram}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 text-white transition-colors text-xs font-bold"
+                  title="Instagram"
+                >
+                  ig
+                </a>
+              )}
+              {socialLinks.twitter && (
+                <a
+                  href={socialLinks.twitter}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 text-white transition-colors text-xs font-bold"
+                  title="Twitter / X"
+                >
+                  𝕏
+                </a>
+              )}
+              {socialLinks.youtube && (
+                <a
+                  href={socialLinks.youtube}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 text-white transition-colors text-xs font-bold"
+                  title="YouTube"
+                >
+                  ▶
+                </a>
+              )}
+              {socialLinks.linkedin && (
+                <a
+                  href={socialLinks.linkedin}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 text-white transition-colors text-xs font-bold"
+                  title="LinkedIn"
+                >
+                  in
+                </a>
+              )}
+              {socialLinks.tiktok && (
+                <a
+                  href={socialLinks.tiktok}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 text-white transition-colors text-xs font-bold"
+                  title="TikTok"
+                >
+                  tt
+                </a>
+              )}
             </div>
           </div>
 
-          <div>
-            <h4 className="text-white font-semibold mb-4 text-sm">Shop</h4>
-            <ul className="space-y-2">
-              {categories.slice(0, 6).map((item) => (
-                <li key={item}>
-                  <Link
-                    href={`/products?q=${encodeURIComponent(item)}`}
-                    className="text-sm text-gray-400 hover:text-[#D4A574] transition-colors"
-                  >
-                    {item}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-white font-semibold mb-4 text-sm">Help</h4>
-            <ul className="space-y-2">
-              {help.slice(0, 6).map((item) => (
-                <li key={item}>
-                  <Link
-                    href={HELP_LINKS[item] || '/care-guide'}
-                    className="text-sm text-gray-400 hover:text-[#D4A574] transition-colors"
-                  >
-                    {item}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-white font-semibold mb-4 text-sm">Company</h4>
-            <ul className="space-y-2">
-              {company.map((item) => (
-                <li key={item}>
-                  <Link
-                    href={COMPANY_LINKS[item] || '/lookbook'}
-                    className="text-sm text-gray-400 hover:text-[#D4A574] transition-colors"
-                  >
-                    {item}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {/* Dynamic Navigation Columns */}
+          {columns.map((col) => (
+            <div key={col.id}>
+              <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">
+                {col.title}
+              </h4>
+              <ul className="space-y-2.5">
+                {col.links.map((link) => (
+                  <li key={link.id}>
+                    <Link
+                      href={link.url}
+                      className="text-sm transition-colors hover:text-white"
+                      style={{ color: cfg.textColor }}
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
-        <div className="border-t border-white/10 pt-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-xs text-gray-400">
-              © 2024 Lumière & Knit. All rights reserved.
-            </p>
-            <div className="flex gap-3">
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
-                alt="App Store"
-                className="h-8" />
-              
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-                alt="Google Play"
-                className="h-8" />
-              
+        {/* Bottom Bar: Copyright & Payment Badges */}
+        <div className="border-t border-white/10 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-xs" style={{ color: cfg.textColor }}>
+            {cfg.copyrightText || '© 2026 All rights reserved.'}
+          </p>
+
+          {/* Payment Method Badges */}
+          {cfg.showPaymentBadges && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-medium mr-1 text-slate-400">Accepted Payments:</span>
+              {(cfg.paymentMethods || []).map((method) => {
+                const labels: Record<string, { name: string; bg: string; text: string }> = {
+                  visa: { name: 'VISA', bg: 'bg-[#1A1F71]', text: 'text-white' },
+                  mastercard: { name: 'Mastercard', bg: 'bg-[#EB001B]', text: 'text-white' },
+                  mpesa: { name: 'M-PESA', bg: 'bg-[#008A00]', text: 'text-white' },
+                  paypal: { name: 'PayPal', bg: 'bg-[#003087]', text: 'text-white' },
+                  applepay: { name: 'Apple Pay', bg: 'bg-black', text: 'text-white' },
+                  cash: { name: 'Cash on Delivery', bg: 'bg-slate-700', text: 'text-white' },
+                };
+                const m = labels[method.toLowerCase()] || { name: method.toUpperCase(), bg: 'bg-slate-700', text: 'text-white' };
+                return (
+                  <span
+                    key={method}
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded border border-white/20 shadow-sm ${m.bg} ${m.text}`}
+                  >
+                    {m.name}
+                  </span>
+                );
+              })}
             </div>
-          </div>
+          )}
         </div>
       </div>
-    </footer>);
-
+    </footer>
+  );
 }

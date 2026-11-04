@@ -285,6 +285,12 @@ const CMS_NAV: NavItem[] = [
     icon: 'solar:global-bold-duotone',
     href: '/admin/cms/seo',
   },
+  {
+    key: 'footer',
+    label: 'Footer Settings',
+    icon: 'solar:window-frame-bold-duotone',
+    href: '/admin/cms/footer',
+  },
 ];
 
 // -- sub-component: nav entry ------------------------------------------------

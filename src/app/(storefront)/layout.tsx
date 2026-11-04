@@ -1,6 +1,6 @@
 import '../../index.css';
 import { ClientLayout } from '../../components/ClientLayout';
-import { getCmsSeoSettings, getCmsAnnouncementBar, getCmsNavigation } from '../actions';
+import { getCmsSeoSettings, getCmsAnnouncementBar, getCmsNavigation, getCmsFooter } from '../actions';
 
 export async function generateMetadata() {
   const seo = await getCmsSeoSettings();
@@ -20,6 +20,7 @@ export default async function RootLayout({
 }) {
   const announcementBar = await getCmsAnnouncementBar();
   const navigation = await getCmsNavigation();
+  const footerSettings = await getCmsFooter();
 
   return (
     <html lang="en">
@@ -36,7 +37,7 @@ export default async function RootLayout({
             )}
           </div>
         )}
-        <ClientLayout navigation={navigation}>{children}</ClientLayout>
+        <ClientLayout navigation={navigation} footerSettings={footerSettings}>{children}</ClientLayout>
       </body>
     </html>
   );

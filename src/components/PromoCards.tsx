@@ -29,38 +29,38 @@ export function PromoCards(props: PromoCardsProps) {
   const promos = [
     {
       icon: Sparkles,
-      title: props.card1Title || 'Get 20%* off on Jewelry',
-      subtitle: props.card1Subtitle || 'SHOP NOW',
-      link: props.card1Link || '/products?category=jewelry',
-      bg: props.card1Bg || 'bg-[#E8F0E5]',
-      textColor: 'text-[#8B5A3C]',
+      title: props.card1Title || 'Fast Express Delivery',
+      subtitle: props.card1Subtitle || 'ON ALL ORDERS',
+      link: props.card1Link || '/products',
+      bg: props.card1Bg || 'bg-[#EFF6FF]',
+      textColor: 'text-blue-700',
       badge: props.card1Badge
     },
     {
       icon: User,
-      title: props.card2Title || 'Personal Stylist',
-      subtitle: props.card2Subtitle || 'BOOK NOW',
-      link: props.card2Link || '/membership',
-      bg: props.card2Bg || 'bg-[#EDE7F3]',
-      textColor: 'text-[#8B5A3C]',
+      title: props.card2Title || 'Customer Support 24/7',
+      subtitle: props.card2Subtitle || 'EXPERT HELP',
+      link: props.card2Link || '/about',
+      bg: props.card2Bg || 'bg-[#F0FDF4]',
+      textColor: 'text-emerald-700',
       badge: props.card2Badge
     },
     {
       icon: Shield,
-      title: props.card3Title || 'Care Plan',
-      subtitle: props.card3Subtitle || 'EXPLORE PLANS',
-      link: props.card3Link || '/care-guide',
-      bg: props.card3Bg || 'bg-[#FCEFE3]',
-      textColor: 'text-[#8B5A3C]',
-      badge: props.card3Badge || 'New'
+      title: props.card3Title || 'Quality Guarantee',
+      subtitle: props.card3Subtitle || 'CERTIFIED GENUINE',
+      link: props.card3Link || '/products',
+      bg: props.card3Bg || 'bg-[#FEF3C7]',
+      textColor: 'text-amber-800',
+      badge: props.card3Badge || 'Verified'
     },
     {
       icon: Ruler,
-      title: props.card4Title || 'Free Sizing',
-      subtitle: props.card4Subtitle || 'AT HOME',
-      link: props.card4Link || '/style-guide',
-      bg: props.card4Bg || 'bg-[#F8E6E6]',
-      textColor: 'text-[#8B5A3C]',
+      title: props.card4Title || 'Easy 30-Day Returns',
+      subtitle: props.card4Subtitle || 'HASSLE FREE',
+      link: props.card4Link || '/about',
+      bg: props.card4Bg || 'bg-[#F1F5F9]',
+      textColor: 'text-slate-700',
       badge: props.card4Badge
     }
   ];

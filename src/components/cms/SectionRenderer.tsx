@@ -493,7 +493,7 @@ function BespokeHeroRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) 
   }
 
   return (
-    <div className="w-full bg-[#5C3A24] text-white py-12 relative overflow-hidden group/hero" style={customStyle}>
+    <div className="w-full bg-slate-900 text-white py-12 relative overflow-hidden group/hero" style={customStyle}>
       <div className="absolute top-3 right-3 z-30">
         <button
           type="button"
@@ -521,18 +521,17 @@ function BespokeHeroRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) 
         <div className="text-center mb-6">
           <InlineText
             tagName="h2"
-            value={s.heading || 'Shop Jewelry & Knitwear'}
+            value={s.heading || 'Welcome to Our Store'}
             onUpdate={(val) => onUpdate({ heading: val })}
             className="text-3xl md:text-4xl font-bold mb-2 text-white block"
-            style={{ fontFamily: 'Playfair Display, serif' }}
           />
         </div>
         <div className="max-w-3xl mx-auto">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8B5A3C] pointer-events-none" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
             <div className="w-full pl-12 pr-4 py-3 rounded-full bg-white text-gray-800 text-sm border-2 border-transparent shadow-md flex items-center">
               <InlineText
-                value={s.subheading || 'Search rings, necklaces, sweaters...'}
+                value={s.subheading || 'Search products, collections, and brands...'}
                 onUpdate={(val) => onUpdate({ subheading: val })}
                 className="text-gray-500 w-full"
               />
@@ -573,10 +572,10 @@ function BespokePromoCardsRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch:
   }
 
   const cards = [
-    { key: 1, icon: Sparkles, titleKey: 'card1Title', subKey: 'card1Subtitle', badgeKey: 'card1Badge', defaultTitle: 'Get 20%* off on Jewelry', defaultSub: 'SHOP NOW', defaultBadge: 'New', defaultBg: 'bg-[#E8F0E5]' },
-    { key: 2, icon: User, titleKey: 'card2Title', subKey: 'card2Subtitle', badgeKey: 'card2Badge', defaultTitle: 'Personal Stylist', defaultSub: 'BOOK NOW', defaultBadge: '', defaultBg: 'bg-[#EDE7F3]' },
-    { key: 3, icon: Shield, titleKey: 'card3Title', subKey: 'card3Subtitle', badgeKey: 'card3Badge', defaultTitle: 'Care Plan', defaultSub: 'EXPLORE PLANS', defaultBadge: 'New', defaultBg: 'bg-[#FCEFE3]' },
-    { key: 4, icon: Ruler, titleKey: 'card4Title', subKey: 'card4Subtitle', badgeKey: 'card4Badge', defaultTitle: 'Free Sizing', defaultSub: 'AT HOME', defaultBadge: '', defaultBg: 'bg-[#E8F4F8]' },
+    { key: 1, icon: Sparkles, titleKey: 'card1Title', subKey: 'card1Subtitle', badgeKey: 'card1Badge', defaultTitle: 'Fast Express Delivery', defaultSub: 'ON ALL ORDERS', defaultBadge: 'New', defaultBg: 'bg-[#EFF6FF]' },
+    { key: 2, icon: User, titleKey: 'card2Title', subKey: 'card2Subtitle', badgeKey: 'card2Badge', defaultTitle: 'Customer Support 24/7', defaultSub: 'EXPERT HELP', defaultBadge: '', defaultBg: 'bg-[#F0FDF4]' },
+    { key: 3, icon: Shield, titleKey: 'card3Title', subKey: 'card3Subtitle', badgeKey: 'card3Badge', defaultTitle: 'Quality Guarantee', defaultSub: 'CERTIFIED GENUINE', defaultBadge: 'Verified', defaultBg: 'bg-[#FEF3C7]' },
+    { key: 4, icon: Ruler, titleKey: 'card4Title', subKey: 'card4Subtitle', badgeKey: 'card4Badge', defaultTitle: 'Easy 30-Day Returns', defaultSub: 'HASSLE FREE', defaultBadge: '', defaultBg: 'bg-[#F1F5F9]' },
   ];
 
   return (
@@ -593,7 +592,7 @@ function BespokePromoCardsRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch:
             return (
               <div key={c.key} className={`${bg} rounded-xl p-4 flex items-center justify-between border border-black/5 hover:shadow-md transition-all`}>
                 <div className="flex items-center gap-3 flex-1">
-                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#8B5A3C] shadow-sm shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-700 shadow-sm shrink-0">
                     <Icon className="w-5 h-5" />
                   </div>
                   <div className="flex-1">
@@ -607,10 +606,10 @@ function BespokePromoCardsRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch:
                       <InlineText
                         value={sub}
                         onUpdate={(val) => onUpdate({ [c.subKey]: val })}
-                        className="text-xs font-semibold text-[#8B5A3C]"
+                        className="text-xs font-semibold text-slate-700"
                       />
                       {badge && (
-                        <span className="text-[10px] px-1.5 py-0.5 bg-[#8B5A3C] text-white rounded font-medium">
+                        <span className="text-[10px] px-1.5 py-0.5 bg-slate-800 text-white rounded font-medium">
                           <InlineText
                             value={badge}
                             onUpdate={(val) => onUpdate({ [c.badgeKey]: val })}
@@ -633,10 +632,10 @@ function BespokePromoBannerRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch
   if (!onUpdate) {
     return (
       <PromoBanner 
-        title={s.title}
-        description={s.description}
-        ctaLabel={s.ctaLabel}
-        ctaLink={s.ctaLink}
+        title={s.title} 
+        description={s.description} 
+        ctaLabel={s.ctaLabel} 
+        ctaLink={s.ctaLink} 
       />
     );
   }
@@ -644,25 +643,24 @@ function BespokePromoBannerRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch
   return (
     <div className="w-full py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-[#3D2817] rounded-2xl p-8 text-white text-center relative overflow-hidden">
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 rounded-2xl p-8 text-white text-center relative overflow-hidden border border-slate-700/50 shadow-xl">
           <div className="relative z-10">
             <InlineText
               tagName="h2"
-              value={s.title || 'Save Up to 25% on Premium Collections'}
+              value={s.title || 'Special Seasonal Offers & Discounts'}
               onUpdate={(val) => onUpdate({ title: val })}
-              className="text-2xl md:text-3xl font-bold mb-3 text-[#D4A574] block"
-              style={{ fontFamily: 'Playfair Display, serif' }}
+              className="text-2xl md:text-3xl font-bold mb-3 text-white block"
             />
-            <div className="text-sm md:text-base mb-5 opacity-90 max-w-2xl mx-auto">
+            <div className="text-sm md:text-base mb-5 opacity-90 max-w-2xl mx-auto text-slate-300">
               <InlineText
-                value={s.description || 'Exclusive offers on handcrafted jewelry and luxury knitwear'}
+                value={s.description || 'Save up to 30% on top-rated products and high-demand collections across the entire catalog.'}
                 onUpdate={(val) => onUpdate({ description: val })}
               />
             </div>
             <InlineButton
-              label={s.ctaLabel || 'Shop Now'}
+              label={s.ctaLabel || 'Shop All Deals'}
               link={s.ctaLink || '/products'}
-              color="#8B5A3C"
+              color="#ea580c"
               styleVariant="filled"
               sectionId={s.id}
               labelField="ctaLabel"
@@ -691,26 +689,25 @@ function BespokeStylistBannerRenderer({ s, onUpdate }: { s: any; onUpdate?: (pat
   return (
     <div className="w-full py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-[#FAF6F0] border border-[#8B5A3C]/20 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
           <div className="flex-1">
             <InlineText
               tagName="h2"
-              value={s.title || 'Ask Anything About Your Style'}
+              value={s.title || 'Expert Advice & Bulk Inquiries'}
               onUpdate={(val) => onUpdate({ title: val })}
-              className="text-2xl font-bold mb-3 text-[#3D2817] block"
-              style={{ fontFamily: 'Playfair Display, serif' }}
+              className="text-2xl font-bold mb-3 text-slate-900 block"
             />
-            <div className="text-gray-700 text-sm mb-5 max-w-xl">
+            <div className="text-slate-600 text-sm mb-5 max-w-xl">
               <InlineText
-                value={s.description || 'Our expert stylists are here to help you find the perfect piece for any occasion. Get personalized recommendations for jewelry and knitwear that match your unique style.'}
+                value={s.description || 'Need guidance on product specifications, commercial orders, or tailored recommendations? Our product specialists are ready to assist you.'}
                 onUpdate={(val) => onUpdate({ description: val })}
                 multiline
               />
             </div>
             <InlineButton
-              label={s.ctaLabel || 'Chat with a Stylist'}
-              link="/membership"
-              color="#8B5A3C"
+              label={s.ctaLabel || 'Contact Specialist'}
+              link="/about"
+              color="#0f172a"
               styleVariant="filled"
               sectionId={s.id}
               labelField="ctaLabel"
@@ -718,8 +715,8 @@ function BespokeStylistBannerRenderer({ s, onUpdate }: { s: any; onUpdate?: (pat
               onUpdate={(patch) => onUpdate({ ctaLabel: patch.label })}
             />
           </div>
-          <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100 shrink-0">
-            <MessageCircle className="w-12 h-12 text-[#8B5A3C]" />
+          <div className="w-24 h-24 sm:w-28 sm:h-28 bg-white rounded-2xl flex items-center justify-center shadow-md border border-slate-200/60 shrink-0 text-orange-600">
+            <MessageCircle className="w-12 h-12" />
           </div>
         </div>
       </div>
@@ -747,42 +744,39 @@ function BespokeSeoContentRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch:
         <div className="prose prose-sm max-w-none text-gray-600">
           <InlineText
             tagName="h2"
-            value={s.title1 || 'Premium Jewelry & Luxury Knitwear'}
+            value={s.title1 || 'Quality You Can Rely On'}
             onUpdate={(val) => onUpdate({ title1: val })}
-            className="text-xl font-bold mb-3 text-[#3D2817] block"
-            style={{ fontFamily: 'Playfair Display, serif' }}
+            className="text-xl font-bold mb-3 text-slate-900 block"
           />
           <div className="mb-5">
             <InlineText
-              value={s.body1 || 'Discover our curated collection of handcrafted jewelry and premium knitwear. From timeless gold pieces to cozy cashmere sweaters, each item is selected for quality, craftsmanship, and enduring style.'}
+              value={s.body1 || 'We provide a comprehensive selection of premium goods, equipment, and essentials sourced directly from trusted manufacturers. Every product undergoes strict quality assessment to meet high standards of performance and reliability.'}
               onUpdate={(val) => onUpdate({ body1: val })}
               multiline
             />
           </div>
           <InlineText
             tagName="h2"
-            value={s.title2 || 'Jewelry Care Guide'}
+            value={s.title2 || 'Fast Shipping & Nationwide Delivery'}
             onUpdate={(val) => onUpdate({ title2: val })}
-            className="text-xl font-bold mb-3 mt-6 text-[#3D2817] block"
-            style={{ fontFamily: 'Playfair Display, serif' }}
+            className="text-xl font-bold mb-3 mt-6 text-slate-900 block"
           />
           <div className="mb-5 text-sm">
             <InlineText
-              value={s.body2 || 'Proper care ensures your jewelry maintains its brilliance for years. Store pieces separately in soft pouches to prevent scratching. Clean gold and diamond jewelry with warm water and mild soap, using a soft brush for intricate details.'}
+              value={s.body2 || 'Enjoy reliable handling and trackable delivery right to your door or jobsite. Standard orders are packed and dispatched promptly, with express fulfillment available for time-critical needs.'}
               onUpdate={(val) => onUpdate({ body2: val })}
               multiline
             />
           </div>
           <InlineText
             tagName="h2"
-            value={s.title3 || 'Custom Sizing & Bespoke Orders'}
+            value={s.title3 || 'Warranty, Support & Bulk Inquiries'}
             onUpdate={(val) => onUpdate({ title3: val })}
-            className="text-xl font-bold mb-3 mt-6 text-[#3D2817] block"
-            style={{ fontFamily: 'Playfair Display, serif' }}
+            className="text-xl font-bold mb-3 mt-6 text-slate-900 block"
           />
           <div className="mb-5 text-sm">
             <InlineText
-              value={s.body3 || 'We offer personalized consultations and bespoke tailoring for rings, bracelets, and cashmere garments to ensure a flawless fit.'}
+              value={s.body3 || 'All items come with manufacturer warranty protection and dedicated customer support. Inquire with our sales team for commercial pricing, custom specifications, or recurring supply arrangements.'}
               onUpdate={(val) => onUpdate({ body3: val })}
               multiline
             />
@@ -813,12 +807,12 @@ function BespokeCategoryGridRenderer({ s, onUpdate }: { s: any; onUpdate?: (patc
   }
 
   const defaultCats = [
-    { key: 'cat1Label', name: s.cat1Label || 'Earrings', img: 'https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=400&q=80' },
-    { key: 'cat2Label', name: s.cat2Label || 'Necklaces', img: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=400&q=80' },
-    { key: 'cat3Label', name: s.cat3Label || 'Rings', img: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=400&q=80' },
-    { key: 'cat4Label', name: s.cat4Label || 'Bracelets', img: 'https://images.unsplash.com/photo-1611591475152-47796d194541?auto=format&fit=crop&w=400&q=80' },
-    { key: 'cat5Label', name: s.cat5Label || 'Sweaters', img: 'https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?auto=format&fit=crop&w=400&q=80' },
-    { key: 'cat6Label', name: s.cat6Label || 'Cardigans', img: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&w=400&q=80' },
+    { key: 'cat1Label', name: s.cat1Label || 'Best Sellers', img: 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=400&q=80' },
+    { key: 'cat2Label', name: s.cat2Label || 'New Arrivals', img: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=400&q=80' },
+    { key: 'cat3Label', name: s.cat3Label || 'Top Rated', img: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=400&q=80' },
+    { key: 'cat4Label', name: s.cat4Label || 'Deals & Offers', img: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=400&q=80' },
+    { key: 'cat5Label', name: s.cat5Label || 'Popular Picks', img: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?auto=format&fit=crop&w=400&q=80' },
+    { key: 'cat6Label', name: s.cat6Label || 'Seasonal Lines', img: 'https://images.unsplash.com/photo-1491553895911-0055eca6402d?auto=format&fit=crop&w=400&q=80' },
   ];
 
   return (
@@ -827,22 +821,21 @@ function BespokeCategoryGridRenderer({ s, onUpdate }: { s: any; onUpdate?: (patc
         <div className="text-center mb-8">
           <InlineText
             tagName="h2"
-            value={s.title || 'Explore by Category'}
+            value={s.title || 'Explore Categories'}
             onUpdate={(val) => onUpdate({ title: val })}
-            className="text-2xl md:text-3xl font-bold text-[#3D2817] block"
-            style={{ fontFamily: 'Playfair Display, serif' }}
+            className="text-2xl md:text-3xl font-bold text-slate-900 block"
           />
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {defaultCats.map(cat => (
-            <div key={cat.key} className="group relative rounded-xl overflow-hidden border border-gray-100 hover:shadow-lg transition-all text-center p-3 bg-[#FAF6F0]">
-              <div className="aspect-square rounded-lg overflow-hidden mb-2 bg-gray-100">
+            <div key={cat.key} className="group relative rounded-xl overflow-hidden border border-slate-200/80 hover:shadow-lg transition-all text-center p-3 bg-slate-50/70">
+              <div className="aspect-square rounded-lg overflow-hidden mb-2 bg-slate-100">
                 <img src={cat.img} alt={cat.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
               </div>
               <InlineText
                 value={cat.name}
                 onUpdate={(val) => onUpdate({ [cat.key]: val })}
-                className="font-bold text-xs text-[#3D2817] block"
+                className="font-bold text-xs text-slate-800 block"
               />
             </div>
           ))}

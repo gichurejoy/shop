@@ -56,7 +56,7 @@ function Toggle({ label, checked, onChange }: { label: string, checked: boolean,
 export function SectionForms({ section }: { section: CmsSection }) {
   const { updateSection } = useCms();
 
-  const update = (patch: Partial<CmsSection>) => {
+  const update = (patch: any) => {
     updateSection(section.id, patch);
   };
 
@@ -148,17 +148,17 @@ export function SectionForms({ section }: { section: CmsSection }) {
             <FieldGroup title="Header">
               <Input label="Section Title" value={section.title || ''} onChange={v => update({ title: v })} />
             </FieldGroup>
-            <FieldGroup title="Categories">
-              <Input label="Category 1 Label (default: Rings)" value={(section as any).cat1Label || ''} onChange={v => update({ cat1Label: v })} />
-              <Input label="Category 2 Label (default: Necklaces)" value={(section as any).cat2Label || ''} onChange={v => update({ cat2Label: v })} />
-              <Input label="Category 3 Label (default: Earrings)" value={(section as any).cat3Label || ''} onChange={v => update({ cat3Label: v })} />
-              <Input label="Category 4 Label (default: Bracelets)" value={(section as any).cat4Label || ''} onChange={v => update({ cat4Label: v })} />
-              <Input label="Category 5 Label (default: Watches)" value={(section as any).cat5Label || ''} onChange={v => update({ cat5Label: v })} />
-              <Input label="Category 6 Label (default: Cardigans)" value={(section as any).cat6Label || ''} onChange={v => update({ cat6Label: v })} />
-              <Input label="Category 7 Label (default: Pullovers)" value={(section as any).cat7Label || ''} onChange={v => update({ cat7Label: v })} />
-              <Input label="Category 8 Label (default: Cashmere)" value={(section as any).cat8Label || ''} onChange={v => update({ cat8Label: v })} />
-              <Input label="Category 9 Label (default: Turtlenecks)" value={(section as any).cat9Label || ''} onChange={v => update({ cat9Label: v })} />
-              <Input label="Category 10 Label (default: Vests)" value={(section as any).cat10Label || ''} onChange={v => update({ cat10Label: v })} />
+            <FieldGroup title="Category Labels">
+              <Input label="Category 1 Label" value={(section as any).cat1Label || ''} onChange={v => update({ cat1Label: v })} />
+              <Input label="Category 2 Label" value={(section as any).cat2Label || ''} onChange={v => update({ cat2Label: v })} />
+              <Input label="Category 3 Label" value={(section as any).cat3Label || ''} onChange={v => update({ cat3Label: v })} />
+              <Input label="Category 4 Label" value={(section as any).cat4Label || ''} onChange={v => update({ cat4Label: v })} />
+              <Input label="Category 5 Label" value={(section as any).cat5Label || ''} onChange={v => update({ cat5Label: v })} />
+              <Input label="Category 6 Label" value={(section as any).cat6Label || ''} onChange={v => update({ cat6Label: v })} />
+              <Input label="Category 7 Label" value={(section as any).cat7Label || ''} onChange={v => update({ cat7Label: v })} />
+              <Input label="Category 8 Label" value={(section as any).cat8Label || ''} onChange={v => update({ cat8Label: v })} />
+              <Input label="Category 9 Label" value={(section as any).cat9Label || ''} onChange={v => update({ cat9Label: v })} />
+              <Input label="Category 10 Label" value={(section as any).cat10Label || ''} onChange={v => update({ cat10Label: v })} />
             </FieldGroup>
           </>
         );
@@ -166,25 +166,29 @@ export function SectionForms({ section }: { section: CmsSection }) {
       case 'promo-cards':
         return (
           <>
-            <FieldGroup title="Card 1 (Jewelry Offer)">
+            <FieldGroup title="Card 1 (Delivery & Speed)">
               <Input label="Title" value={(section as any).card1Title || ''} onChange={v => update({ card1Title: v })} />
               <Input label="Subtitle" value={(section as any).card1Subtitle || ''} onChange={v => update({ card1Subtitle: v })} />
               <Input label="Badge" value={(section as any).card1Badge || ''} onChange={v => update({ card1Badge: v })} />
+              <Input label="Link" value={(section as any).card1Link || ''} onChange={v => update({ card1Link: v })} />
             </FieldGroup>
-            <FieldGroup title="Card 2 (Stylist)">
+            <FieldGroup title="Card 2 (Support & Advice)">
               <Input label="Title" value={(section as any).card2Title || ''} onChange={v => update({ card2Title: v })} />
               <Input label="Subtitle" value={(section as any).card2Subtitle || ''} onChange={v => update({ card2Subtitle: v })} />
               <Input label="Badge" value={(section as any).card2Badge || ''} onChange={v => update({ card2Badge: v })} />
+              <Input label="Link" value={(section as any).card2Link || ''} onChange={v => update({ card2Link: v })} />
             </FieldGroup>
-            <FieldGroup title="Card 3 (Care Plan)">
+            <FieldGroup title="Card 3 (Quality & Warranty)">
               <Input label="Title" value={(section as any).card3Title || ''} onChange={v => update({ card3Title: v })} />
               <Input label="Subtitle" value={(section as any).card3Subtitle || ''} onChange={v => update({ card3Subtitle: v })} />
               <Input label="Badge" value={(section as any).card3Badge || ''} onChange={v => update({ card3Badge: v })} />
+              <Input label="Link" value={(section as any).card3Link || ''} onChange={v => update({ card3Link: v })} />
             </FieldGroup>
-            <FieldGroup title="Card 4 (Sizing)">
+            <FieldGroup title="Card 4 (Returns & Protection)">
               <Input label="Title" value={(section as any).card4Title || ''} onChange={v => update({ card4Title: v })} />
               <Input label="Subtitle" value={(section as any).card4Subtitle || ''} onChange={v => update({ card4Subtitle: v })} />
               <Input label="Badge" value={(section as any).card4Badge || ''} onChange={v => update({ card4Badge: v })} />
+              <Input label="Link" value={(section as any).card4Link || ''} onChange={v => update({ card4Link: v })} />
             </FieldGroup>
           </>
         );
@@ -195,6 +199,7 @@ export function SectionForms({ section }: { section: CmsSection }) {
             <Input label="Title" value={(section as any).title || ''} onChange={v => update({ title: v })} />
             <Input label="Description" value={(section as any).description || ''} onChange={v => update({ description: v })} />
             <Input label="Button Label" value={(section as any).ctaLabel || ''} onChange={v => update({ ctaLabel: v })} />
+            <Input label="Button Link" value={(section as any).ctaLink || ''} onChange={v => update({ ctaLink: v })} />
           </FieldGroup>
         );
 
@@ -217,10 +222,11 @@ export function SectionForms({ section }: { section: CmsSection }) {
       case 'stylist-banner':
         return (
           <>
-            <FieldGroup title="Content">
+            <FieldGroup title="Consultation & Inquiries Banner">
               <Input label="Section Title" value={section.title || ''} onChange={v => update({ title: v })} />
               <Input label="Description" value={section.description || ''} onChange={v => update({ description: v })} />
               <Input label="Button Label" value={section.ctaLabel || ''} onChange={v => update({ ctaLabel: v })} />
+              <Input label="Button Link" value={(section as any).ctaLink || '/about'} onChange={v => update({ ctaLink: v })} />
             </FieldGroup>
           </>
         );
@@ -228,26 +234,95 @@ export function SectionForms({ section }: { section: CmsSection }) {
       case 'seo-content':
         return (
           <>
-            <FieldGroup title="Section 1">
+            <FieldGroup title="Topic 1 (Quality & Standards)">
               <Input label="Title 1" value={section.title1 || ''} onChange={v => update({ title1: v })} />
               <Input label="Body 1" value={section.body1 || ''} onChange={v => update({ body1: v })} />
             </FieldGroup>
-            <FieldGroup title="Section 2">
+            <FieldGroup title="Topic 2 (Shipping & Handling)">
               <Input label="Title 2" value={section.title2 || ''} onChange={v => update({ title2: v })} />
               <Input label="Body 2" value={section.body2 || ''} onChange={v => update({ body2: v })} />
             </FieldGroup>
-            <FieldGroup title="Section 3">
+            <FieldGroup title="Topic 3 (Warranty & Bulk Inquiries)">
               <Input label="Title 3" value={section.title3 || ''} onChange={v => update({ title3: v })} />
               <Input label="Body 3" value={section.body3 || ''} onChange={v => update({ body3: v })} />
             </FieldGroup>
           </>
         );
 
-      // We add other sections as needed. A default fallback for now:
+      case 'flash-sale':
+        return (
+          <FieldGroup title="Flash Sale Settings">
+            <Input label="Sale Badge" value={(section as any).badge || 'LIMITED OFFER'} onChange={v => update({ badge: v })} />
+            <Input label="Sale Heading" value={(section as any).heading || 'Flash Sale'} onChange={v => update({ heading: v })} />
+            <Input label="Subheading" value={(section as any).subheading || ''} onChange={v => update({ subheading: v })} />
+            <Input label="Discount Text" value={(section as any).discount || 'Up to 50% OFF'} onChange={v => update({ discount: v })} />
+            <Input label="Button Label" value={(section as any).ctaLabel || 'Shop Flash Deals'} onChange={v => update({ ctaLabel: v })} />
+            <Input label="Button Link" value={(section as any).ctaLink || '/products'} onChange={v => update({ ctaLink: v })} />
+            <Input type="color" label="Background Color" value={(section as any).backgroundColor || '#0f172a'} onChange={v => update({ backgroundColor: v })} />
+          </FieldGroup>
+        );
+
+      case 'testimonials':
+        return (
+          <FieldGroup title="Customer Reviews">
+            <Input label="Section Title" value={(section as any).title || 'What Our Customers Say'} onChange={v => update({ title: v })} />
+            <Input label="Subtitle" value={(section as any).subtitle || 'Real feedback from satisfied buyers'} onChange={v => update({ subtitle: v })} />
+          </FieldGroup>
+        );
+
+      case 'newsletter':
+        return (
+          <FieldGroup title="Newsletter Signup">
+            <Input label="Heading" value={(section as any).heading || 'Stay in the Loop'} onChange={v => update({ heading: v })} />
+            <Input label="Subheading" value={(section as any).subheading || 'Get exclusive deals, new arrivals and trade offers directly in your inbox.'} onChange={v => update({ subheading: v })} />
+            <Input label="Button Label" value={(section as any).buttonLabel || 'Subscribe'} onChange={v => update({ buttonLabel: v })} />
+            <Input label="Placeholder Text" value={(section as any).placeholder || 'Enter your email address'} onChange={v => update({ placeholder: v })} />
+          </FieldGroup>
+        );
+
+      case 'stats':
+        return (
+          <FieldGroup title="Key Numbers & Trust Indicators">
+            <Input label="Title" value={(section as any).title || 'Trusted by Thousands'} onChange={v => update({ title: v })} />
+            <Input label="Stat 1 Value" value={(section as any).stat1Value || '10,000+'} onChange={v => update({ stat1Value: v })} />
+            <Input label="Stat 1 Label" value={(section as any).stat1Label || 'Orders Fulfilled'} onChange={v => update({ stat1Label: v })} />
+            <Input label="Stat 2 Value" value={(section as any).stat2Value || '99.8%'} onChange={v => update({ stat2Value: v })} />
+            <Input label="Stat 2 Label" value={(section as any).stat2Label || 'Satisfaction Rate'} onChange={v => update({ stat2Label: v })} />
+            <Input label="Stat 3 Value" value={(section as any).stat3Value || '24h'} onChange={v => update({ stat3Value: v })} />
+            <Input label="Stat 3 Label" value={(section as any).stat3Label || 'Dispatch Time'} onChange={v => update({ stat3Label: v })} />
+          </FieldGroup>
+        );
+
+      case 'video':
+        return (
+          <FieldGroup title="Video Embed">
+            <Input label="Video URL (YouTube or Vimeo)" value={(section as any).videoUrl || ''} onChange={v => update({ videoUrl: v })} />
+            <Input label="Overlay Text" value={(section as any).overlayText || ''} onChange={v => update({ overlayText: v })} />
+            <Toggle label="Autoplay" checked={Boolean((section as any).autoplay)} onChange={v => update({ autoplay: v })} />
+            <Toggle label="Muted" checked={Boolean((section as any).muted)} onChange={v => update({ muted: v })} />
+            <Toggle label="Loop" checked={Boolean((section as any).loop)} onChange={v => update({ loop: v })} />
+          </FieldGroup>
+        );
+
+      case 'custom-html':
+        return (
+          <FieldGroup title="Custom HTML Code">
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', color: '#334155', marginBottom: '6px', fontWeight: 500 }}>HTML / Embed Code</label>
+              <textarea
+                value={(section as any).html || ''}
+                onChange={e => update({ html: e.target.value })}
+                rows={8}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', fontFamily: 'monospace', outline: 'none' }}
+              />
+            </div>
+          </FieldGroup>
+        );
+
       default:
         return (
           <div style={{ color: '#64748b', fontSize: '14px', fontStyle: 'italic', padding: '20px 0' }}>
-            Settings for {section.type} are under construction.
+            Click any text or image in the preview to edit directly, or adjust block settings above.
           </div>
         );
     }
