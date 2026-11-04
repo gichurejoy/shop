@@ -3,6 +3,7 @@ import { useCms, ActiveElement } from './cms-store';
 import { SectionType } from '@/lib/cms-types';
 import { SectionForms } from './SectionForms';
 import { LUXURY_PRESET_IMAGES, INDUSTRY_PRESET_IMAGES } from './InlineWidgets';
+import { toast } from 'sonner';
 
 export const AVAILABLE_BLOCKS: {
   id: SectionType;
@@ -70,9 +71,13 @@ function ImageInspector({
       if (data.url) {
         setUrl(data.url);
         onUpdate(data.url, alt);
+        toast.success('Image uploaded successfully!');
+      } else {
+        toast.error('Upload failed: ' + (data.error || 'Server error'));
       }
     } catch (err) {
       console.error('Failed to upload image:', err);
+      toast.error('Network error uploading image');
     } finally {
       setUploading(false);
     }
@@ -83,6 +88,7 @@ function ImageInspector({
   const handleApplyPreset = (presetUrl: string) => {
     setUrl(presetUrl);
     onUpdate(presetUrl, alt);
+    toast.success('Applied preset photo!');
   };
 
   const handleChangeUrl = (newUrl: string) => {
@@ -105,9 +111,35 @@ function ImageInspector({
       </div>
 
       {/* Image Preview Box */}
-      <div style={{ marginBottom: '16px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0', background: '#0f172a', maxHeight: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ marginBottom: '16px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0', background: '#0f172a', maxHeight: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
         {url ? (
-          <img src={url} alt={alt || 'Preview'} style={{ maxWidth: '100%', maxHeight: '180px', objectFit: 'contain' }} />
+          <>
+            <img src={url} alt={alt || 'Preview'} style={{ maxWidth: '100%', maxHeight: '180px', objectFit: 'contain' }} />
+            <button
+              type="button"
+              onClick={() => {
+                setUrl('');
+                onUpdate('', alt);
+                toast.success('Image cleared');
+              }}
+              style={{
+                position: 'absolute',
+                top: '8px',
+                right: '8px',
+                background: 'rgba(239, 68, 68, 0.9)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '4px 8px',
+                fontSize: '11px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+              title="Clear this image"
+            >
+              ✕ Clear
+            </button>
+          </>
         ) : (
           <div style={{ padding: '32px', color: '#64748b', fontSize: '12px' }}>No image set</div>
         )}
@@ -733,6 +765,7 @@ export function SectionsPanel({ insertAtIndex }: { insertAtIndex?: number | null
                 onUpdate={(newUrl, newAlt) => {
                   updateSection(activeSection.id, {
                     [activeElement.field]: newUrl,
+                    ...(activeElement.field === 'backgroundImage' ? { backgroundType: newUrl ? 'image' : 'solid' } : {}),
                     ...(newAlt !== undefined ? { alt: newAlt } : {}),
                   } as any);
                 }}

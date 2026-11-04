@@ -26,7 +26,7 @@ export function Hero({ heading, searchPlaceholder, backgroundColor, backgroundIm
 
   const customStyle: React.CSSProperties = {};
   if (backgroundImage) {
-    customStyle.backgroundImage = `url(${backgroundImage})`;
+    customStyle.backgroundImage = `linear-gradient(rgba(15, 23, 42, 0.60), rgba(15, 23, 42, 0.70)), url("${backgroundImage}")`;
     customStyle.backgroundSize = 'cover';
     customStyle.backgroundPosition = 'center';
   } else if (backgroundColor) {

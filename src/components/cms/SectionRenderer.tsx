@@ -17,8 +17,8 @@ import { Sparkles, User, Shield, Ruler, Search, MessageCircle } from 'lucide-rea
 
 export function HeroRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) => void }) {
   const bg: React.CSSProperties = {};
-  if (s.backgroundType === 'image' && s.backgroundImage) {
-    bg.backgroundImage = `url(${s.backgroundImage})`;
+  if ((s.backgroundType === 'image' || s.backgroundImage) && s.backgroundImage) {
+    bg.backgroundImage = `linear-gradient(rgba(15, 23, 42, 0.60), rgba(15, 23, 42, 0.70)), url("${s.backgroundImage}")`;
     bg.backgroundSize = 'cover';
     bg.backgroundPosition = 'center';
   } else if (s.backgroundType === 'gradient') {
@@ -473,6 +473,9 @@ export function RichContentRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch
 // ─── Bespoke Storefront Inline Renderers ────────────────────────────────────
 
 function BespokeHeroRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) => void }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
   if (!onUpdate) {
     return (
       <Hero 
@@ -483,9 +486,32 @@ function BespokeHeroRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) 
       />
     );
   }
+
+  const handleDirectUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !onUpdate) return;
+    setUploading(true);
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.url) {
+        onUpdate({
+          backgroundImage: data.url,
+          backgroundType: 'image',
+        });
+      }
+    } catch (err) {
+      console.error('Failed to upload hero background:', err);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const customStyle: React.CSSProperties = {};
   if (s.backgroundImage) {
-    customStyle.backgroundImage = `url(${s.backgroundImage})`;
+    customStyle.backgroundImage = `linear-gradient(rgba(15, 23, 42, 0.60), rgba(15, 23, 42, 0.70)), url("${s.backgroundImage}")`;
     customStyle.backgroundSize = 'cover';
     customStyle.backgroundPosition = 'center';
   } else if (s.backgroundColor) {
@@ -494,7 +520,28 @@ function BespokeHeroRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) 
 
   return (
     <div className="w-full bg-slate-900 text-white py-12 relative overflow-hidden group/hero" style={customStyle}>
-      <div className="absolute top-3 right-3 z-30">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleDirectUpload}
+        accept="image/*"
+        style={{ display: 'none' }}
+      />
+      <div className="absolute top-3 right-3 z-30 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            fileInputRef.current?.click();
+          }}
+          disabled={uploading}
+          className="bg-orange-600 hover:bg-orange-700 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shadow-lg font-semibold"
+          title="Upload new background photo directly from your computer"
+        >
+          <span>📁</span>
+          <span>{uploading ? 'Uploading…' : 'Upload Background'}</span>
+        </button>
+
         <button
           type="button"
           onClick={(e) => {
@@ -511,11 +558,26 @@ function BespokeHeroRenderer({ s, onUpdate }: { s: any; onUpdate?: (patch: any) 
             }, '*');
           }}
           className="bg-black/70 hover:bg-black/90 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 backdrop-blur border border-white/20 transition-all cursor-pointer shadow-lg"
-          title="Edit background image in inspector"
+          title="Choose from industry preset photos or enter URL"
         >
-          <span>📷</span>
-          <span className="font-medium">Change Background</span>
+          <span>🎨</span>
+          <span className="font-medium">Presets & Inspector</span>
         </button>
+
+        {s.backgroundImage && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onUpdate({ backgroundImage: '', backgroundType: 'solid' });
+            }}
+            className="bg-red-900/80 hover:bg-red-800 text-white text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1 backdrop-blur border border-white/20 transition-all cursor-pointer shadow-lg"
+            title="Clear background image"
+          >
+            <span>✕</span>
+            <span>Remove</span>
+          </button>
+        )}
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-6">

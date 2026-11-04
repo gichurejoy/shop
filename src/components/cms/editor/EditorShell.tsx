@@ -109,6 +109,10 @@ export function EditorShell({
         setActiveTab('customize');
       }
       if (e.data?.type === 'ELEMENT_SELECTED') {
+        if (e.data.element?.sectionId) {
+          setActive(e.data.element.sectionId);
+        }
+        setActiveTab('customize');
         setActiveElement(e.data.element);
       }
       if (e.data?.type === 'SECTION_UPDATED') {

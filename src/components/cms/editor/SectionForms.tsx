@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { useCms } from './cms-store';
 import { CmsSection } from '@/lib/cms-types';
+import { toast } from 'sonner';
 
 function FieldGroup({ title, children }: { title: string, children: React.ReactNode }) {
   return (
@@ -51,6 +52,84 @@ function Toggle({ label, checked, onChange }: { label: string, checked: boolean,
   );
 }
 
+function ImageUploadField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (url: string) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.url) {
+        onChange(data.url);
+        toast.success('Image uploaded successfully!');
+      } else {
+        toast.error('Upload failed: ' + (data.error || 'Server error'));
+      }
+    } catch {
+      toast.error('Network error uploading file');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div>
+      <label style={{ display: 'block', fontSize: '13px', color: '#334155', marginBottom: '6px', fontWeight: 500 }}>{label}</label>
+      {value && (
+        <div style={{ position: 'relative', marginBottom: '8px', borderRadius: '8px', overflow: 'hidden', height: '130px', background: '#0f172a', border: '1px solid #cbd5e1' }}>
+          <img src={value} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            style={{
+              position: 'absolute', top: '6px', right: '6px', background: 'rgba(0,0,0,0.75)',
+              color: '#fff', border: 'none', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', cursor: 'pointer'
+            }}
+          >
+            ✕ Remove
+          </button>
+        </div>
+      )}
+      <input type="file" ref={fileInputRef} onChange={handleUpload} accept="image/*" style={{ display: 'none' }} />
+      <div style={{ display: 'flex', gap: '8px' }}>
+        <input
+          type="text"
+          value={value || ''}
+          placeholder="https://... or upload from PC"
+          onChange={e => onChange(e.target.value)}
+          style={{ flex: 1, padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none' }}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          style={{
+            padding: '8px 14px', borderRadius: '6px', border: 'none', background: '#ff6c2f',
+            color: '#fff', fontSize: '12px', fontWeight: 600, cursor: uploading ? 'not-allowed' : 'pointer',
+            display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap'
+          }}
+        >
+          <span>{uploading ? '⏳ Uploading…' : '📁 Upload'}</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Section Forms ──────────────────────────────────────────────────────────
 
 export function SectionForms({ section }: { section: CmsSection }) {
@@ -75,7 +154,13 @@ export function SectionForms({ section }: { section: CmsSection }) {
                 { label: 'Gradient', value: 'gradient' },
                 { label: 'Solid Color', value: 'solid' },
               ]} />
-              {section.backgroundType === 'image' && <Input label="Image URL" value={section.backgroundImage} onChange={v => update({ backgroundImage: v })} />}
+              {section.backgroundType === 'image' && (
+                <ImageUploadField
+                  label="Hero Background Image"
+                  value={section.backgroundImage || ''}
+                  onChange={(url) => update({ backgroundImage: url, backgroundType: 'image' })}
+                />
+              )}
               {section.backgroundType === 'gradient' && (
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <Input type="color" label="From" value={section.gradientFrom} onChange={v => update({ gradientFrom: v })} />
